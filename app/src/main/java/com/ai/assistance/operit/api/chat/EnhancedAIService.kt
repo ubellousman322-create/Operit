@@ -2036,31 +2036,6 @@ class EnhancedAIService private constructor(private val context: Context) {
             }
         }
 
-        if (enableMemoryAutoUpdate && !isSubTask && content.isNotBlank()) {
-            runCatching {
-                val currentChatId = chatId?.takeIf { it.isNotBlank() }
-                val profileId =
-                    memorySpaceIdOverride?.takeIf { it.isNotBlank() }
-                        ?: preferencesManager.activeMemorySpaceIdFlow.first()
-                if (currentChatId.isNullOrBlank()) {
-                    AppLogger.w(TAG, "自动保存长期记忆入队跳过：chatId为空")
-                } else {
-                    MemoryAutoSaveCandidateRepository(this@EnhancedAIService.context, profileId)
-                        .enqueue(
-                            chatId = currentChatId,
-                            triggerMessageTimestamp = System.currentTimeMillis()
-                        )
-                }
-            }.onFailure { e ->
-                AppLogger.e(TAG, "自动保存长期记忆候选入队失败", e)
-                onNonFatalError(
-                    this@EnhancedAIService.context.getString(
-                        R.string.chat_auto_update_memory_failed,
-                        e.message ?: ""
-                    )
-                )
-            }
-        }
 
         if (!isSubTask) {
             notifyReplyCompleted(chatId, characterName, avatarUri, notifyReplyOverride)
