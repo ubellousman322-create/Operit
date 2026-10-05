@@ -540,7 +540,6 @@ object SystemToolPrompts {
             basicTools,
             adjustedFileSystemTools,
             httpTools,
-            memoryTools
         )
     }
 
@@ -615,7 +614,6 @@ object SystemToolPrompts {
             basicToolsCn,
             adjustedFileSystemTools,
             httpToolsCn,
-            memoryToolsCn
         )
     }
 
