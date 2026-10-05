@@ -385,7 +385,6 @@ AVAILABLE_TOOLS_SECTION""".trimIndent()
     // Determine the available tools string based on tool visibility and recognition capabilities.
     // 当使用Tool Call API时，不在系统提示词中包含工具描述（工具已通过API的tools字段发送）
     val availableToolsEn = if (useToolCallApi || toolExposureMode == ToolExposureMode.CLI) "" else (
-        getMemoryToolsEn(toolVisibility) +
             getAvailableToolsEn(
                 chatId = chatId,
                 hasImageRecognition = hasImageRecognition,
@@ -402,7 +401,6 @@ AVAILABLE_TOOLS_SECTION""".trimIndent()
             )
     )
     val availableToolsCn = if (useToolCallApi || toolExposureMode == ToolExposureMode.CLI) "" else (
-        getMemoryToolsCn(toolVisibility) +
             getAvailableToolsCn(
                 chatId = chatId,
                 hasImageRecognition = hasImageRecognition,
