@@ -104,6 +104,32 @@ class ActivePromptManager private constructor(context: Context) {
         }
     }
 
+    suspend fun listThemePresets(): List<ThemePresetSummary> {
+        return userPreferencesManager.listThemePresets()
+    }
+
+    suspend fun saveThemePreset(name: String, values: ThemePreferenceValues): String {
+        return themeOperations.runTransition {
+            userPreferencesManager.saveThemePreset(name = name, values = values)
+        }
+    }
+
+    suspend fun applyThemePresetToTarget(presetId: String, target: ActivePrompt) {
+        themeOperations.runTransition {
+            userPreferencesManager.applyThemePresetToPrompt(presetId = presetId, target = target)
+        }
+    }
+
+    suspend fun renameThemePreset(presetId: String, name: String) {
+        userPreferencesManager.renameThemePreset(presetId = presetId, name = name)
+    }
+
+    suspend fun deleteThemePreset(presetId: String) {
+        themeOperations.runTransition {
+            userPreferencesManager.deleteThemePreset(presetId)
+        }
+    }
+
     suspend fun saveAiAvatarForPrompt(target: ActivePrompt, avatarUri: String?) {
         themeOperations.runTransition {
             when (target) {

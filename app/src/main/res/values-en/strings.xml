@@ -8518,4 +8518,25 @@
     <string name="market_version_too_low_message">Current client version %1$s is lower than the minimum required version %2$s for this resource. Please update the client before downloading.</string>
     <string name="market_version_too_high_message">Current client version %1$s is higher than the maximum supported version %2$s for this resource. Please use a supported client version.</string>
     <string name="thinking_config_invalid_json">Invalid Thinking Configuration</string>
+    <!-- Named theme presets -->
+    <string name="theme_preset_title">My themes</string>
+    <string name="theme_preset_subtitle">%1$d saved</string>
+    <string name="theme_preset_manage">Manage</string>
+    <string name="theme_preset_empty">No saved themes yet. Tune the theme the way you like it, then save it below.</string>
+    <string name="theme_preset_name_hint">Theme name</string>
+    <string name="theme_preset_save_current">Save current settings as a new theme</string>
+    <string name="theme_preset_apply">Apply</string>
+    <string name="theme_preset_rename">Rename</string>
+    <string name="theme_preset_delete">Delete</string>
+    <string name="theme_preset_saved">Saved theme: %1$s</string>
+    <string name="theme_preset_applied">Applied theme: %1$s</string>
+    <string name="theme_preset_save_failed">Failed to save theme</string>
+    <string name="theme_preset_apply_failed">Failed to apply theme</string>
+    <string name="theme_preset_delete_failed">Failed to delete theme</string>
+    <string name="theme_preset_rename_failed">Failed to rename theme</string>
+    <string name="theme_preset_rename_title">Rename theme</string>
+    <string name="theme_preset_rename_hint">New name</string>
+    <string name="theme_preset_confirm">OK</string>
+    <string name="theme_preset_close">Close</string>
+    <string name="theme_preset_apply_note">Applying a theme overwrites the theme currently being edited for this target.</string>
 </resources>

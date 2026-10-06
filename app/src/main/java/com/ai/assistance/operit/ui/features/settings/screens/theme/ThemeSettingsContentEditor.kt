@@ -59,6 +59,7 @@ import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.CharacterGroupCardManager
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
+import com.ai.assistance.operit.data.preferences.ThemePreferenceValues
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.ui.main.navigation.RegisterRouteBackGuard
 import com.ai.assistance.operit.util.AppLogger
@@ -155,6 +156,13 @@ internal fun ThemeSettingsContentEditor(
     var isSaving by remember { mutableStateOf(false) }
     var targetSwitchesInFlight by remember { mutableStateOf(0) }
     val scrollState = androidx.compose.foundation.rememberScrollState()
+    var showPresetDialog by remember { mutableStateOf(false) }
+    var presetCount by remember { mutableStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        presetCount = activePromptManager.listThemePresets().size
+    }
+
 
     LaunchedEffect(activeThemeTarget, editorReloadToken) {
         val target = activeThemeTarget
@@ -354,6 +362,16 @@ internal fun ThemeSettingsContentEditor(
             },
         )
 
+        ThemeSettingsPresetBar(
+            presetCount = presetCount,
+            enabled =
+                editorState != null &&
+                    pendingAction == null &&
+                    !isSaving &&
+                    targetSwitchesInFlight == 0,
+            onClick = { showPresetDialog = true },
+        )
+
         val draft = editorState?.session
         if (draft == null) {
             Box(
@@ -424,6 +442,25 @@ internal fun ThemeSettingsContentEditor(
                 )
             }
         }
+    }
+
+    if (showPresetDialog && editorState != null) {
+        ThemePresetManagerDialog(
+            activePromptManager = activePromptManager,
+            target = editorTarget,
+            currentValues = editorValues ?: ThemePreferenceValues.defaultVisual(),
+            onPresetApplied = {
+                showPresetDialog = false
+                editorState = null
+                editorReloadToken += 1
+            },
+            onDismissRequest = {
+                showPresetDialog = false
+                scope.launch {
+                    presetCount = activePromptManager.listThemePresets().size
+                }
+            },
+        )
     }
 
     if (pendingAction != null) {

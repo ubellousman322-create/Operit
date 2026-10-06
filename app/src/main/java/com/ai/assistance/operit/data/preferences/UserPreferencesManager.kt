@@ -78,6 +78,9 @@ class UserPreferencesManager private constructor(private val context: Context) {
         private val ACTIVE_MEMORY_SPACE_ID = stringPreferencesKey("active_memory_space_id")
         private val MEMORY_SPACE_LIST = stringPreferencesKey("memory_space_list")
 
+        // 命名主题库（用户自己保存的多套主题）
+        private val THEME_PRESET_INDEX = stringPreferencesKey("theme_preset_index")
+
         // 应用语言设置
         private val APP_LANGUAGE = stringPreferencesKey("app_language")
 
@@ -1244,4 +1247,85 @@ class UserPreferencesManager private constructor(private val context: Context) {
             characterGroupId = characterGroupId,
         ).first()
     }
+
+    // ========== 命名主题库（用户自己保存的多套主题） ==========
+
+    private fun getThemePresetPrefix(presetId: String): String = "theme_preset_${presetId}_"
+
+    private fun getThemePresetNameKey(presetId: String): Preferences.Key<String> =
+        stringPreferencesKey("theme_preset_${presetId}_display_name")
+
+    private fun readThemePresetIds(preferences: Preferences): List<String> {
+        val raw = preferences[THEME_PRESET_INDEX] ?: return emptyList()
+        return raw.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    }
+
+    suspend fun listThemePresets(): List<ThemePresetSummary> {
+        val preferences = context.userPreferencesDataStore.data.first()
+        return readThemePresetIds(preferences).mapNotNull { presetId ->
+            val name = preferences[getThemePresetNameKey(presetId)]
+            if (name.isNullOrBlank()) null else ThemePresetSummary(id = presetId, name = name)
+        }
+    }
+
+    suspend fun saveThemePreset(name: String, values: ThemePreferenceValues): String {
+        val presetId = java.util.UUID.randomUUID().toString().replace("-", "").take(12)
+        context.userPreferencesDataStore.edit { preferences ->
+            val prefix = getThemePresetPrefix(presetId)
+            writeVisualThemeValues(preferences, prefix, values)
+            writeThemeTargetMetadata(preferences, prefix, values)
+            preferences[getThemePresetNameKey(presetId)] = name
+            val ids = readThemePresetIds(preferences).toMutableList()
+            ids.add(presetId)
+            preferences[THEME_PRESET_INDEX] = ids.joinToString(",")
+        }
+        return presetId
+    }
+
+    suspend fun renameThemePreset(presetId: String, name: String) {
+        context.userPreferencesDataStore.edit { preferences ->
+            val key = getThemePresetNameKey(presetId)
+            if (preferences.contains(key)) {
+                preferences[key] = name
+            }
+        }
+    }
+
+    suspend fun deleteThemePreset(presetId: String) {
+        context.userPreferencesDataStore.edit { preferences ->
+            val prefix = getThemePresetPrefix(presetId)
+            getAllStringThemeKeys().forEach { key ->
+                preferences.remove(stringPreferencesKey(prefix + key.name))
+            }
+            getAllBooleanThemeKeys().forEach { key ->
+                preferences.remove(booleanPreferencesKey(prefix + key.name))
+            }
+            getAllIntThemeKeys().forEach { key ->
+                preferences.remove(intPreferencesKey(prefix + key.name))
+            }
+            getAllFloatThemeKeys().forEach { key ->
+                preferences.remove(floatPreferencesKey(prefix + key.name))
+            }
+            preferences.remove(getThemePresetNameKey(presetId))
+            val ids = readThemePresetIds(preferences).toMutableList()
+            ids.remove(presetId)
+            preferences[THEME_PRESET_INDEX] = ids.joinToString(",")
+        }
+    }
+
+    suspend fun applyThemePresetToPrompt(presetId: String, target: ActivePrompt) {
+        context.userPreferencesDataStore.edit { preferences ->
+            copyThemeValues(
+                preferences = preferences,
+                sourcePrefix = getThemePresetPrefix(presetId),
+                targetPrefix = themePrefixForPrompt(target),
+                clearMissingTargetValues = true,
+            )
+        }
+    }
 }
+
+data class ThemePresetSummary(
+    val id: String,
+    val name: String,
+)

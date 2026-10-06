@@ -8504,4 +8504,25 @@
     <string name="codex_usage_unavailable">额度暂时不可用</string>
     <string name="codex_reset_after_days">%1$d 天后重置</string>
     <string name="codex_reset_after_clock">%1$02d:%2$02d 后重置</string>
+    <!-- 命名主题库 -->
+    <string name="theme_preset_title">我的主题</string>
+    <string name="theme_preset_subtitle">已保存 %1$d 套</string>
+    <string name="theme_preset_manage">管理</string>
+    <string name="theme_preset_empty">还没有保存的主题。把主题调成想要的样子，再在下面存一套。</string>
+    <string name="theme_preset_name_hint">主题名称</string>
+    <string name="theme_preset_save_current">把当前设置存为新主题</string>
+    <string name="theme_preset_apply">应用</string>
+    <string name="theme_preset_rename">重命名</string>
+    <string name="theme_preset_delete">删除</string>
+    <string name="theme_preset_saved">已保存主题：%1$s</string>
+    <string name="theme_preset_applied">已应用主题：%1$s</string>
+    <string name="theme_preset_save_failed">保存主题失败</string>
+    <string name="theme_preset_apply_failed">应用主题失败</string>
+    <string name="theme_preset_delete_failed">删除主题失败</string>
+    <string name="theme_preset_rename_failed">重命名失败</string>
+    <string name="theme_preset_rename_title">重命名主题</string>
+    <string name="theme_preset_rename_hint">新名称</string>
+    <string name="theme_preset_confirm">确定</string>
+    <string name="theme_preset_close">关闭</string>
+    <string name="theme_preset_apply_note">应用后，当前角色正在编辑的主题会被这一套覆盖。</string>
 </resources>
