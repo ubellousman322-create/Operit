@@ -8539,4 +8539,9 @@
     <string name="theme_preset_confirm">OK</string>
     <string name="theme_preset_close">Close</string>
     <string name="theme_preset_apply_note">Applying a theme overwrites the theme currently being edited for this target.</string>
+    <!-- Per-chat model selection -->
+    <string name="chat_model_scope_local_only">This chat only</string>
+    <string name="chat_model_scope_local_only_desc">Do not change the character card; only affects this chat</string>
+    <string name="chat_model_scope_local_active">This chat uses its own model</string>
+    <string name="chat_model_scope_clear">Clear</string>
 </resources>

@@ -24,6 +24,7 @@ import com.ai.assistance.operit.data.model.CharacterCardMemoryProfileBindingMode
 import com.ai.assistance.operit.data.model.ActivePrompt
 import com.ai.assistance.operit.core.tools.ToolProgressBus
 import com.ai.assistance.operit.ui.features.chat.viewmodel.UiStateDelegate
+import com.ai.assistance.operit.data.preferences.ChatModelOverrideManager
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.CharacterGroupCardManager
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
@@ -102,6 +103,7 @@ class MessageCoordinationDelegate(
     private var currentMemorySpaceIdOverride: String? = null
 
     private var nonFatalErrorCollectorJob: Job? = null
+    private val chatModelOverrideManager = ChatModelOverrideManager.getInstance(context)
     private val characterCardManager = CharacterCardManager.getInstance(context)
     private val characterGroupCardManager = CharacterGroupCardManager.getInstance(context)
     private val activePromptManager = ActivePromptManager.getInstance(context)
@@ -433,7 +435,8 @@ class MessageCoordinationDelegate(
                 .ifBlank { targetMessage.roleName }
 
         val (resolvedChatModelConfigIdOverride, resolvedChatModelIndexOverride) =
-            resolveRoleCardChatModelOverrides(roleCardId)
+            resolveChatScopedModelOverride(chatId)
+                ?: resolveRoleCardChatModelOverrides(roleCardId)
         val resolvedMemorySpaceIdOverride =
             resolveRoleCardMemoryProfileOverride(roleCardId)
         val chatContextSettings =
@@ -633,7 +636,8 @@ class MessageCoordinationDelegate(
                             Pair(currentChatModelConfigIdOverride, currentChatModelIndexOverride)
                         }
                         else -> {
-                            resolveRoleCardChatModelOverrides(roleCardId)
+                            resolveChatScopedModelOverride(chatId)
+                                ?: resolveRoleCardChatModelOverrides(roleCardId)
                         }
                     }
                 val resolvedMemorySpaceIdOverride =
@@ -1414,6 +1418,12 @@ class MessageCoordinationDelegate(
                 isGroupChat = true
             )
         }
+    }
+
+    private fun resolveChatScopedModelOverride(chatId: String?): Pair<String?, Int?>? {
+        val normalizedChatId = chatId?.takeIf { it.isNotBlank() } ?: return null
+        val override = runBlocking { chatModelOverrideManager.getOverride(normalizedChatId) } ?: return null
+        return Pair(override.configId, override.modelIndex)
     }
 
     private fun resolveRoleCardChatModelOverrides(roleCardId: String): Pair<String?, Int?> {

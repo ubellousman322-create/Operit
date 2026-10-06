@@ -8525,4 +8525,9 @@
     <string name="theme_preset_confirm">确定</string>
     <string name="theme_preset_close">关闭</string>
     <string name="theme_preset_apply_note">应用后，当前角色正在编辑的主题会被这一套覆盖。</string>
+    <!-- 窗口级模型选择 -->
+    <string name="chat_model_scope_local_only">只改本窗口</string>
+    <string name="chat_model_scope_local_only_desc">不改角色卡，只影响当前对话</string>
+    <string name="chat_model_scope_local_active">本窗口已单独设置模型</string>
+    <string name="chat_model_scope_clear">清除</string>
 </resources>

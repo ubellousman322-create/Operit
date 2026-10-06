@@ -65,6 +65,7 @@ import com.ai.assistance.operit.data.preferences.FunctionalConfigManager
 import com.ai.assistance.operit.data.preferences.FunctionConfigMapping
 import com.ai.assistance.operit.data.preferences.MemorySearchSettingsPreferences
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
+import com.ai.assistance.operit.data.preferences.ChatModelOverrideManager
 import com.ai.assistance.operit.data.model.PromptFunctionType
 import com.ai.assistance.operit.data.model.getModelByIndex
 import com.ai.assistance.operit.data.model.getModelList
@@ -80,6 +81,8 @@ import com.ai.assistance.operit.ui.features.chat.components.style.input.common.I
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.InputMenuToggleSlots
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.CharacterCardMemoryBindingSwitchConfirmDialog
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.CharacterCardModelBindingSwitchConfirmDialog
+import com.ai.assistance.operit.ui.features.chat.components.style.input.common.ChatModelScopeToggleItem
+import com.ai.assistance.operit.ui.features.chat.components.style.input.common.rememberChatScopedModelOverride
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.ToolPromptManagerDialog
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.ThinkingQualitySlider
 import com.ai.assistance.operit.ui.permissions.PermissionLevel
@@ -158,6 +161,9 @@ fun ClassicChatSettingsBar(
     val activePromptManager = remember { ActivePromptManager.getInstance(context) }
     val functionalConfigManager = remember { FunctionalConfigManager(context) }
     val modelConfigManager = remember { ModelConfigManager(context) }
+    val chatModelOverrideManager = remember { ChatModelOverrideManager.getInstance(context) }
+    var chatLocalModelOnly by remember { mutableStateOf(false) }
+    val chatScopedModelOverride = rememberChatScopedModelOverride(currentChatId)
     val configMappingWithIndex by
             functionalConfigManager.functionConfigMappingWithIndexFlow.collectAsState(initial = emptyMap())
     val configSummaries by
@@ -276,7 +282,14 @@ fun ClassicChatSettingsBar(
     }
 
     val onSelectModel: (String, Int) -> Unit = { selectedId, modelIndex ->
-        if (isModelSelectionLockedByCharacterCard) {
+        val scopedChatId = currentChatId
+        if (chatLocalModelOnly && !scopedChatId.isNullOrBlank()) {
+            scope.launch {
+                chatModelOverrideManager.setOverride(scopedChatId, selectedId, modelIndex)
+                showModelDropdown = false
+                EnhancedAIService.refreshServiceForFunction(context, FunctionType.CHAT)
+            }
+        } else if (isModelSelectionLockedByCharacterCard) {
             val currentModelIndex =
                 configSummaries.find { it.id == effectiveCurrentConfigMapping.configId }?.let { config ->
                     getValidModelIndex(config.modelName, effectiveCurrentConfigMapping.modelIndex)
@@ -561,6 +574,20 @@ fun ClassicChatSettingsBar(
                                     }
                                 }
                             ) {
+                            ChatModelScopeToggleItem(
+                                chatLocalModelOnly = chatLocalModelOnly,
+                                hasChatScopedOverride = chatScopedModelOverride != null,
+                                onChatLocalModelOnlyChange = { chatLocalModelOnly = it },
+                                onClearChatScope = {
+                                    val scopedChatId = currentChatId
+                                    if (!scopedChatId.isNullOrBlank()) {
+                                        scope.launch {
+                                            chatModelOverrideManager.clearOverride(scopedChatId)
+                                            EnhancedAIService.refreshServiceForFunction(context, FunctionType.CHAT)
+                                        }
+                                    }
+                                },
+                            )
                             ModelSelectorItem(
                                 configSummaries = configSummaries,
                                 currentConfigMapping = effectiveCurrentConfigMapping,
