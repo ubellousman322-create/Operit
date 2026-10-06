@@ -151,6 +151,10 @@ class OperitBridge(context: Context) : AutoCloseable {
     }
 
     private suspend fun cancelRemote(target: OperitPending) {
+        OperitLocalVoice.host?.let {
+            it.cancel(context, target)
+            return
+        }
         val cancel = OperitPending("cancel", targetId = target.id)
         try {
             OperitInbox.add(cancel)
@@ -167,6 +171,12 @@ class OperitBridge(context: Context) : AutoCloseable {
     }
 
     private fun dispatch(pending: OperitPending) {
+        // Built-in direct path: when the host app registered a local voice host we
+        // stop broadcasting and hand the request straight to it.
+        OperitLocalVoice.host?.let {
+            it.dispatch(context, pending)
+            return
+        }
         val uri = uri(pending)
         context.grantUriPermission(OPERIT_PACKAGE, uri, GRANTS)
         val intent = Intent(if (pending.kind == "cancel") CANCEL_ACTION else ACTION).apply {
