@@ -24,12 +24,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 internal object ErpanColors {
-    val Paper = Color(0xFFFFFCFA)
-    val Ink = Color(0xFF232326)
-    val Muted = Color(0xFF73737A)
-    val Rose = Color(0xFFDD7890)
-    val Line = Color(0xFFECCDD3)
-    val Blush = Color(0xFFFBE8ED)
+    val Paper = Color(0xFF1B2330)
+    val Ink = Color(0xFFF1F5F9)
+    val Muted = Color(0xFF93A6BA)
+    val Rose = Color(0xFFE9B49A)
+    val Line = Color(0xFF35404F)
+    val Blush = Color(0xFF263140)
     val Coal = Color(0xFF242628)
     val CoalText = Color(0xFFF7F3F2)
     val CoalMuted = Color(0xFFBEBBC0)

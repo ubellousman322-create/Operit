@@ -326,7 +326,20 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        when (page) {
+        if (state.running) {
+            ErpanCallScreen(
+                settings = saved,
+                state = state,
+                avatar = avatar,
+                onEnd = {
+                    state.pendingDraft?.let { VoiceService.cancelPendingDraft(it.id) }
+                    stopService(Intent(this@MainActivity, VoiceService::class.java))
+                },
+                onMic = {
+                    startService(Intent(this@MainActivity, VoiceService::class.java).setAction(VoiceService.TOGGLE))
+                },
+            )
+        } else when (page) {
             "appearance" -> ErpanAppearance(appearanceDraft, avatar, notice, busy,
                 onChange = { appearanceDraft = it.safe() },
                 onPick = { avatarPicker.launch("image/*") },
