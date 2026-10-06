@@ -20,9 +20,9 @@ internal object MossSpeech {
     }
 
     fun consume(response: Response, active: () -> Boolean, onSampleRate: (Int) -> Unit, onPcm: (ByteArray) -> Unit) {
-        if (response.body.contentType()?.let { "${it.type}/${it.subtype}" } != "text/event-stream")
+        if (response.body!!.contentType()?.let { "${it.type}/${it.subtype}" } != "text/event-stream")
             throw SpeechApiException("Mossland 未返回流式语音，请核对模型与接口地址。")
-        val source = response.body.source()
+        val source = response.body!!.source()
         val event = StringBuilder()
         var started = false
         var carry: Byte? = null

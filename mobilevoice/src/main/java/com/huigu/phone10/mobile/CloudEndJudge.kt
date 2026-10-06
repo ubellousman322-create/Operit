@@ -56,7 +56,7 @@ internal class CloudEndJudge(private val config: EndJudgeConfig, client: OkHttpC
                     val result = response.use {
                         try {
                             if (!response.isSuccessful) null else {
-                                val source = response.body.source()
+                                val source = response.body!!.source()
                                 source.request(65_537)
                                 if (source.buffer.size > 65_536) null else {
                                     val json = JsonParser.parseString(source.readUtf8()).asJsonObject

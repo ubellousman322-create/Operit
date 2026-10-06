@@ -69,7 +69,7 @@ class CloudSpeech(private val config: SpeechConfig, client: OkHttpClient = OkHtt
         val request = Request.Builder().url(config.sttEndpoint()).header("Authorization", "Bearer ${config.sttKey}")
             .post(body).build()
         return execute("识别", request) { response, active ->
-            val input = response.body.byteStream()
+            val input = response.body!!.byteStream()
             val buffer = java.io.ByteArrayOutputStream()
             val bytes = ByteArray(4096)
             while (active()) {
@@ -125,11 +125,11 @@ class CloudSpeech(private val config: SpeechConfig, client: OkHttpClient = OkHtt
                 MossSpeech.consume(response, active, onSampleRate, onPcm)
                 return@execute
             }
-            val type = response.body.contentType()?.let { "${it.type}/${it.subtype}" }
+            val type = response.body!!.contentType()?.let { "${it.type}/${it.subtype}" }
             if (type !in setOf("application/octet-stream", "audio/pcm", "audio/x-pcm")) {
                 throw SpeechApiException("合成服务未返回兼容的 PCM 音频。")
             }
-            val input = response.body.byteStream()
+            val input = response.body!!.byteStream()
             if (elevenHttp) onSampleRate(24_000)
             val buffer = ByteArray(8192)
             var carry: Byte? = null
