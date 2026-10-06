@@ -78,6 +78,7 @@ import com.ai.assistance.operit.ui.features.chat.components.style.input.common.I
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.InputMenuToggleDefinition
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.InputMenuTogglePluginRegistry
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.InputMenuToggleSlots
+import com.ai.assistance.operit.ui.features.chat.components.style.input.common.CharacterCardMemoryBindingSwitchConfirmDialog
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.CharacterCardModelBindingSwitchConfirmDialog
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.ToolPromptManagerDialog
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.ThinkingQualitySlider
@@ -350,6 +351,26 @@ fun ClassicChatSettingsBar(
         }
     )
 
+    CharacterCardMemoryBindingSwitchConfirmDialog(
+        visible = showCharacterCardMemoryBindingSwitchConfirm,
+        onConfirm = {
+            val profileId = pendingCharacterCardMemorySelection
+            if (profileId.isNullOrBlank()) {
+                showCharacterCardMemoryBindingSwitchConfirm = false
+                return@CharacterCardMemoryBindingSwitchConfirmDialog
+            }
+            scope.launch {
+                val activePrompt = activePromptManager.getActivePrompt()
+                val activeCard = when (activePrompt) {
+                    is ActivePrompt.CharacterCard -> characterCardManager.getCharacterCard(activePrompt.id)
+                    is ActivePrompt.CharacterGroup -> null
+                }
+                if (activeCard != null) {
+                    characterCardManager.updateCharacterCard(
+                        activeCard.copy(
+                            memoryProfileBindingMode = CharacterCardMemoryProfileBindingMode.FIXED_PROFILE,
+                            memoryProfileId = profileId,
+                        )
                     )
                     EnhancedAIService.refreshServiceForFunction(context, FunctionType.CHAT)
                 }
