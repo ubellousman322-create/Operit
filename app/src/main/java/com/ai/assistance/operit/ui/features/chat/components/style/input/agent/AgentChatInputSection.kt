@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.outlined.VolumeOff
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -1604,6 +1605,27 @@ private fun AgentModelSelectorPopup(
                             .padding(vertical = 4.dp)
                             .verticalScroll(rememberScrollState()),
                 ) {
+                    AgentActionSettingItem(
+                        title = "打电话",
+                        icon = Icons.Filled.Call,
+                        onClick = {
+                            runCatching {
+                                context.startActivity(
+                                    android.content.Intent().apply {
+                                        setClassName(
+                                            context.packageName,
+                                            "com.huigu.phone10.mobile.MainActivity"
+                                        )
+                                        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                                )
+                            }
+                            onDismiss()
+                        },
+                        onInfoClick = {
+                            infoPopupContent = "打电话" to "打开耳畔语音通话界面"
+                        },
+                    )
                     AgentThinkingSettingsItem(
                         popupContainerColor = popupContainerColor,
                         enableThinkingMode = enableThinkingMode || thinkingQualityMapping?.reasoningRequired == true,
