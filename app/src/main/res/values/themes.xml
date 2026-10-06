@@ -13,5 +13,9 @@
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
         <!-- Customize your theme here. -->
         
+        <!-- splash: night and moon -->
+        <item name="android:windowSplashScreenBackground">#2A3440</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_moon_foreground</item>
+        <item name="android:windowSplashScreenAnimationDuration">500</item>
     </style>
 </resources>
