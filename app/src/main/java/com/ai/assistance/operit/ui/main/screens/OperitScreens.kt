@@ -30,7 +30,6 @@ import com.ai.assistance.operit.ui.features.assistant.screens.AssistantConfigScr
 import com.ai.assistance.operit.ui.features.chat.screens.AIChatScreen
 import com.ai.assistance.operit.ui.features.demo.screens.ShizukuDemoScreen
 import com.ai.assistance.operit.ui.features.help.screens.HelpScreen
-import com.ai.assistance.operit.ui.features.memory.screens.MemoryScreen
 import com.ai.assistance.operit.ui.features.packages.screens.MarketHomeTab
 import com.ai.assistance.operit.ui.features.packages.screens.PackageManagerScreen
 import com.ai.assistance.operit.ui.features.packages.screens.ArtifactPublishScreen
@@ -159,7 +158,6 @@ sealed class Screen(
                     hasBackgroundImage = hasBackgroundImage,
                     onNavigateToTokenConfig = { navigateTo(TokenConfig) },
                     onNavigateToSettings = { navigateTo(Settings) },
-                    onNavigateToMemoryBase = { navigateTo(MemoryBase) },
                     onNavigateToModelConfig = { navigateTo(ModelConfig) },
                     onNavigateToOnboardingModelConfig = { navigateTo(ModelConfigOnboarding) },
                     onNavigateToModelPrompts = { navigateTo(ModelPromptsSettings) },
@@ -171,20 +169,6 @@ sealed class Screen(
         }
     }
 
-    data object MemoryBase : Screen(navItem = NavItem.MemoryBase, titleRes = R.string.screen_title_memory_base) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            MemoryScreen()
-        }
-    }
 
     data object Packages : Screen(navItem = NavItem.Packages) {
         @Composable
@@ -794,7 +778,6 @@ sealed class Screen(
         ) {
             UserPreferencesSettingsScreen(
                 onNavigateBack = onGoBack,
-                onNavigateToMemory = { navigateTo(MemoryBase) }
             )
         }
     }
