@@ -137,6 +137,7 @@ import com.ai.assistance.operit.ui.common.animations.SimpleAnimatedVisibility
 import com.ai.assistance.operit.ui.features.chat.components.AttachmentChip
 import com.ai.assistance.operit.ui.features.chat.components.AttachmentSelectorPopupPanel
 import com.ai.assistance.operit.ui.features.chat.components.FullscreenInputDialog
+import com.ai.assistance.operit.ui.features.chat.components.style.input.common.CharacterCardMemoryBindingSwitchConfirmDialog
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.CharacterCardModelBindingSwitchConfirmDialog
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.InputMenuToggleHookParams
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.InputMenuToggleDefinition
@@ -317,6 +318,27 @@ fun AgentChatInputSection(
         },
     )
 
+    CharacterCardMemoryBindingSwitchConfirmDialog(
+        visible = showCharacterCardMemoryBindingSwitchConfirm,
+        onConfirm = {
+            val profileId = pendingCharacterCardMemorySelection
+            if (profileId.isNullOrBlank()) {
+                showCharacterCardMemoryBindingSwitchConfirm = false
+                return@CharacterCardMemoryBindingSwitchConfirmDialog
+            }
+            scope.launch {
+                val activePrompt = activePromptManager.getActivePrompt()
+                val activeCard = when (activePrompt) {
+                    is ActivePrompt.CharacterCard -> characterCardManager.getCharacterCard(activePrompt.id)
+                    is ActivePrompt.CharacterGroup -> null
+                }
+                if (activeCard != null) {
+                    characterCardManager.updateCharacterCard(
+                        activeCard.copy(
+                            memoryProfileBindingMode = CharacterCardMemoryProfileBindingMode.FIXED_PROFILE,
+                            memoryProfileId = profileId,
+                        ),
+                    )
                     EnhancedAIService.refreshServiceForFunction(context, FunctionType.CHAT)
                 }
                 showCharacterCardMemoryBindingSwitchConfirm = false
