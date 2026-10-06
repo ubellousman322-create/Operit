@@ -40,6 +40,11 @@ class IncomingCallActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val allowed = runCatching { SettingsStore(this).load().allowIncoming }.getOrDefault(true)
+        if (!allowed) {
+            finish()
+            return
+        }
         setShowWhenLocked(true)
         setTurnScreenOn(true)
         val who = intent.getStringExtra(EXTRA_NAME)?.takeIf { it.isNotBlank() } ?: "姐姐"

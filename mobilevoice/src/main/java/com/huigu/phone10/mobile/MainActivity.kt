@@ -455,6 +455,7 @@ class MainActivity : ComponentActivity() {
                 onLogs = { dialog = "最近语音状态" to VoiceDiagnostics.snapshot().ifBlank { "暂无记录" } }, onAbout = { showAbout() },
                 onProfiles = { openProfiles() }, onCaptions = { enabled -> floatingPreference("captions", enabled) },
                 onListenOnly = { enabled -> if (!state.running) persist(saved.copy(listenOnly = enabled)) },
+                onIncoming = { enabled -> persist(saved.copy(allowIncoming = enabled)) },
                 onInterrupt = { startService(Intent(this@MainActivity, VoiceService::class.java).setAction(VoiceService.INTERRUPT)) })
         }
         if (showProfiles) VoiceProfilesDialog(saved, busy || state.running, profileError.ifBlank { notice },

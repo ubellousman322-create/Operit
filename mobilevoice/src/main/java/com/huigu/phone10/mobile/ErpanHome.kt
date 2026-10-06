@@ -28,7 +28,8 @@ import androidx.compose.ui.viewinterop.AndroidView
     onAvatar: () -> Unit,
     onConfig: () -> Unit, onLogs: () -> Unit, onAbout: () -> Unit,
     onProfiles: () -> Unit, onCaptions: (Boolean) -> Unit,
-    onListenOnly: (Boolean) -> Unit, onInterrupt: () -> Unit) {
+    onListenOnly: (Boolean) -> Unit, onInterrupt: () -> Unit,
+    onIncoming: (Boolean) -> Unit) {
     var showTitle by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
     val configured = configurationIssues(settings).isEmpty()
@@ -84,6 +85,8 @@ import androidx.compose.ui.viewinterop.AndroidView
                     label = { Text("语音通话") })
                 FilterChip(selected = settings.listenOnly, onClick = { onListenOnly(true) }, enabled = !state.running && !busy,
                     label = { Text("只听回复") })
+                FilterChip(selected = settings.allowIncoming, onClick = { onIncoming(!settings.allowIncoming) }, enabled = !busy,
+                    label = { Text("允许来电") })
             }
             Text(if (settings.speech.clientSegmentedTts) "首个断句标点到达即提交合成，后续合段；实际出声仍需等待模型生成。"
             else if (settings.speech.wholeReplyTts) {

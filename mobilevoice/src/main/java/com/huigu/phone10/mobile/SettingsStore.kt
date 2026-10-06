@@ -27,6 +27,7 @@ data class MobileSettings(
     val captionsEnabled: Boolean = false,
     val listenOnly: Boolean = false,
     val confirmBeforeSend: Boolean = false,
+    val allowIncoming: Boolean = true,
 )
 
 /** User-owned credentials stay encrypted in this app's non-backup storage. */
