@@ -843,3 +843,7 @@ dependencies {
     implementation(libs.glance.appwidget)
     implementation(libs.glance.material3)
 }
+
+dependencies {
+    implementation(project(":mobilevoice"))
+}
