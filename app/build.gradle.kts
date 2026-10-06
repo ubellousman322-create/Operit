@@ -435,7 +435,7 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             signingConfig = signingConfigs.getByName("debug")
-            resValue("string", "app_name", "Operit Debug")
+            resValue("string", "app_name", "ave")
         }
         create("clone") {
             initWith(getByName("debug"))
