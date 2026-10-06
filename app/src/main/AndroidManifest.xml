@@ -175,16 +175,6 @@
             </intent-filter>
         </provider>
 
-        <provider
-            android:name=".provider.MemoryDocumentsProvider"
-            android:authorities="${applicationId}.documents.memory"
-            android:exported="true"
-            android:grantUriPermissions="true"
-            android:permission="android.permission.MANAGE_DOCUMENTS">
-            <intent-filter>
-                <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
-            </intent-filter>
-        </provider>
 
         <provider
             android:name=".provider.OperitDataDocumentsProvider"
