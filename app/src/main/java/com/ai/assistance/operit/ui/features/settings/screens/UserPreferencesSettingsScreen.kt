@@ -86,7 +86,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun UserPreferencesSettingsScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToMemory: () -> Unit
+    onNavigateToMemory: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val repository = remember(context) { MemorySpaceProfileDocumentRepository.getInstance(context) }
