@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Portrait
@@ -561,6 +562,40 @@ fun ClassicChatSettingsBar(
                             )
                             }
 
+                            Row(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 40.dp)
+                                        .clickable {
+                                            runCatching {
+                                                context.startActivity(
+                                                    android.content.Intent().apply {
+                                                        setClassName(
+                                                            context.packageName,
+                                                            "com.huigu.phone10.mobile.MainActivity"
+                                                        )
+                                                        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                    }
+                                                )
+                                            }
+                                        }
+                                        .padding(horizontal = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Call,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "打电话",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
                             ClassicSettingsFoldSection(
                                 title = stringResource(R.string.model),
                                 value = currentModelName,
