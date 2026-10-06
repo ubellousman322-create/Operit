@@ -17,7 +17,9 @@ import java.util.concurrent.atomic.AtomicReference
 data class VoiceState(val running: Boolean = false, val message: String = "麦克风已关闭",
     val micEnabled: Boolean = false, val changing: Boolean = false, val overlayVisible: Boolean = false,
     val captionsVisible: Boolean = false, val listenOnly: Boolean = false,
-    val pendingDraft: PendingVoiceDraft? = null)
+    val pendingDraft: PendingVoiceDraft? = null,
+    val caption: String = "",
+    val startedAt: Long = 0L)
 
 /** Sole capture/turn/playback owner. The overlay only requests explicit state transitions. */
 class VoiceService : Service() {
@@ -320,6 +322,7 @@ class VoiceService : Service() {
                 renderCaptions()
             }, onReplyDelta = { delta ->
                 captionBuffer.append(delta)
+                mutableState.value = mutableState.value.copy(caption = captionBuffer.text)
                 if (!captionAligned || spokenCaptions.text.isEmpty()) renderCaptions()
             }, onSpeechSegment = { text ->
                 if (captionAligned) { spokenCaptions.append(text); renderCaptions() }
@@ -331,6 +334,7 @@ class VoiceService : Service() {
     }
 
     private suspend fun beginCapture() {
+        mutableState.value = mutableState.value.copy(startedAt = System.currentTimeMillis())
         val child = requireNotNull(callScope)
         val flow = requireNotNull(conversation)
         foreground()

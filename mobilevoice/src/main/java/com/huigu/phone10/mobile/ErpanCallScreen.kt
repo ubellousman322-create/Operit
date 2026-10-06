@@ -54,18 +54,18 @@ internal fun ErpanCallScreen(
     onEnd: () -> Unit,
     onMic: () -> Unit,
 ) {
-    var seconds by remember { mutableStateOf(0) }
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
     val context = LocalContext.current
     val audio = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
     var speaker by remember { mutableStateOf(runCatching { audio.isSpeakerphoneOn }.getOrDefault(false)) }
     LaunchedEffect(Unit) { playCue(context, R.raw.call_connected) }
-    LaunchedEffect(state.running) {
-        seconds = 0
+    LaunchedEffect(Unit) {
         while (true) {
-            delay(1000L)
-            seconds += 1
+            delay(500L)
+            now = System.currentTimeMillis()
         }
     }
+    val seconds = if (state.startedAt > 0L) ((now - state.startedAt) / 1000L).toInt() else 0
     val speaking = state.micEnabled
     Box(
         Modifier
@@ -124,7 +124,13 @@ internal fun ErpanCallScreen(
                 fontSize = 17.sp
             )
             Spacer(Modifier.height(36.dp))
-            Text(state.message, color = Color(0xFF7F90A3), fontSize = 14.sp, maxLines = 3)
+            Text(
+                state.caption.ifBlank { state.message },
+                color = Color(0xFFB9C6D4),
+                fontSize = 15.sp,
+                lineHeight = 24.sp,
+                maxLines = 4
+            )
             Spacer(Modifier.weight(1f))
             Row(
                 Modifier.fillMaxWidth().padding(bottom = 44.dp),
@@ -145,7 +151,7 @@ internal fun ErpanCallScreen(
     }
 }
 
-private fun playCue(context: Context, resId: Int) {
+internal fun playCue(context: Context, resId: Int) {
     runCatching {
         MediaPlayer.create(context, resId)?.apply {
             setOnCompletionListener { it.release() }
