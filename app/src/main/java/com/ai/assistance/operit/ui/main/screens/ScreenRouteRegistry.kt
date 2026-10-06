@@ -126,14 +126,6 @@ object ScreenRouteRegistry {
                 order = 20
             ),
             hostEntryDefinition(
-                entryId = "main.memory_base",
-                screen = Screen.MemoryBase,
-                surface = NavigationSurface.MAIN_SIDEBAR_AI,
-                launchNavItem = NavItem.MemoryBase,
-                icon = NavItem.MemoryBase.icon,
-                order = 30
-            ),
-            hostEntryDefinition(
                 entryId = "main.packages",
                 screen = Screen.Packages,
                 surface = NavigationSurface.MAIN_SIDEBAR_TOOLS,
