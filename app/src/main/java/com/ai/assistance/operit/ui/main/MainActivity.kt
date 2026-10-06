@@ -176,6 +176,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 耳畔内置直连：把宿主实现注册给 mobilevoice 模块，
+        // 注册后耳畔不再需要广播 + 插件的三跳通道。
+        com.huigu.phone10.mobile.OperitLocalVoice.host =
+            com.ai.assistance.operit.integrations.mobilevoice.OperitMobileVoiceHost(applicationContext)
         lastOrientation = resources.configuration.orientation
         AppLogger.d(TAG, "onCreate: Android SDK version: ${Build.VERSION.SDK_INT}")
 
