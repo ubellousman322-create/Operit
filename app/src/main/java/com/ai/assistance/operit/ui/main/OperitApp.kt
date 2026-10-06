@@ -368,7 +368,6 @@ fun OperitApp(
         NavItem.AiChat,
         NavItem.AssistantConfig,
         NavItem.Packages,
-        NavItem.MemoryBase,
         NavItem.Toolbox,
         NavItem.ShizukuCommands,
         NavItem.Workflow,
