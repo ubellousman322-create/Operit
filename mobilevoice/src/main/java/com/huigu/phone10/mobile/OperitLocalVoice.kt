@@ -13,6 +13,9 @@ interface OperitLocalVoiceHost {
     fun dispatch(context: Context, pending: OperitPending)
     /** 取消一个还在飞的请求；内置实现里直接把它标掉即可。 */
     fun cancel(context: Context, target: OperitPending)
+
+    /** 通话页正中那张脸。宿主拿得到就用宿主的，拿不到返回 null。 */
+    fun callAvatar(): android.graphics.drawable.Drawable?
 }
 
 object OperitLocalVoice {

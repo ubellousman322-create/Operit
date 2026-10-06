@@ -331,7 +331,7 @@ class MainActivity : ComponentActivity() {
             ErpanCallScreen(
                 settings = saved,
                 state = state,
-                avatar = avatar,
+                avatar = OperitLocalVoice.host?.callAvatar() ?: avatar,
                 onEnd = {
                     state.pendingDraft?.let { VoiceService.cancelPendingDraft(it.id) }
                     stopService(Intent(this@MainActivity, VoiceService::class.java))

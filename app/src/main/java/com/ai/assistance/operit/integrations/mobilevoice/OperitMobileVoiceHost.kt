@@ -51,6 +51,16 @@ class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoice
         }
     }
 
+    override fun callAvatar(): android.graphics.drawable.Drawable? = runCatching {
+        val dir = java.io.File(hostContext.getExternalFilesDir(null), "Pictures")
+        val newest =
+            dir.listFiles()
+                ?.filter { it.isFile && it.name.startsWith("cropped") }
+                ?.maxByOrNull { it.lastModified() }
+                ?: return@runCatching null
+        android.graphics.drawable.Drawable.createFromPath(newest.absolutePath)
+    }.getOrNull()
+
     override fun cancel(context: Context, target: OperitPending) {
         target.cancel()
         streamingSessions.remove(target.id)?.invoke()
