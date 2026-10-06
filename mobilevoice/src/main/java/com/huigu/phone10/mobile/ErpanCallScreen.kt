@@ -1,6 +1,9 @@
 package com.huigu.phone10.mobile
 
+import android.content.Context
 import android.graphics.drawable.Drawable
+import android.media.AudioManager
+import android.media.MediaPlayer
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,6 +35,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,6 +55,10 @@ internal fun ErpanCallScreen(
     onMic: () -> Unit,
 ) {
     var seconds by remember { mutableStateOf(0) }
+    val context = LocalContext.current
+    val audio = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
+    var speaker by remember { mutableStateOf(runCatching { audio.isSpeakerphoneOn }.getOrDefault(false)) }
+    LaunchedEffect(Unit) { playCue(context, R.raw.call_connected) }
     LaunchedEffect(state.running) {
         seconds = 0
         while (true) {
@@ -122,10 +130,26 @@ internal fun ErpanCallScreen(
                 Modifier.fillMaxWidth().padding(bottom = 44.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                CallKey("免提", false, false) {}
+                CallKey("免提", !speaker, false) {
+                    speaker = !speaker
+                    runCatching { audio.isSpeakerphoneOn = speaker }
+                }
                 CallKey(if (state.micEnabled) "静音" else "已静音", !state.micEnabled, false, onMic)
-                CallKey("挂断", false, true, onEnd)
+                CallKey("挂断", false, true) {
+                    runCatching { audio.isSpeakerphoneOn = false }
+                    playCue(context, R.raw.call_hangup)
+                    onEnd()
+                }
             }
+        }
+    }
+}
+
+private fun playCue(context: Context, resId: Int) {
+    runCatching {
+        MediaPlayer.create(context, resId)?.apply {
+            setOnCompletionListener { it.release() }
+            start()
         }
     }
 }
