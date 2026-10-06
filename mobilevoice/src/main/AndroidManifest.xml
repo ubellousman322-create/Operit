@@ -11,8 +11,16 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <application>
         <activity android:name="com.huigu.phone10.mobile.MainActivity" android:exported="false" />
+        <activity
+            android:name="com.huigu.phone10.mobile.IncomingCallActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:excludeFromRecents="true"
+            android:showOnLockScreen="true"
+            android:theme="@android:style/Theme.Material.NoActionBar" />
         <service
             android:name="com.huigu.phone10.mobile.VoiceService"
             android:exported="false"
