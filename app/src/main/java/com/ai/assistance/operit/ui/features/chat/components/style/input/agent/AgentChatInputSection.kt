@@ -124,6 +124,7 @@ import com.ai.assistance.operit.data.model.getModelByIndex
 import com.ai.assistance.operit.data.model.getModelList
 import com.ai.assistance.operit.data.model.getValidModelIndex
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
+import com.ai.assistance.operit.data.preferences.ChatModelOverrideManager
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.model.ActivePrompt
 import com.ai.assistance.operit.data.preferences.FunctionConfigMapping
@@ -138,6 +139,8 @@ import com.ai.assistance.operit.ui.features.chat.components.AttachmentChip
 import com.ai.assistance.operit.ui.features.chat.components.AttachmentSelectorPopupPanel
 import com.ai.assistance.operit.ui.features.chat.components.FullscreenInputDialog
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.CharacterCardMemoryBindingSwitchConfirmDialog
+import com.ai.assistance.operit.ui.features.chat.components.style.input.common.ChatModelScopeToggleItem
+import com.ai.assistance.operit.ui.features.chat.components.style.input.common.rememberChatScopedModelOverride
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.CharacterCardModelBindingSwitchConfirmDialog
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.InputMenuToggleHookParams
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.InputMenuToggleDefinition
@@ -1502,6 +1505,10 @@ private fun AgentModelSelectorPopup(
     var showThinkingDropdown by remember { mutableStateOf(false) }
     var infoPopupContent by remember { mutableStateOf<Pair<String, String>?>(null) }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val chatModelOverrideManager = remember { ChatModelOverrideManager.getInstance(context) }
+    var chatLocalModelOnly by remember { mutableStateOf(false) }
+    val chatScopedModelOverride = rememberChatScopedModelOverride(currentChatId)
     val inputMenuToggles = InputMenuTogglePluginRegistry.changeVersion.collectAsState().value.let {
         InputMenuTogglePluginRegistry.createToggles(
             params = InputMenuToggleHookParams(
@@ -1514,9 +1521,13 @@ private fun AgentModelSelectorPopup(
         )
     }
     val inputMenuTogglesBySlot = inputMenuToggles.groupBy { InputMenuToggleSlots.normalize(it.slot) }
-    val currentConfig = configSummaries.find { it.id == currentConfigMapping.configId }
+    val effectiveCurrentConfigMapping =
+        chatScopedModelOverride?.configId?.let { overrideConfigId ->
+            FunctionConfigMapping(overrideConfigId, chatScopedModelOverride.modelIndex)
+        } ?: currentConfigMapping
+    val currentConfig = configSummaries.find { it.id == effectiveCurrentConfigMapping.configId }
     val currentModelName = currentConfig?.let { config ->
-        val validIndex = getValidModelIndex(config.modelName, currentConfigMapping.modelIndex)
+        val validIndex = getValidModelIndex(config.modelName, effectiveCurrentConfigMapping.modelIndex)
         getModelByIndex(config.modelName, validIndex)
     }.orEmpty()
     var thinkingQualityMapping by remember(
@@ -1667,11 +1678,35 @@ private fun AgentModelSelectorPopup(
                                     )
                         },
                     )
+                    ChatModelScopeToggleItem(
+                        chatLocalModelOnly = chatLocalModelOnly,
+                        hasChatScopedOverride = chatScopedModelOverride?.configId != null,
+                        onChatLocalModelOnlyChange = { chatLocalModelOnly = it },
+                        onClearChatScope = {
+                            val scopedChatId = currentChatId
+                            if (!scopedChatId.isNullOrBlank()) {
+                                scope.launch {
+                                    chatModelOverrideManager.clearOverride(scopedChatId)
+                                    EnhancedAIService.refreshServiceForFunction(context, FunctionType.CHAT)
+                                }
+                            }
+                        },
+                    )
                     AgentModelSelectorItem(
                         popupContainerColor = popupContainerColor,
                         configSummaries = configSummaries,
-                        currentConfigMapping = currentConfigMapping,
-                        onSelectModel = onSelectModel,
+                        currentConfigMapping = effectiveCurrentConfigMapping,
+                        onSelectModel = { selectedId, modelIndex ->
+                            val scopedChatId = currentChatId
+                            if (chatLocalModelOnly && !scopedChatId.isNullOrBlank()) {
+                                scope.launch {
+                                    chatModelOverrideManager.setOverride(scopedChatId, selectedId, modelIndex)
+                                    EnhancedAIService.refreshServiceForFunction(context, FunctionType.CHAT)
+                                }
+                            } else {
+                                onSelectModel(selectedId, modelIndex)
+                            }
+                        },
                         expanded = true,
                         onExpandedChange = {},
                         allowCollapse = false,
