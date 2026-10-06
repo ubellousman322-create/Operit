@@ -221,6 +221,7 @@ class MainActivity : ComponentActivity() {
             else notice = "需要麦克风权限才能开始通话。"
         }
         fun requestStart() {
+            playCue(this@MainActivity, R.raw.call_ringback)
             val issues = configurationIssues(saved)
             if (issues.isNotEmpty()) {
                 openConfig(); notice = issues.joinToString("\n"); return
