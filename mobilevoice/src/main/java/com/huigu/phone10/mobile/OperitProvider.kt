@@ -16,7 +16,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 
 /** Pure in-memory request/response protocol, separately tested on the JVM. */
-class OperitPending(val kind: String, chatId: String? = null, text: String? = null, targetId: String? = null, after: Long? = null,
+class OperitPending(val kind: String, val chatId: String? = null, val text: String? = null, val targetId: String? = null, val after: Long? = null,
                             paged: Boolean = false) {
     val id: String = UUID.randomUUID().toString()
     val nonce: String = UUID.randomUUID().toString()

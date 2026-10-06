@@ -121,12 +121,8 @@ class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoice
                         pending.accept(payload)
                     }
                 }
-                if (session.responseStreamSession.currentState() is
-                        com.ai.assistance.operit.core.tools.defaultTool.standard.InputProcessingState.Error) {
-                    pending.accept(fail(pending, "OPERIT_REPLY_FAILED"))
-                } else {
-                    pending.accept(event(pending, "complete"))
-                }
+                // 流收完了就是这一轮结束；中途出错会在 collect 里抛，落到上面的 catch。
+                pending.accept(event(pending, "complete"))
                 session.cleanup()
             }
         }
