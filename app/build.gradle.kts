@@ -407,10 +407,12 @@ android {
         applicationId = "com.ai.assistance.operit"
         minSdk = 26
         targetSdk = 34
-        // CI 每次构建都给一个一眼能认出来的号：1.12.2-b<run>，code 也跟着往上走。
+        // CI 每次构建都带一个能认出来的构建号：1.12.2+<run>。
+        // 必须是 major.minor.patch（可接 +build）—— toolpkg 的版本校验就认这个格式，
+        // 写别的（比如 1.12.2-b62）会让所有工具包判为“不支持”。
         val aveRun = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0
         versionCode = 51 + aveRun
-        versionName = if (aveRun > 0) "1.12.2-b" + aveRun else "1.12.2"
+        versionName = if (aveRun > 0) "1.12.2+" + aveRun else "1.12.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
