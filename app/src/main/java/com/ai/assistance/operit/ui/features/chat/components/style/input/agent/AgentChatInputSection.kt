@@ -1345,11 +1345,12 @@ fun AgentChatInputSection(
                                                     VoiceNoteController.toggle(context) { result ->
                                                         val text = result.text.trim()
                                                         if (text.isNotEmpty()) {
-                                                            val marked =
+                                                            val marked = run {
                                                                 val note = result.file
                                                                 if (note != null) {
                                                                     text + "\n[voice:" + note.name + "|" + result.durationMs + "]"
                                                                 } else text
+                                                                }
                                                             onUserMessageChange(TextFieldValue(marked))
                                                             scope.launch {
                                                                 kotlinx.coroutines.delay(150L)
