@@ -88,18 +88,14 @@ class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoice
     }
 
     private suspend fun handleList(pending: OperitPending) {
-        val result = chatTool.listChats(AITool(name = "list_chats"))
-        val data = result.result as? ChatListResultData ?: run {
-            writeDiagnostic(
-                pending,
-                IllegalStateException(
-                    "listChats returned " + (result.result?.javaClass?.name ?: "null") + ", error=" + result.error
-                )
-            )
-            pending.acceptEmbedded(fail(pending, "OPERIT_LIST_FAILED"))
-            return
+        // 这个列表是从一个带初始空值的共享 Flow（stateIn Lazily + emptyList）里读出来的：
+        // 第一次读常常就是那个空壳，Room 的查询还没回来。空就等一会儿再要一次，
+        // 别把“还没读出来”当成“没有聊天”。
+        var chats = listChatsOrNull(pending) ?: return
+        if (chats.isEmpty()) {
+            kotlinx.coroutines.delay(1500L)
+            chats = listChatsOrNull(pending) ?: return
         }
-        val chats = data.chats
         if (chats.isEmpty()) {
             val empty = event(pending, "chats")
             empty.add("chats", JsonArray())
@@ -123,6 +119,22 @@ class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoice
             pending.acceptEmbedded(payload)
         }
         pending.acceptEmbedded(event(pending, "complete"))
+    }
+
+    private suspend fun listChatsOrNull(pending: OperitPending): List<ChatListResultData.ChatInfo>? {
+        val result = chatTool.listChats(AITool(name = "list_chats"))
+        val data = result.result as? ChatListResultData
+        if (data == null) {
+            writeDiagnostic(
+                pending,
+                IllegalStateException(
+                    "listChats returned " + (result.result?.javaClass?.name ?: "null") + ", error=" + result.error
+                )
+            )
+            pending.acceptEmbedded(fail(pending, "OPERIT_LIST_FAILED"))
+            return null
+        }
+        return data.chats
     }
 
     private suspend fun handleReply(pending: OperitPending) {
