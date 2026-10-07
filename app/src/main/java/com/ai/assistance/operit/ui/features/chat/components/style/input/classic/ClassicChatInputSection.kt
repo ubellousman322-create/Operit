@@ -694,7 +694,8 @@ fun ClassicChatInputSection(
                                     }
                                 },
                                 onTap = {
-                                    when {
+                                            val voiceJustDone = System.currentTimeMillis() - VoiceNoteController.lastTouchHandledAt < 1200L
+                                            if (!voiceJustDone) when {
                                         showCancelAction -> onCancelMessage()
                                         showQueueAction -> {
                                             onQueueMessage()
