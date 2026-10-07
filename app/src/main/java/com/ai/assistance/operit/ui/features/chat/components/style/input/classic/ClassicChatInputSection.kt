@@ -58,6 +58,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
 import kotlinx.coroutines.launch
 import com.huigu.phone10.mobile.VoiceNoteController
+import com.huigu.phone10.mobile.voiceAttachmentTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import com.ai.assistance.operit.data.model.AttachmentInfo
@@ -664,7 +665,7 @@ fun ClassicChatInputSection(
                                         .primary
                             }
                         )
-                        pointerInput(showCancelAction, showQueueAction, canSendMessage) {
+                        pointerInput(listOf(canSendMessage, showCancelAction, showQueueAction)) {
                             val voiceReady = !showCancelAction && !showQueueAction && !canSendMessage
                             detectTapGestures(
                                 onPress = {
