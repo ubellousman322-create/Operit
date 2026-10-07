@@ -8,6 +8,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -1044,51 +1046,62 @@ fun AgentChatInputSection(
                                     Modifier
                                         .size(36.dp)
                                         .background(actionButtonBackground, CircleShape)
-                                        .combinedClickable(
-                                            enabled = true,
-                                            onLongClick = {
-                                                // 长按：一下开始录，再一下停录，转写完当作一条消息发出去。
-                                                VoiceNoteController.toggle(context) { result ->
-                                                    val text = result.text.trim()
-                                                    if (text.isNotEmpty()) {
-                                                        val note = result.file
-                                                        val marked = if (note != null) {
-                                                            text + "\n[voice:" + note.name + "|" + result.durationMs + "]"
-                                                        } else text
-                                                        onUserMessageChange(TextFieldValue(marked))
-                                                        scope.launch {
-                                                            kotlinx.coroutines.delay(150L)
-                                                            onSendMessage()
+                                        pointerInput(showCancelAction, showQueueAction, canSendMessage) {
+                                            val voiceReady = !showCancelAction && !showQueueAction && !canSendMessage
+                                            detectTapGestures(
+                                                onPress = {
+                                                    if (voiceReady) {
+                                                        val started = VoiceNoteController.begin(context)
+                                                        tryAwaitRelease()
+                                                        if (started) {
+                                                            VoiceNoteController.end(context) { result ->
+                                                                val spoken = result.text.trim()
+                                                                val tag = result.file?.let { voiceAttachmentTag(it) }.orEmpty()
+                                                                val marked =
+                                                                    when {
+                                                                        spoken.isNotEmpty() && tag.isNotEmpty() ->
+                                                                            spoken + System.lineSeparator() + tag
+                                                                        spoken.isNotEmpty() -> spoken
+                                                                        else -> tag
+                                                                    }
+                                                                if (marked.isNotEmpty()) {
+                                                                    onUserMessageChange(TextFieldValue(marked))
+                                                                    scope.launch {
+                                                                        kotlinx.coroutines.delay(150L)
+                                                                        onSendMessage()
+                                                                    }
+                                                                }
+                                                            }
                                                         }
                                                     }
-                                                }
-                                            },
-                                            onClick = {
-                                                when {
-                                                    showCancelAction -> onCancelMessage()
-                                                    showQueueAction -> {
-                                                        onQueueMessage()
-                                                        setShowAttachmentPanel(false)
-                                                    }
-                                                    canSendMessage -> {
-                                                        if (isOverTokenLimit) {
-                                                            showTokenLimitDialog.value = true
-                                                        } else {
-                                                            onSendMessage()
+                                                },
+                                                onTap = {
+                                                    when {
+                                                        showCancelAction -> onCancelMessage()
+                                                        showQueueAction -> {
+                                                            onQueueMessage()
                                                             setShowAttachmentPanel(false)
                                                         }
+                                                        canSendMessage -> {
+                                                            if (isOverTokenLimit) {
+                                                                showTokenLimitDialog.value = true
+                                                            } else {
+                                                                onSendMessage()
+                                                                setShowAttachmentPanel(false)
+                                                            }
+                                                        }
+                                                        else -> {
+                                                            actualViewModel.onFloatingButtonClick(
+                                                                FloatingMode.FULLSCREEN,
+                                                                voicePermissionLauncher,
+                                                                colorScheme,
+                                                                typography,
+                                                            )
+                                                        }
                                                     }
-                                                    else -> {
-                                                        actualViewModel.onFloatingButtonClick(
-                                                            FloatingMode.FULLSCREEN,
-                                                            voicePermissionLauncher,
-                                                            colorScheme,
-                                                            typography,
-                                                        )
-                                                    }
-                                                }
-                                            },
-                                        ),
+                                                },
+                                            )
+                                        },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Icon(
@@ -1361,53 +1374,62 @@ fun AgentChatInputSection(
                                         Modifier
                                             .size(36.dp)
                                             .background(actionButtonBackground, CircleShape)
-                                            .combinedClickable(
-                                                enabled = true,
-                                                onLongClick = {
-                                                    // 长按发送键：一下开始录，再一下停录，转写完当作一条消息发出去。
-                                                    VoiceNoteController.toggle(context) { result ->
-                                                        val text = result.text.trim()
-                                                        if (text.isNotEmpty()) {
-                                                            val marked = run {
-                                                                val note = result.file
-                                                                if (note != null) {
-                                                                    text + "\n[voice:" + note.name + "|" + result.durationMs + "]"
-                                                                } else text
+                                            pointerInput(showCancelAction, showQueueAction, canSendMessage) {
+                                                val voiceReady = !showCancelAction && !showQueueAction && !canSendMessage
+                                                detectTapGestures(
+                                                    onPress = {
+                                                        if (voiceReady) {
+                                                            val started = VoiceNoteController.begin(context)
+                                                            tryAwaitRelease()
+                                                            if (started) {
+                                                                VoiceNoteController.end(context) { result ->
+                                                                    val spoken = result.text.trim()
+                                                                    val tag = result.file?.let { voiceAttachmentTag(it) }.orEmpty()
+                                                                    val marked =
+                                                                        when {
+                                                                            spoken.isNotEmpty() && tag.isNotEmpty() ->
+                                                                                spoken + System.lineSeparator() + tag
+                                                                            spoken.isNotEmpty() -> spoken
+                                                                            else -> tag
+                                                                        }
+                                                                    if (marked.isNotEmpty()) {
+                                                                        onUserMessageChange(TextFieldValue(marked))
+                                                                        scope.launch {
+                                                                            kotlinx.coroutines.delay(150L)
+                                                                            onSendMessage()
+                                                                        }
+                                                                    }
                                                                 }
-                                                            onUserMessageChange(TextFieldValue(marked))
-                                                            scope.launch {
-                                                                kotlinx.coroutines.delay(150L)
-                                                                onSendMessage()
                                                             }
                                                         }
-                                                    }
-                                                },
-                                                onClick = {
-                                                    when {
-                                                        showCancelAction -> onCancelMessage()
-                                                        showQueueAction -> {
-                                                            onQueueMessage()
-                                                            setShowAttachmentPanel(false)
-                                                        }
-                                                        canSendMessage -> {
-                                                            if (isOverTokenLimit) {
-                                                                showTokenLimitDialog.value = true
-                                                            } else {
-                                                                onSendMessage()
+                                                    },
+                                                    onTap = {
+                                                        when {
+                                                            showCancelAction -> onCancelMessage()
+                                                            showQueueAction -> {
+                                                                onQueueMessage()
                                                                 setShowAttachmentPanel(false)
                                                             }
+                                                            canSendMessage -> {
+                                                                if (isOverTokenLimit) {
+                                                                    showTokenLimitDialog.value = true
+                                                                } else {
+                                                                    onSendMessage()
+                                                                    setShowAttachmentPanel(false)
+                                                                }
+                                                            }
+                                                            else -> {
+                                                                actualViewModel.onFloatingButtonClick(
+                                                                    FloatingMode.FULLSCREEN,
+                                                                    voicePermissionLauncher,
+                                                                    colorScheme,
+                                                                    typography,
+                                                                )
+                                                            }
                                                         }
-                                                        else -> {
-                                                            actualViewModel.onFloatingButtonClick(
-                                                                FloatingMode.FULLSCREEN,
-                                                                voicePermissionLauncher,
-                                                                colorScheme,
-                                                                typography,
-                                                            )
-                                                        }
-                                                    }
-                                                },
-                                            ),
+                                                    },
+                                                )
+                                            },
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Icon(
