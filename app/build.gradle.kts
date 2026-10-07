@@ -407,8 +407,10 @@ android {
         applicationId = "com.ai.assistance.operit"
         minSdk = 26
         targetSdk = 34
-        versionCode = 51
-        versionName = "1.12.2"
+        // CI 每次构建都给一个一眼能认出来的号：1.12.2-b<run>，code 也跟着往上走。
+        val aveRun = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0
+        versionCode = 51 + aveRun
+        versionName = if (aveRun > 0) "1.12.2-b" + aveRun else "1.12.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
