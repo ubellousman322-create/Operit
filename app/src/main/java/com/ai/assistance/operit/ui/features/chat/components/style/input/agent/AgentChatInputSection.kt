@@ -375,6 +375,7 @@ fun AgentChatInputSection(
             ?: FunctionConfigMapping(FunctionalConfigManager.DEFAULT_CONFIG_ID, 0)
     val isModelSelectionLockedByCharacterCard = !characterCardBoundChatModelConfigId.isNullOrBlank()
     val isMemorySelectionLockedByCharacterCard = !characterCardBoundMemoryProfileId.isNullOrBlank()
+    val chatScopedMappingForDisplay = rememberChatScopedModelOverride(currentChatId)
     val effectiveConfigMapping =
         if (isModelSelectionLockedByCharacterCard) {
             FunctionConfigMapping(
@@ -382,7 +383,12 @@ fun AgentChatInputSection(
                 characterCardBoundChatModelIndex.coerceAtLeast(0),
             )
         } else {
-            currentConfigMapping
+            chatScopedMappingForDisplay?.configId?.let { scopeConfigId ->
+                FunctionConfigMapping(
+                    scopeConfigId,
+                    chatScopedMappingForDisplay.modelIndex.coerceAtLeast(0),
+                )
+            } ?: currentConfigMapping
         }
     val effectiveProfileId =
         if (isMemorySelectionLockedByCharacterCard) {
@@ -1546,7 +1552,15 @@ private fun AgentModelSelectorPopup(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val chatModelOverrideManager = remember { ChatModelOverrideManager.getInstance(context) }
-    var chatLocalModelOnly by remember { mutableStateOf(false) }
+    val chatScopePrefs = remember {
+        context.getSharedPreferences("ave_chat_model_scope", android.content.Context.MODE_PRIVATE)
+    }
+    var chatLocalModelOnly by remember(currentChatId) {
+        mutableStateOf(
+            if (currentChatId.isNullOrBlank()) false
+            else chatScopePrefs.getBoolean("scope_" + currentChatId, false)
+        )
+    }
     val chatScopedModelOverride = rememberChatScopedModelOverride(currentChatId)
     val inputMenuToggles = InputMenuTogglePluginRegistry.changeVersion.collectAsState().value.let {
         InputMenuTogglePluginRegistry.createToggles(
@@ -1741,7 +1755,13 @@ private fun AgentModelSelectorPopup(
                     ChatModelScopeToggleItem(
                         chatLocalModelOnly = chatLocalModelOnly,
                         hasChatScopedOverride = chatScopedModelOverride?.configId != null,
-                        onChatLocalModelOnlyChange = { chatLocalModelOnly = it },
+                        onChatLocalModelOnlyChange = { value ->
+                            chatLocalModelOnly = value
+                            val scopeId = currentChatId
+                            if (!scopeId.isNullOrBlank()) {
+                                chatScopePrefs.edit().putBoolean("scope_" + scopeId, value).apply()
+                            }
+                        },
                         onClearChatScope = {
                             val scopedChatId = currentChatId
                             if (!scopedChatId.isNullOrBlank()) {
