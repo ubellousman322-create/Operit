@@ -21,4 +21,25 @@ interface OperitLocalVoiceHost {
 object OperitLocalVoice {
     @Volatile
     var host: OperitLocalVoiceHost? = null
+
+    /** 宿主进程的 Application context。只存一个引用，任何时候设都不会失败。 */
+    @Volatile
+    var appContext: Context? = null
+
+    /**
+     * 拿不到注册进来的实现时，照着类名自己捞一份。
+     * 宿主注册的时机一旦没踩对（进程是别的入口先拉起来的），
+     * 这里就是最后一道，不至于让整条直连静默变哑。
+     */
+    fun resolve(): OperitLocalVoiceHost? {
+        host?.let { return it }
+        val ctx = appContext ?: return null
+        val created =
+            runCatching {
+                val cls = Class.forName("com.ai.assistance.operit.integrations.mobilevoice.OperitMobileVoiceHost")
+                cls.getConstructor(Context::class.java).newInstance(ctx) as OperitLocalVoiceHost
+            }.getOrNull() ?: return null
+        host = created
+        return created
+    }
 }
