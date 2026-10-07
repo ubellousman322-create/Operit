@@ -44,10 +44,29 @@ class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoice
                     else -> pending.accept(fail(pending, "OPERIT_UNAVAILABLE"))
                 }
             } catch (t: Throwable) {
+                writeDiagnostic(pending, t)
                 pending.accept(fail(pending, "OPERIT_UNAVAILABLE"))
             } finally {
                 streamingSessions.remove(pending.id)
             }
+        }
+    }
+
+    /**
+     * 把真实错误写成一个我可以直接读的文件。
+     * 直连一旦断在内部，耳机那边只看到“没拿到”，看不到为什么。
+     */
+    private fun writeDiagnostic(pending: OperitPending, t: Throwable) {
+        runCatching {
+            val file = java.io.File(hostContext.getExternalFilesDir(null), "erpan-host-error.log")
+            file.appendText(
+                "[" + java.text.SimpleDateFormat("MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date()) +
+                    "] kind=" + pending.kind + " id=" + pending.id + "
+" +
+                    android.util.Log.getStackTraceString(t) + "
+
+"
+            )
         }
     }
 
