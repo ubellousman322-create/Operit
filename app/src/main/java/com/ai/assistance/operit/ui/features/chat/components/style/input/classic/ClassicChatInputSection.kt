@@ -54,6 +54,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
+import kotlinx.coroutines.launch
 import com.huigu.phone10.mobile.VoiceNoteController
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -669,8 +670,9 @@ fun ClassicChatInputSection(
                                     val spoken = result.text.trim()
                                     if (spoken.isNotEmpty()) {
                                         val marked =
-                                            if (result.file != null) {
-                                                spoken + "\n[voice:" + result.file.name + "|" + result.durationMs + "]"
+                                            val note = result.file
+                                            if (note != null) {
+                                                spoken + "\n[voice:" + note.name + "|" + result.durationMs + "]"
                                             } else spoken
                                         onUserMessageChange(TextFieldValue(marked))
                                         kotlinx.coroutines.MainScope().launch {

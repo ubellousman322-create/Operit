@@ -34,7 +34,7 @@ import java.io.File
 /** 一条语音消息在正文里留下的痕迹：[voice:文件名|时长毫秒] */
 data class VoiceNoteMark(val file: String, val durationMs: Long) {
     companion object {
-        private val PATTERN = Regex("\[voice:([^|\]]+)\|(\d+)]")
+        private val PATTERN = Regex("""\[voice:([^|\]]+)\|(\d+)]""")
 
         fun parse(text: String): VoiceNoteMark? =
             PATTERN.find(text)?.let {

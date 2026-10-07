@@ -1346,8 +1346,9 @@ fun AgentChatInputSection(
                                                         val text = result.text.trim()
                                                         if (text.isNotEmpty()) {
                                                             val marked =
-                                                                if (result.file != null) {
-                                                                    text + "\n[voice:" + result.file.name + "|" + result.durationMs + "]"
+                                                                val note = result.file
+                                                                if (note != null) {
+                                                                    text + "\n[voice:" + note.name + "|" + result.durationMs + "]"
                                                                 } else text
                                                             onUserMessageChange(TextFieldValue(marked))
                                                             scope.launch {

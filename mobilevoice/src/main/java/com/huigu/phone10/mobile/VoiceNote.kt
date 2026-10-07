@@ -15,10 +15,10 @@ import kotlinx.coroutines.withContext
  * 复用耳畔已经配好的那条识别通道（CloudSpeech），所以不需要再配一次 key；
  * 录到的原始 PCM 不落盘，转写完就丢 —— 语音消息只留文字。
  */
-internal data class VoiceNoteResult(val file: java.io.File?, val text: String, val durationMs: Long)
+data class VoiceNoteResult(val file: java.io.File?, val text: String, val durationMs: Long)
 
 /** 输入栏那个键的开关：再按一下就是停录，转写完把文字交回给界面。 */
-internal object VoiceNoteController {
+object VoiceNoteController {
     private val scope = kotlinx.coroutines.CoroutineScope(
         kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main.immediate
     )
@@ -47,7 +47,7 @@ internal object VoiceNoteController {
     }
 }
 
-internal class VoiceNoteSession(private val context: Context) {
+class VoiceNoteSession(private val context: Context) {
 
     private val pcm = ByteArrayOutputStream()
     private var recorder: AudioRecord? = null
