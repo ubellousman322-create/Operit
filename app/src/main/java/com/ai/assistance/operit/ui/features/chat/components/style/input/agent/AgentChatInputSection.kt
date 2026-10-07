@@ -1076,7 +1076,8 @@ fun AgentChatInputSection(
                                                     }
                                                 },
                                                 onTap = {
-                                                    when {
+                                                            val voiceJustDone = System.currentTimeMillis() - VoiceNoteController.lastTouchHandledAt < 1200L
+                                                            if (!voiceJustDone) when {
                                                         showCancelAction -> onCancelMessage()
                                                         showQueueAction -> {
                                                             onQueueMessage()
@@ -1404,7 +1405,8 @@ fun AgentChatInputSection(
                                                         }
                                                     },
                                                     onTap = {
-                                                        when {
+                                                                val voiceJustDone = System.currentTimeMillis() - VoiceNoteController.lastTouchHandledAt < 1200L
+                                                                if (!voiceJustDone) when {
                                                             showCancelAction -> onCancelMessage()
                                                             showQueueAction -> {
                                                                 onQueueMessage()
