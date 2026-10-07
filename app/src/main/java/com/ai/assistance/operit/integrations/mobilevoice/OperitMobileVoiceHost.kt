@@ -31,8 +31,10 @@ import kotlinx.coroutines.launch
 class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoiceHost {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val executor = ExternalChatRequestExecutor(hostContext)
-    private val chatTool = StandardChatManagerTool(hostContext)
+    // 构造时只存引用，真正要用的时候才建 —— 这样这个对象在进程最早的时刻
+    // 也能安全地 new 出来，不会因为依赖还没就绪就被吞掉。
+    private val executor by lazy { ExternalChatRequestExecutor(hostContext) }
+    private val chatTool by lazy { StandardChatManagerTool(hostContext) }
     private val streamingSessions = ConcurrentHashMap<String, () -> Unit>()
 
     override fun dispatch(context: Context, pending: OperitPending) {
@@ -41,11 +43,11 @@ class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoice
                 when (pending.kind) {
                     "list" -> handleList(pending)
                     "reply" -> handleReply(pending)
-                    else -> pending.accept(fail(pending, "OPERIT_UNAVAILABLE"))
+                    else -> pending.acceptEmbedded(fail(pending, "OPERIT_UNAVAILABLE"))
                 }
             } catch (t: Throwable) {
                 writeDiagnostic(pending, t)
-                pending.accept(fail(pending, "OPERIT_UNAVAILABLE"))
+                pending.acceptEmbedded(fail(pending, "OPERIT_UNAVAILABLE"))
             } finally {
                 streamingSessions.remove(pending.id)
             }
@@ -88,15 +90,21 @@ class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoice
     private suspend fun handleList(pending: OperitPending) {
         val result = chatTool.listChats(AITool(name = "list_chats"))
         val data = result.result as? ChatListResultData ?: run {
-            pending.accept(fail(pending, "OPERIT_LIST_FAILED"))
+            writeDiagnostic(
+                pending,
+                IllegalStateException(
+                    "listChats returned " + (result.result?.javaClass?.name ?: "null") + ", error=" + result.error
+                )
+            )
+            pending.acceptEmbedded(fail(pending, "OPERIT_LIST_FAILED"))
             return
         }
         val chats = data.chats
         if (chats.isEmpty()) {
             val empty = event(pending, "chats")
             empty.add("chats", JsonArray())
-            pending.accept(empty)
-            pending.accept(event(pending, "complete"))
+            pending.acceptEmbedded(empty)
+            pending.acceptEmbedded(event(pending, "complete"))
             return
         }
         // 耳畔侧一批最多接受 40 条，这里照办。
@@ -112,15 +120,15 @@ class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoice
                 )
             }
             payload.add("chats", array)
-            pending.accept(payload)
+            pending.acceptEmbedded(payload)
         }
-        pending.accept(event(pending, "complete"))
+        pending.acceptEmbedded(event(pending, "complete"))
     }
 
     private suspend fun handleReply(pending: OperitPending) {
         val text = pending.text
         if (text.isNullOrBlank()) {
-            pending.accept(fail(pending, "OPERIT_INVALID_REQUEST"))
+            pending.acceptEmbedded(fail(pending, "OPERIT_INVALID_REQUEST"))
             return
         }
         val request = ExternalChatRequest(
@@ -134,7 +142,7 @@ class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoice
         )
         when (val started = executor.startStreaming(request)) {
             is ExternalChatStreamingStartResult.Failed -> {
-                pending.accept(fail(pending, "OPERIT_REPLY_FAILED"))
+                pending.acceptEmbedded(fail(pending, "OPERIT_REPLY_FAILED"))
             }
             is ExternalChatStreamingStartResult.Started -> {
                 val session = started.session
@@ -147,11 +155,11 @@ class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoice
                     if (chunk.isNotEmpty()) {
                         val payload = event(pending, "chunk")
                         payload.addProperty("text", chunk)
-                        pending.accept(payload)
+                        pending.acceptEmbedded(payload)
                     }
                 }
                 // 流收完了就是这一轮结束；中途出错会在 collect 里抛，落到上面的 catch。
-                pending.accept(event(pending, "complete"))
+                pending.acceptEmbedded(event(pending, "complete"))
                 session.cleanup()
             }
         }
