@@ -24,25 +24,56 @@ object VoiceNoteController {
     )
     private var session: VoiceNoteSession? = null
 
-    @Volatile
-    var recording = false
-        private set
+    /** 界面要看得见的三件事：录着、正在认、上一次为什么没成。 */
+    val recording = androidx.compose.runtime.mutableStateOf(false)
+    val transcribing = androidx.compose.runtime.mutableStateOf(false)
+    val lastError = androidx.compose.runtime.mutableStateOf<String?>(null)
 
     fun toggle(context: Context, onDone: (VoiceNoteResult) -> Unit) {
         val current = session
         if (current == null) {
+            lastError.value = null
+            val permitted =
+                context.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) ==
+                    android.content.pm.PackageManager.PERMISSION_GRANTED
+            if (!permitted) {
+                lastError.value = "没拿到麦克风权限，去系统设置里给 ave 打开"
+                say(context, lastError.value)
+                return
+            }
             val fresh = VoiceNoteSession(context.applicationContext)
             if (fresh.start()) {
                 session = fresh
-                recording = true
+                recording.value = true
+                say(context, "录音中，说完再长按一下")
+            } else {
+                lastError.value = "麦克风打不开，可能被别的应用占着"
+                say(context, lastError.value)
             }
             return
         }
         session = null
-        recording = false
+        recording.value = false
+        transcribing.value = true
+        say(context, "认字中…")
         scope.launch {
             val result = current.stopAndTranscribe()
+            transcribing.value = false
+            val problem =
+                when {
+                    result.text.isNotBlank() -> null
+                    result.durationMs < 300 -> "太短了，没听见什么"
+                    else -> "没认出来：识别服务是不是还没填 key"
+                }
+            lastError.value = problem
+            problem?.let { say(context, it) }
             onDone(result)
+        }
+    }
+
+    private fun say(context: Context, text: String) {
+        runCatching {
+            android.widget.Toast.makeText(context, text, android.widget.Toast.LENGTH_LONG).show()
         }
     }
 }
