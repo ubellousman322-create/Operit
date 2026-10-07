@@ -104,6 +104,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import com.huigu.phone10.mobile.VoiceNoteController
+import com.huigu.phone10.mobile.voiceAttachmentTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -1046,7 +1047,7 @@ fun AgentChatInputSection(
                                     Modifier
                                         .size(36.dp)
                                         .background(actionButtonBackground, CircleShape)
-                                        pointerInput(showCancelAction, showQueueAction, canSendMessage) {
+                                        pointerInput(listOf(canSendMessage, showCancelAction, showQueueAction)) {
                                             val voiceReady = !showCancelAction && !showQueueAction && !canSendMessage
                                             detectTapGestures(
                                                 onPress = {
@@ -1375,7 +1376,7 @@ fun AgentChatInputSection(
                                         Modifier
                                             .size(36.dp)
                                             .background(actionButtonBackground, CircleShape)
-                                            pointerInput(showCancelAction, showQueueAction, canSendMessage) {
+                                            pointerInput(listOf(canSendMessage, showCancelAction, showQueueAction)) {
                                                 val voiceReady = !showCancelAction && !showQueueAction && !canSendMessage
                                                 detectTapGestures(
                                                     onPress = {
