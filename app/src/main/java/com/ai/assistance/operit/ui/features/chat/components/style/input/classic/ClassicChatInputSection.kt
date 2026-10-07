@@ -5,6 +5,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -53,6 +54,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
+import com.huigu.phone10.mobile.VoiceNoteController
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import com.ai.assistance.operit.data.model.AttachmentInfo
@@ -659,8 +661,21 @@ fun ClassicChatInputSection(
                                         .primary
                             }
                         )
-                        .clickable(
+                        .combinedClickable(
                             enabled = sendButtonEnabled,
+                            onLongClick = {
+                                // 长按发送键：一下开始录，再一下停录，转写完当作一条消息发出去。
+                                VoiceNoteController.toggle(context) { result ->
+                                    val spoken = result.text.trim()
+                                    if (spoken.isNotEmpty()) {
+                                        onUserMessageChange(TextFieldValue(spoken))
+                                        kotlinx.coroutines.MainScope().launch {
+                                            kotlinx.coroutines.delay(150L)
+                                            onSendMessage()
+                                        }
+                                    }
+                                }
+                            },
                             onClick = {
                                 when {
                                     showCancelAction ->
