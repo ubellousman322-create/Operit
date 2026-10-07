@@ -145,8 +145,10 @@ class VoiceService : Service() {
         val status = if (config.listenOnly && message.startsWith("正在聆听")) "只听回复已开启 · 等待新的回复"
             else if (!mic && !changing && message.startsWith("正在聆听"))
             "麦克风已关闭 · 点悬浮球可再开麦" else message
+        // caption 和 startedAt 也要带过去 —— 不带的话每次状态更新都会把通话计时清零。
         mutableState.value = VoiceState(true, status, mic, changing, mutableState.value.overlayVisible,
-            mutableState.value.captionsVisible, config.listenOnly, mutableState.value.pendingDraft)
+            mutableState.value.captionsVisible, config.listenOnly, mutableState.value.pendingDraft,
+            mutableState.value.caption, mutableState.value.startedAt)
         overlay?.update(Phone10MicrophoneState(mic, changing, pendingReview = mutableState.value.pendingDraft != null))
         renderCaptions()
     }
