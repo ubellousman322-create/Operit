@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -100,6 +101,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import com.huigu.phone10.mobile.VoiceNoteController
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -1336,8 +1338,21 @@ fun AgentChatInputSection(
                                         Modifier
                                             .size(36.dp)
                                             .background(actionButtonBackground, CircleShape)
-                                            .clickable(
+                                            .combinedClickable(
                                                 enabled = sendButtonEnabled,
+                                                onLongClick = {
+                                                    // 长按发送键：一下开始录，再一下停录，转写完当作一条消息发出去。
+                                                    VoiceNoteController.toggle(context) { result ->
+                                                        val text = result.text.trim()
+                                                        if (text.isNotEmpty()) {
+                                                            onUserMessageChange(TextFieldValue(text))
+                                                            scope.launch {
+                                                                kotlinx.coroutines.delay(150L)
+                                                                onSendMessage()
+                                                            }
+                                                        }
+                                                    }
+                                                },
                                                 onClick = {
                                                     when {
                                                         showCancelAction -> onCancelMessage()
