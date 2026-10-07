@@ -10,22 +10,20 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * 语音消息的耳朵：按住说话，松手拿文字。
+ * 语音消息的耳朵：按住说话，松手把这段声音作为一条语音条发出去。
  *
- * 复用耳畔已经配好的那条识别通道（CloudSpeech），所以不需要再配一次 key；
- * 录到的原始 PCM 不落盘，转写完就丢 —— 语音消息只留文字。
+ * 声音存成 wav 留在 filesDir/voice-notes；正文里只放一个 [voice:文件名|时长]，
+ * Operit 会照着它画一条能重听的语音条。声音不再转成文字。
  */
 data class VoiceNoteResult(val file: java.io.File?, val text: String, val durationMs: Long)
 
-/** 输入栏那个键的开关：再按一下就是停录，转写完把文字交回给界面。 */
-/** 系统认的附件写法：id 放完整路径，标签体留空。语音气泡就靠它出现。 */
-private val VOICE_QUOTE = '\u0022'
-
-fun voiceAttachmentTag(file: java.io.File): String =
-    "<attachment id=" + VOICE_QUOTE + file.absolutePath + VOICE_QUOTE +
-        " filename=" + VOICE_QUOTE + file.name + VOICE_QUOTE +
-        " type=" + VOICE_QUOTE + "audio/wav" + VOICE_QUOTE +
-        " size=" + VOICE_QUOTE + file.length() + VOICE_QUOTE + "></attachment>"
+/** 输入栏那个键的开关：按住就录，松手就发。 */
+/**
+ * 语音条在正文里的写法。Operit 的语音气泡认的就是 [voice:文件名|毫秒]；
+ * 写成 <attachment ...> 只会变成一张附件卡，不是气泡。
+ */
+fun voiceAttachmentTag(file: java.io.File, durationMs: Long): String =
+    "[voice:" + file.name + "|" + (if (durationMs > 0L) durationMs else 1L) + "]"
 
 object VoiceNoteController {
     private val scope = kotlinx.coroutines.CoroutineScope(
@@ -68,18 +66,13 @@ object VoiceNoteController {
         }
         session = null
         recording.value = false
-        transcribing.value = true
-        say(context, "认字中…")
         scope.launch {
-            val result = current.stopAndTranscribe()
-            transcribing.value = false
+            val result = current.stopAndSave()
             val problem =
                 when {
-                    result.text.isNotBlank() -> null
-                    current.lastProblem != null -> current.lastProblem
-                    result.durationMs < 300 -> "太短了，没听见什么"
+                    result.file == null -> current.lastProblem ?: "太短了，没听见什么"
                     current.peak < 300 -> "没听到声音：麦克风被挡住了？"
-                    else -> "没认出来：识别服务是不是还没填 key"
+                    else -> null
                 }
             lastError.value = problem
             problem?.let { say(context, it) }
@@ -114,24 +107,19 @@ object VoiceNoteController {
         return false
     }
 
-    /** 松手就停：文字可能有，也可能没有 —— 声音一定留着。 */
+    /** 松手就停：这段声音存下来，作为一条语音条发出去。 */
     fun end(context: Context, onDone: (VoiceNoteResult) -> Unit) {
         lastTouchHandledAt = System.currentTimeMillis()
         val current = session ?: return
         session = null
         recording.value = false
-        transcribing.value = true
-        say(context, "认字中…")
         scope.launch {
-            val result = current.stopAndTranscribe()
-            transcribing.value = false
+            val result = current.stopAndSave()
             val problem =
                 when {
-                    result.text.isNotBlank() -> null
-                    current.lastProblem != null -> current.lastProblem
-                    result.durationMs < 300 -> "太短了，没听见什么"
+                    result.file == null -> current.lastProblem ?: "太短了，没听见什么"
                     current.peak < 300 -> "没听到声音：麦克风被挡住了？"
-                    else -> "没认出来：识别服务是不是还没填 key"
+                    else -> null
                 }
             lastError.value = problem
             problem?.let { say(context, it) }
@@ -193,8 +181,8 @@ class VoiceNoteSession(private val context: Context) {
         return true
     }
 
-    /** 停录：把这段声音存成文件，同时交给耳畔的识别通道拿文字。 */
-    suspend fun stopAndTranscribe(): VoiceNoteResult {
+    /** 停录：把这段声音存成文件 —— 这就是要发出去的东西。 */
+    suspend fun stopAndSave(): VoiceNoteResult {
         if (!running && recorder == null) return VoiceNoteResult(null, "", 0L)
         running = false
         runCatching { pump?.join(600L) }
@@ -211,17 +199,7 @@ class VoiceNoteSession(private val context: Context) {
         if (data.size < SAMPLE_RATE / 2) return VoiceNoteResult(null, "", durationMs)
         val file = withContext(Dispatchers.IO) { runCatching { saveWav(data) }.getOrNull() }
         peak = peakOf(data)
-        val text =
-            withContext(Dispatchers.IO) {
-                runCatching {
-                    val speech = SettingsStore(context.applicationContext).load().speech
-                    CloudSpeech(speech).transcribe(boost(data, peak))
-                }.getOrElse { error ->
-                    lastProblem = "识别失败：" + (error.message ?: error.javaClass.simpleName)
-                    ""
-                }
-            }
-        return VoiceNoteResult(file, text, durationMs)
+        return VoiceNoteResult(file, "", durationMs)
     }
 
     /** 声音本身要留住 —— 气泡上那根波形和重听都指着它。 */
@@ -252,23 +230,6 @@ class VoiceNoteSession(private val context: Context) {
             i += 2
         }
         return peak
-    }
-
-    /** 声音太轻，识别服务基本不给字；先把它整体拉起来再送过去。 */
-    private fun boost(data: ByteArray, peak: Int): ByteArray {
-        if (peak < 300 || peak > 8000) return data
-        val factor = (9000.0 / peak).coerceIn(1.0, 16.0)
-        val out = ByteArray(data.size)
-        var i = 0
-        while (i + 1 < data.size) {
-            val raw = (data[i].toInt() and 0xff) or (data[i + 1].toInt() shl 8)
-            val sample = if (raw >= 0x8000) raw - 0x10000 else raw
-            val scaled = (sample * factor).toInt().coerceIn(-32768, 32767)
-            out[i] = (scaled and 0xff).toByte()
-            out[i + 1] = ((scaled shr 8) and 0xff).toByte()
-            i += 2
-        }
-        return out
     }
 
     private fun wavHeader(dataSize: Int): ByteArray {
