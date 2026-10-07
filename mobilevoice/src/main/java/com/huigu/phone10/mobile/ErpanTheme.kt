@@ -36,10 +36,28 @@ internal object ErpanColors {
 }
 
 @Composable internal fun ErpanTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = lightColorScheme(primary = ErpanColors.Rose,
-        onPrimary = ErpanColors.Ink, background = ErpanColors.Paper, surface = ErpanColors.Paper,
-        onBackground = ErpanColors.Ink, onSurface = ErpanColors.Ink, outline = ErpanColors.Line,
-        secondary = ErpanColors.Rose, error = Color(0xFFAC344C)), content = content)
+    MaterialTheme(
+        colorScheme = darkColorScheme(
+            primary = ErpanColors.Rose, onPrimary = ErpanColors.Paper,
+            primaryContainer = ErpanColors.Blush, onPrimaryContainer = ErpanColors.Ink,
+            secondary = ErpanColors.Rose, onSecondary = ErpanColors.Paper,
+            secondaryContainer = ErpanColors.Blush, onSecondaryContainer = ErpanColors.Ink,
+            tertiary = ErpanColors.Rose, onTertiary = ErpanColors.Paper,
+            tertiaryContainer = ErpanColors.Blush, onTertiaryContainer = ErpanColors.Ink,
+            background = ErpanColors.Paper, onBackground = ErpanColors.Ink,
+            surface = ErpanColors.Paper, onSurface = ErpanColors.Ink,
+            surfaceVariant = ErpanColors.Blush, onSurfaceVariant = ErpanColors.Muted,
+            surfaceContainerLowest = ErpanColors.Paper, surfaceContainerLow = ErpanColors.Paper,
+            surfaceContainer = ErpanColors.Blush, surfaceContainerHigh = ErpanColors.Blush,
+            surfaceContainerHighest = ErpanColors.Line, surfaceTint = ErpanColors.Rose,
+            outline = ErpanColors.Line, outlineVariant = ErpanColors.Line,
+            error = Color(0xFFE0564E), onError = ErpanColors.Ink,
+            errorContainer = Color(0xFF3A1F26), onErrorContainer = Color(0xFFF7D5DA),
+            inverseSurface = ErpanColors.Ink, inverseOnSurface = ErpanColors.Paper,
+            inversePrimary = ErpanColors.Rose, scrim = Color(0xCC000000),
+        ),
+        content = content,
+    )
 }
 
 internal enum class ErpanIcon { BACK, NEXT, DOWN, PHONE, END, PLUS, ARROW }
