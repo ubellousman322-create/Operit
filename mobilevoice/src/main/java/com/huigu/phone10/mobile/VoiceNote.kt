@@ -38,6 +38,9 @@ object VoiceNoteController {
     val transcribing = androidx.compose.runtime.mutableStateOf(false)
     val lastError = androidx.compose.runtime.mutableStateOf<String?>(null)
 
+    /** 刚刚处理过一次按住说话 —— 界面据此把紧跟着的那一下点击跳过。 */
+    @Volatile var lastTouchHandledAt: Long = 0L
+
     fun toggle(context: Context, onDone: (VoiceNoteResult) -> Unit) {
         val current = session
         if (current == null) {
@@ -86,6 +89,7 @@ object VoiceNoteController {
 
     /** 按住就开始录；已经在录就当成功。 */
     fun begin(context: Context): Boolean {
+        lastTouchHandledAt = System.currentTimeMillis()
         if (session != null) return true
         lastError.value = null
         val permitted =
@@ -112,6 +116,7 @@ object VoiceNoteController {
 
     /** 松手就停：文字可能有，也可能没有 —— 声音一定留着。 */
     fun end(context: Context, onDone: (VoiceNoteResult) -> Unit) {
+        lastTouchHandledAt = System.currentTimeMillis()
         val current = session ?: return
         session = null
         recording.value = false
