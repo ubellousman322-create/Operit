@@ -119,7 +119,8 @@ internal fun ErpanCallScreen(
                 }
             }
             Spacer(Modifier.height(22.dp))
-            Text(settings.displayChat(), color = Color(0xFFF1F5F9), fontSize = 26.sp, fontFamily = FontFamily.Serif)
+            // 通话页正中那行字是“对方”，不再取聊天窗口名 —— 以前会冒出 Operit 这种字。
+            Text(CALL_NAME, color = Color(0xFFF1F5F9), fontSize = 26.sp, fontFamily = FontFamily.Serif)
             Spacer(Modifier.height(10.dp))
             Text(
                 if (seconds == 0) "正在通话…" else "%02d:%02d".format(seconds / 60, seconds % 60),
@@ -153,6 +154,9 @@ internal fun ErpanCallScreen(
         }
     }
 }
+
+/** 通话页上那个名字。 */
+private const val CALL_NAME = "姐姐"
 
 internal fun playCue(context: Context, resId: Int) {
     runCatching {
