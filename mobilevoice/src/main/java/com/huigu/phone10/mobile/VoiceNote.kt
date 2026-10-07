@@ -37,8 +37,9 @@ object VoiceNoteController {
                 context.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) ==
                     android.content.pm.PackageManager.PERMISSION_GRANTED
             if (!permitted) {
-                lastError.value = "没拿到麦克风权限，去系统设置里给 ave 打开"
-                say(context, lastError.value)
+                val denied = "没拿到麦克风权限，去系统设置里给 ave 打开"
+                lastError.value = denied
+                say(context, denied)
                 return
             }
             val fresh = VoiceNoteSession(context.applicationContext)
@@ -47,8 +48,9 @@ object VoiceNoteController {
                 recording.value = true
                 say(context, "录音中，说完再长按一下")
             } else {
-                lastError.value = "麦克风打不开，可能被别的应用占着"
-                say(context, lastError.value)
+                val busy = "麦克风打不开，可能被别的应用占着"
+                lastError.value = busy
+                say(context, busy)
             }
             return
         }
