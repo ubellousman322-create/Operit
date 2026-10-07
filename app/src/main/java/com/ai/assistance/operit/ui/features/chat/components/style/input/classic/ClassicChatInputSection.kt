@@ -663,7 +663,7 @@ fun ClassicChatInputSection(
                             }
                         )
                         .combinedClickable(
-                            enabled = sendButtonEnabled,
+                            enabled = true,
                             onLongClick = {
                                 // 长按发送键：一下开始录，再一下停录，转写完当作一条消息发出去。
                                 VoiceNoteController.toggle(context) { result ->
