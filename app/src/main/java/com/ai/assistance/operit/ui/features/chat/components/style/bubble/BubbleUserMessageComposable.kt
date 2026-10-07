@@ -309,14 +309,6 @@ fun BubbleUserMessageComposable(
             }
         }
 
-        // 语音消息：正文里带 [voice:...] 标记时，画一条能重听的气泡
-        VoiceNoteMark.parse(message.content)?.let { voiceMark ->
-            VoiceNoteBubble(
-                mark = voiceMark,
-                context = context,
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
-        }
         // Display trailing attachments above the message bubble
         if (trailingAttachments.isNotEmpty()) {
             // Display attachment row above the bubble
@@ -400,6 +392,14 @@ fun BubbleUserMessageComposable(
                         }
                     }
                 }
+        // 语音消息：正文里带 [voice:...] 标记时，画一条能重听的气泡
+        VoiceNoteMark.parse(message.content)?.let { voiceMark ->
+            VoiceNoteBubble(
+                mark = voiceMark,
+                context = context,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+        }
 
                 Spacer(modifier = Modifier.height(6.dp))
             }
