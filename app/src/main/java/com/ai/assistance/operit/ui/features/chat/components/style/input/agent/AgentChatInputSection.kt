@@ -1056,15 +1056,7 @@ fun AgentChatInputSection(
                                                         tryAwaitRelease()
                                                         if (started) {
                                                             VoiceNoteController.end(context) { result ->
-                                                                val spoken = result.text.trim()
-                                                                val tag = result.file?.let { voiceAttachmentTag(it) }.orEmpty()
-                                                                val marked =
-                                                                    when {
-                                                                        spoken.isNotEmpty() && tag.isNotEmpty() ->
-                                                                            spoken + System.lineSeparator() + tag
-                                                                        spoken.isNotEmpty() -> spoken
-                                                                        else -> tag
-                                                                    }
+                                                                val marked = result.file?.let { file -> voiceAttachmentTag(file, result.durationMs) }.orEmpty()
                                                                 if (marked.isNotEmpty()) {
                                                                     onUserMessageChange(TextFieldValue(marked))
                                                                     scope.launch {
@@ -1385,15 +1377,7 @@ fun AgentChatInputSection(
                                                             tryAwaitRelease()
                                                             if (started) {
                                                                 VoiceNoteController.end(context) { result ->
-                                                                    val spoken = result.text.trim()
-                                                                    val tag = result.file?.let { voiceAttachmentTag(it) }.orEmpty()
-                                                                    val marked =
-                                                                        when {
-                                                                            spoken.isNotEmpty() && tag.isNotEmpty() ->
-                                                                                spoken + System.lineSeparator() + tag
-                                                                            spoken.isNotEmpty() -> spoken
-                                                                            else -> tag
-                                                                        }
+                                                                    val marked = result.file?.let { file -> voiceAttachmentTag(file, result.durationMs) }.orEmpty()
                                                                     if (marked.isNotEmpty()) {
                                                                         onUserMessageChange(TextFieldValue(marked))
                                                                         scope.launch {
