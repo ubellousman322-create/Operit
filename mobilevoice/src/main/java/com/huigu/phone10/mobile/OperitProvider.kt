@@ -40,6 +40,16 @@ class OperitPending(val kind: String, val chatId: String? = null, val text: Stri
 
     @Synchronized fun payload(): ByteArray = (payload ?: throw FileNotFoundException()).toByteArray(Charsets.UTF_8)
 
+    /**
+     * 内置直连专用：事件由宿主侧自己造，序号在这里补上。
+     * 广播那条路的 seq 是 Operit 侧填的；直连漏了它，会被 accept 当场拦掉，
+     * 表现就是“什么都没收到”。
+     */
+    @Synchronized fun acceptEmbedded(event: JsonObject): Boolean {
+        event.addProperty("seq", nextSeq)
+        return accept(event)
+    }
+
     @Synchronized fun accept(event: JsonObject): Boolean {
         if (cancelled || terminal) return false
         try {
