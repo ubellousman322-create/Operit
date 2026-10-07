@@ -1038,8 +1038,25 @@ fun AgentChatInputSection(
                                     Modifier
                                         .size(36.dp)
                                         .background(actionButtonBackground, CircleShape)
-                                        .clickable(
-                                            enabled = sendButtonEnabled,
+                                        .combinedClickable(
+                                            enabled = true,
+                                            onLongClick = {
+                                                // 长按：一下开始录，再一下停录，转写完当作一条消息发出去。
+                                                VoiceNoteController.toggle(context) { result ->
+                                                    val text = result.text.trim()
+                                                    if (text.isNotEmpty()) {
+                                                        val note = result.file
+                                                        val marked = if (note != null) {
+                                                            text + "\n[voice:" + note.name + "|" + result.durationMs + "]"
+                                                        } else text
+                                                        onUserMessageChange(TextFieldValue(marked))
+                                                        scope.launch {
+                                                            kotlinx.coroutines.delay(150L)
+                                                            onSendMessage()
+                                                        }
+                                                    }
+                                                }
+                                            },
                                             onClick = {
                                                 when {
                                                     showCancelAction -> onCancelMessage()
