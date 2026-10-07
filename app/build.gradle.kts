@@ -367,10 +367,20 @@ android {
     }
 
     signingConfigs {
-        val releaseKeystorePath = localProperties.getProperty("RELEASE_STORE_FILE")
-        val releaseStorePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD")
-        val releaseKeyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS")
-        val releaseKeyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD")
+        val bundledKeystore = rootProject.file("ci/ave-signing/ave.p12")
+        val useBundled = bundledKeystore.exists()
+        val releaseKeystorePath =
+            localProperties.getProperty("RELEASE_STORE_FILE")
+                ?: if (useBundled) bundledKeystore.absolutePath else null
+        val releaseStorePassword =
+            localProperties.getProperty("RELEASE_STORE_PASSWORD")
+                ?: if (useBundled) "ave2026operit" else null
+        val releaseKeyAlias =
+            localProperties.getProperty("RELEASE_KEY_ALIAS")
+                ?: if (useBundled) "ave" else null
+        val releaseKeyPassword =
+            localProperties.getProperty("RELEASE_KEY_PASSWORD")
+                ?: if (useBundled) "ave2026operit" else null
 
         if (releaseKeystorePath != null &&
             releaseStorePassword != null &&
@@ -434,7 +444,7 @@ android {
         }
         debug {
             applicationIdSuffix = ".debug"
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = releaseSigningConfig ?: signingConfigs.getByName("debug")
             resValue("string", "app_name", "ave")
         }
         create("clone") {
@@ -457,7 +467,7 @@ android {
                 signingConfig = releaseSigningConfig
             }
             matchingFallbacks += listOf("release")
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = releaseSigningConfig ?: signingConfigs.getByName("debug")
         }
     }
     applicationVariants.all {
