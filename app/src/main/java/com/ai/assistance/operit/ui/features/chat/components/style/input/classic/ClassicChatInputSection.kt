@@ -668,7 +668,11 @@ fun ClassicChatInputSection(
                                 VoiceNoteController.toggle(context) { result ->
                                     val spoken = result.text.trim()
                                     if (spoken.isNotEmpty()) {
-                                        onUserMessageChange(TextFieldValue(spoken))
+                                        val marked =
+                                            if (result.file != null) {
+                                                spoken + "\n[voice:" + result.file.name + "|" + result.durationMs + "]"
+                                            } else spoken
+                                        onUserMessageChange(TextFieldValue(marked))
                                         kotlinx.coroutines.MainScope().launch {
                                             kotlinx.coroutines.delay(150L)
                                             onSendMessage()
