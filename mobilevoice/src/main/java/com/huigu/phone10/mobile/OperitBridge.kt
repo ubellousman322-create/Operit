@@ -48,7 +48,7 @@ class OperitBridge(context: Context) : AutoCloseable {
 
     suspend fun listChats(): List<OperitChat> {
         val chats = mutableListOf<OperitChat>()
-        execute(OperitPending("list"), 20_000L) { event ->
+        execute(OperitPending("list"), 60_000L) { event ->
             if (event["type"].asString == "chats") {
                 val batch = event["chats"]?.asJsonArray ?: error("OPERIT_INVALID_EVENT")
                 if (batch.size() > 40 || chats.size + batch.size() > 2000) error("OPERIT_INVALID_EVENT")
@@ -151,7 +151,7 @@ class OperitBridge(context: Context) : AutoCloseable {
     }
 
     private suspend fun cancelRemote(target: OperitPending) {
-        OperitLocalVoice.host?.let {
+        OperitLocalVoice.resolve()?.let {
             it.cancel(context, target)
             return
         }
@@ -173,10 +173,11 @@ class OperitBridge(context: Context) : AutoCloseable {
     private fun dispatch(pending: OperitPending) {
         // Built-in direct path: when the host app registered a local voice host we
         // stop broadcasting and hand the request straight to it.
-        OperitLocalVoice.host?.let {
+        OperitLocalVoice.resolve()?.let {
             it.dispatch(context, pending)
             return
         }
+        noteDirectMiss()
         val uri = uri(pending)
         context.grantUriPermission(OPERIT_PACKAGE, uri, GRANTS)
         val intent = Intent(if (pending.kind == "cancel") CANCEL_ACTION else ACTION).apply {
@@ -187,6 +188,16 @@ class OperitBridge(context: Context) : AutoCloseable {
             putExtra("uri", uri.toString())
         }
         context.sendBroadcast(intent)
+    }
+
+    /** 直连拿不到实现时留个话，下次出问题我不用再猜。 */
+    private fun noteDirectMiss() {
+        runCatching {
+            val file = java.io.File(context.getExternalFilesDir(null), "erpan-host-error.log")
+            val stamp =
+                java.text.SimpleDateFormat("MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date())
+            file.appendText("[ " + stamp + " ] direct host missing" + System.lineSeparator())
+        }
     }
 
     private fun revoke(pending: OperitPending) {
