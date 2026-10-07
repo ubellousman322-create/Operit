@@ -894,8 +894,9 @@ private fun MicrophoneButton(
             .clickable(enabled = false, onClick = {})
             .pointerInput(Unit) {
                 detectTapGestures(
+                    // 点一下麦克风不再跳去语音态界面：说完话松手那一下常被当成“点击”，
+                    // 人就被带着换了界面。想手动进语音态，点输入框左边那个键就好。
                     onTap = {
-                        onEnterWaveMode()
                     },
                     onLongPress = {
                         onDragOffsetChange(0f)
