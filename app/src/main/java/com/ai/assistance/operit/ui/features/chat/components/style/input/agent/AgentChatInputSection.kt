@@ -1047,7 +1047,7 @@ fun AgentChatInputSection(
                                     Modifier
                                         .size(36.dp)
                                         .background(actionButtonBackground, CircleShape)
-                                        pointerInput(listOf(canSendMessage, showCancelAction, showQueueAction)) {
+                                        .pointerInput(listOf(canSendMessage, showCancelAction, showQueueAction)) {
                                             val voiceReady = !showCancelAction && !showQueueAction && !canSendMessage
                                             detectTapGestures(
                                                 onPress = {
@@ -1376,7 +1376,7 @@ fun AgentChatInputSection(
                                         Modifier
                                             .size(36.dp)
                                             .background(actionButtonBackground, CircleShape)
-                                            pointerInput(listOf(canSendMessage, showCancelAction, showQueueAction)) {
+                                            .pointerInput(listOf(canSendMessage, showCancelAction, showQueueAction)) {
                                                 val voiceReady = !showCancelAction && !showQueueAction && !canSendMessage
                                                 detectTapGestures(
                                                     onPress = {
