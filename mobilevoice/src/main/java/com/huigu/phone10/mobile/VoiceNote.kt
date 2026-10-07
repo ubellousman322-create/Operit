@@ -18,6 +18,11 @@ import kotlinx.coroutines.withContext
 data class VoiceNoteResult(val file: java.io.File?, val text: String, val durationMs: Long)
 
 /** 输入栏那个键的开关：再按一下就是停录，转写完把文字交回给界面。 */
+/** 系统认的附件写法：id 放完整路径，标签体留空。语音气泡就靠它出现。 */
+fun voiceAttachmentTag(file: java.io.File): String =
+    "<attachment id=\"" + file.absolutePath + "\" filename=\"" + file.name +
+        "\" type="audio/wav\" size=\"" + file.length() + "\"></attachment>"
+
 object VoiceNoteController {
     private val scope = kotlinx.coroutines.CoroutineScope(
         kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main.immediate
@@ -54,6 +59,56 @@ object VoiceNoteController {
             }
             return
         }
+        session = null
+        recording.value = false
+        transcribing.value = true
+        say(context, "认字中…")
+        scope.launch {
+            val result = current.stopAndTranscribe()
+            transcribing.value = false
+            val problem =
+                when {
+                    result.text.isNotBlank() -> null
+                    current.lastProblem != null -> current.lastProblem
+                    result.durationMs < 300 -> "太短了，没听见什么"
+                    current.peak < 300 -> "没听到声音：麦克风被挡住了？"
+                    else -> "没认出来：识别服务是不是还没填 key"
+                }
+            lastError.value = problem
+            problem?.let { say(context, it) }
+            onDone(result)
+        }
+    }
+
+    /** 按住就开始录；已经在录就当成功。 */
+    fun begin(context: Context): Boolean {
+        if (session != null) return true
+        lastError.value = null
+        val permitted =
+            context.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) ==
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (!permitted) {
+            val denied = "没拿到麦克风权限，去系统设置里给 ave 打开"
+            lastError.value = denied
+            say(context, denied)
+            return false
+        }
+        val fresh = VoiceNoteSession(context.applicationContext)
+        if (fresh.start()) {
+            session = fresh
+            recording.value = true
+            say(context, "录音中，松手就发")
+            return true
+        }
+        val busy = fresh.lastProblem ?: "麦克风打不开"
+        lastError.value = busy
+        say(context, busy)
+        return false
+    }
+
+    /** 松手就停：文字可能有，也可能没有 —— 声音一定留着。 */
+    fun end(context: Context, onDone: (VoiceNoteResult) -> Unit) {
+        val current = session ?: return
         session = null
         recording.value = false
         transcribing.value = true
