@@ -64,7 +64,9 @@ object VoiceNoteController {
             val problem =
                 when {
                     result.text.isNotBlank() -> null
+                    current.lastProblem != null -> current.lastProblem
                     result.durationMs < 300 -> "太短了，没听见什么"
+                    current.peak < 300 -> "没听到声音：麦克风被挡住了？"
                     else -> "没认出来：识别服务是不是还没填 key"
                 }
             lastError.value = problem
@@ -82,6 +84,10 @@ object VoiceNoteController {
 
 class VoiceNoteSession(private val context: Context) {
 
+    /** 上一次失败的原因、以及这段声音的峰值 —— 界面据此说话。 */
+    @Volatile var lastProblem: String? = null
+    @Volatile var peak: Int = 0
+
     private val pcm = ByteArrayOutputStream()
     private var recorder: AudioRecord? = null
     private var pump: Thread? = null
@@ -95,7 +101,10 @@ class VoiceNoteSession(private val context: Context) {
         val record =
             runCatching {
                 AudioRecord(SOURCE, SAMPLE_RATE, CHANNEL, ENCODING, bufferSize)
-            }.getOrNull() ?: return false
+            }.getOrNull() ?: run {
+                lastProblem = "麦克风打不开（权限或占用）"
+                return false
+            }
         if (record.state != AudioRecord.STATE_INITIALIZED) {
             runCatching { record.release() }
             return false
@@ -137,12 +146,16 @@ class VoiceNoteSession(private val context: Context) {
         val durationMs = data.size * 1000L / (SAMPLE_RATE * 2)
         if (data.size < SAMPLE_RATE / 2) return VoiceNoteResult(null, "", durationMs)
         val file = withContext(Dispatchers.IO) { runCatching { saveWav(data) }.getOrNull() }
+        peak = peakOf(data)
         val text =
             withContext(Dispatchers.IO) {
                 runCatching {
                     val speech = SettingsStore(context.applicationContext).load().speech
-                    CloudSpeech(speech).transcribe(data)
-                }.getOrDefault("")
+                    CloudSpeech(speech).transcribe(boost(data, peak))
+                }.getOrElse { error ->
+                    lastProblem = "识别失败：" + (error.message ?: error.javaClass.simpleName)
+                    ""
+                }
             }
         return VoiceNoteResult(file, text, durationMs)
     }
@@ -161,6 +174,37 @@ class VoiceNoteSession(private val context: Context) {
             ?.drop(200)
             ?.forEach { runCatching { it.delete() } }
         return file
+    }
+
+    /** 满量程 32767。对着麦克风正常说话，峰值通常在几千以上。 */
+    private fun peakOf(data: ByteArray): Int {
+        var peak = 0
+        var i = 0
+        while (i + 1 < data.size) {
+            val raw = (data[i].toInt() and 0xff) or (data[i + 1].toInt() shl 8)
+            val sample = if (raw >= 0x8000) raw - 0x10000 else raw
+            val magnitude = if (sample < 0) -sample else sample
+            if (magnitude > peak) peak = magnitude
+            i += 2
+        }
+        return peak
+    }
+
+    /** 声音太轻，识别服务基本不给字；先把它整体拉起来再送过去。 */
+    private fun boost(data: ByteArray, peak: Int): ByteArray {
+        if (peak < 300 || peak > 8000) return data
+        val factor = (9000.0 / peak).coerceIn(1.0, 16.0)
+        val out = ByteArray(data.size)
+        var i = 0
+        while (i + 1 < data.size) {
+            val raw = (data[i].toInt() and 0xff) or (data[i + 1].toInt() shl 8)
+            val sample = if (raw >= 0x8000) raw - 0x10000 else raw
+            val scaled = (sample * factor).toInt().coerceIn(-32768, 32767)
+            out[i] = (scaled and 0xff).toByte()
+            out[i + 1] = ((scaled shr 8) and 0xff).toByte()
+            i += 2
+        }
+        return out
     }
 
     private fun wavHeader(dataSize: Int): ByteArray {
@@ -198,7 +242,7 @@ class VoiceNoteSession(private val context: Context) {
         private const val SAMPLE_RATE = 16_000
         private const val CHANNEL = AudioFormat.CHANNEL_IN_MONO
         private const val ENCODING = AudioFormat.ENCODING_PCM_16BIT
-        private const val SOURCE = MediaRecorder.AudioSource.VOICE_RECOGNITION
+        private const val SOURCE = MediaRecorder.AudioSource.VOICE_COMMUNICATION
         private const val BLOCK = 4096
     }
 }
