@@ -59,13 +59,13 @@ class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoice
     private fun writeDiagnostic(pending: OperitPending, t: Throwable) {
         runCatching {
             val file = java.io.File(hostContext.getExternalFilesDir(null), "erpan-host-error.log")
+            val stamp =
+                java.text.SimpleDateFormat("MM-dd HH:mm:ss", java.util.Locale.US)
+                    .format(java.util.Date())
+            val sep = System.lineSeparator()
             file.appendText(
-                "[" + java.text.SimpleDateFormat("MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date()) +
-                    "] kind=" + pending.kind + " id=" + pending.id + "
-" +
-                    android.util.Log.getStackTraceString(t) + "
-
-"
+                "[" + stamp + "] kind=" + pending.kind + " id=" + pending.id + sep +
+                    android.util.Log.getStackTraceString(t) + sep + sep
             )
         }
     }
