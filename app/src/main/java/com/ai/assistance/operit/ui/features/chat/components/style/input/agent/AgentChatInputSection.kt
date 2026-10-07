@@ -1085,12 +1085,7 @@ fun AgentChatInputSection(
                                                             }
                                                         }
                                                         else -> {
-                                                            actualViewModel.onFloatingButtonClick(
-                                                                FloatingMode.FULLSCREEN,
-                                                                voicePermissionLauncher,
-                                                                colorScheme,
-                                                                typography,
-                                                            )
+                                                            // 点一下麦克风不再跳去悬浮语音界面 —— 按住说话就够了，那一下点击会把人带去另一屏。
                                                         }
                                                     }
                                                 },
@@ -1406,12 +1401,7 @@ fun AgentChatInputSection(
                                                                 }
                                                             }
                                                             else -> {
-                                                                actualViewModel.onFloatingButtonClick(
-                                                                    FloatingMode.FULLSCREEN,
-                                                                    voicePermissionLauncher,
-                                                                    colorScheme,
-                                                                    typography,
-                                                                )
+                                                                // 点一下麦克风不再跳去悬浮语音界面 —— 按住说话就够了，那一下点击会把人带去另一屏。
                                                             }
                                                         }
                                                     },
