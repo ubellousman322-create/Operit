@@ -96,10 +96,24 @@ class MainActivity : ComponentActivity() {
             catch (_: Exception) { notice = "头像无法显示，请在外观里重新选择图片。" }
         }
 
+        /** 去要一次聊天列表。进配置页就会自己来一次，不需要她点。 */
+        fun loadChats() {
+            if (listing) return
+            listing = true; notice = ""
+            scope.launch {
+                val o = OperitBridge(this@MainActivity)
+                try { chats = o.listChats() }
+                catch (e: Exception) { notice = "拿不到聊天列表：" + (e.message ?: e.javaClass.simpleName) }
+                finally { o.close(); listing = false }
+            }
+        }
+
         fun openConfig(section: String = "") {
             draft = saved; target = section; notice = ""; page = "config"
             editingProfileId = saved.currentVoiceProfile()?.id
             sttDrafts.clear(); ttsDrafts.clear()
+            // 还没选过窗口就自己去要一次 —— 不用她点，也免得上一次那句旧话一直挂在那儿。
+            if (saved.chatId.isBlank()) loadChats()
         }
         fun openAppearance() {
             appearanceDraft = appearance
@@ -396,17 +410,7 @@ class MainActivity : ComponentActivity() {
                             voicePrompt = old.first.voicePrompt, mossSpeed = old.first.mossSpeed,
                             mossTextMode = old.first.mossTextMode), voiceName = old?.second)
                     }
-                }, onChats = {
-                    if (!listing) {
-                        listing = true; notice = ""
-                        scope.launch {
-                            val o = OperitBridge(this@MainActivity)
-                            try { chats = o.listChats() }
-                            catch (e: Exception) { notice = "拿不到聊天列表：" + (e.message ?: e.javaClass.simpleName) }
-                            finally { o.close(); listing = false }
-                        }
-                    }
-                }, onSave = { saveEditor() }, onBack = { back() }, onAbout = { showAbout() },
+                }, onChats = { loadChats() }, onSave = { saveEditor() }, onBack = { back() }, onAbout = { showAbout() },
                 checking = checking, onCheck = { checkConnections() },
                 profileName = saved.profiles().firstOrNull { it.id == editingProfileId }?.name,
                 onSaveAs = { requestNewProfileName() })
