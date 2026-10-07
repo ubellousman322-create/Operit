@@ -412,7 +412,7 @@ android {
         // 写别的（比如 1.12.2-b62）会让所有工具包判为“不支持”。
         val aveRun = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0
         versionCode = 51 + aveRun
-        versionName = if (aveRun > 0) "1.12.2+" + aveRun else "1.12.2"
+        versionName = if (aveRun > 0) "1.12." + aveRun else "1.12.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
