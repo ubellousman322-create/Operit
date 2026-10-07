@@ -138,11 +138,22 @@ class OperitApplication : Application(), ImageLoaderFactory, WorkConfiguration.P
 
         globalImageLoader = ImageLoader.Builder(this).build()
 
-        // 耳畔内置直连：在进程最开始就注册，不管是哪个入口把进程拉起来的。
-        // 如果此刻依赖还没就绪，把异常咽下去，MainActivity 那边还会再注册一次。
+        // 耳畔内置直连：进程一起来就接上。
+        // context 先存下来（这一步不会失败）；注册要是失败，把原因写进文件，
+        // 下次我直接读，不用再猜。
+        com.huigu.phone10.mobile.OperitLocalVoice.appContext = this
         runCatching {
             com.huigu.phone10.mobile.OperitLocalVoice.host =
                 com.ai.assistance.operit.integrations.mobilevoice.OperitMobileVoiceHost(this)
+        }.onFailure { t ->
+            runCatching {
+                java.io.File(getExternalFilesDir(null), "erpan-host-error.log").appendText(
+                    "[" +
+                        java.text.SimpleDateFormat("MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date()) +
+                        "] register failed: " + android.util.Log.getStackTraceString(t) +
+                        System.lineSeparator()
+                )
+            }
         }
     }
 
