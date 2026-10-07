@@ -64,6 +64,13 @@ class IncomingCallActivity : ComponentActivity() {
                         startService(
                             Intent(this@IncomingCallActivity, VoiceService::class.java)
                         )
+                        // 接起来就直接进通话页 —— 不然人还得去通知栏里把它翻出来。
+                        runCatching {
+                            startActivity(
+                                Intent(this@IncomingCallActivity, MainActivity::class.java)
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                            )
+                        }
                         finish()
                     },
                     onDecline = {
