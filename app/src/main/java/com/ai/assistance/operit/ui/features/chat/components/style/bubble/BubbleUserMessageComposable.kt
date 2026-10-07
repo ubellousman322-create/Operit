@@ -127,7 +127,8 @@ fun BubbleUserMessageComposable(
                 parseMessageContent(context, message.content)
             }
         }
-    val textContent = parseResult.processedText
+    // [voice:...] 是语音条的标记，正文里不显示它，交给下面的气泡去画。
+    val textContent = VoiceNoteMark.strip(parseResult.processedText)
     val trailingAttachments = parseResult.trailingAttachments
     val replyInfo = parseResult.replyInfo
     val imageLinks = parseResult.imageLinks
