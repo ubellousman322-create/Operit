@@ -444,6 +444,10 @@ android {
         }
         debug {
             applicationIdSuffix = ".debug"
+            ndk {
+                abiFilters.clear()
+                abiFilters += "arm64-v8a"
+            }
             signingConfig = releaseSigningConfig ?: signingConfigs.getByName("debug")
             resValue("string", "app_name", "ave")
         }
