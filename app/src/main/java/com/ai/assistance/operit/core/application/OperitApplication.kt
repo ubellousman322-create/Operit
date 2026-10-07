@@ -137,6 +137,13 @@ class OperitApplication : Application(), ImageLoaderFactory, WorkConfiguration.P
         }
 
         globalImageLoader = ImageLoader.Builder(this).build()
+
+        // 耳畔内置直连：在进程最开始就注册，不管是哪个入口把进程拉起来的。
+        // 如果此刻依赖还没就绪，把异常咽下去，MainActivity 那边还会再注册一次。
+        runCatching {
+            com.huigu.phone10.mobile.OperitLocalVoice.host =
+                com.ai.assistance.operit.integrations.mobilevoice.OperitMobileVoiceHost(this)
+        }
     }
 
     fun initializeMainApplication() {
