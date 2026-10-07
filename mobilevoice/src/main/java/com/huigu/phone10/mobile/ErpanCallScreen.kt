@@ -55,6 +55,8 @@ internal fun ErpanCallScreen(
     onMic: () -> Unit,
 ) {
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    // 服务还没给出开始时间（刚进这一页）就先按打开的时刻算，计时不会空着。
+    val openedAt = remember { System.currentTimeMillis() }
     val context = LocalContext.current
     val audio = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
     var speaker by remember { mutableStateOf(runCatching { audio.isSpeakerphoneOn }.getOrDefault(false)) }
@@ -65,7 +67,8 @@ internal fun ErpanCallScreen(
             now = System.currentTimeMillis()
         }
     }
-    val seconds = if (state.startedAt > 0L) ((now - state.startedAt) / 1000L).toInt() else 0
+    val base = if (state.startedAt > 0L) state.startedAt else openedAt
+    val seconds = ((now - base) / 1000L).toInt().coerceAtLeast(0)
     val speaking = state.micEnabled
     Box(
         Modifier
@@ -80,11 +83,11 @@ internal fun ErpanCallScreen(
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(66.dp))
+            Spacer(Modifier.height(40.dp))
             Box(contentAlignment = Alignment.Center) {
                 Box(
                     Modifier
-                        .size(360.dp)
+                        .size(200.dp)
                         .background(
                             Brush.radialGradient(
                                 listOf(
@@ -98,10 +101,10 @@ internal fun ErpanCallScreen(
                 )
                 if (avatar != null) {
                     Image(
-                        bitmap = avatar.toBitmap(300, 300).asImageBitmap(),
+                        bitmap = avatar.toBitmap(200, 200).asImageBitmap(),
                         contentDescription = null,
                         modifier = Modifier
-                            .size(235.dp)
+                            .size(132.dp)
                             .clip(CircleShape)
                             .border(1.dp, ErpanColors.Rose.copy(alpha = 0.28f), CircleShape),
                         contentScale = ContentScale.Crop
@@ -109,14 +112,14 @@ internal fun ErpanCallScreen(
                 } else {
                     Box(
                         Modifier
-                            .size(235.dp)
+                            .size(132.dp)
                             .clip(CircleShape)
                             .background(Color(0xFF3A4858))
                     )
                 }
             }
-            Spacer(Modifier.height(30.dp))
-            Text(settings.displayChat(), color = Color(0xFFF1F5F9), fontSize = 30.sp, fontFamily = FontFamily.Serif)
+            Spacer(Modifier.height(22.dp))
+            Text(settings.displayChat(), color = Color(0xFFF1F5F9), fontSize = 26.sp, fontFamily = FontFamily.Serif)
             Spacer(Modifier.height(10.dp))
             Text(
                 if (seconds == 0) "正在通话…" else "%02d:%02d".format(seconds / 60, seconds % 60),
