@@ -665,7 +665,7 @@ fun ClassicChatInputSection(
                                         .primary
                             }
                         )
-                        pointerInput(listOf(canSendMessage, showCancelAction, showQueueAction)) {
+                        .pointerInput(listOf(canSendMessage, showCancelAction, showQueueAction)) {
                             val voiceReady = !showCancelAction && !showQueueAction && !canSendMessage
                             detectTapGestures(
                                 onPress = {
