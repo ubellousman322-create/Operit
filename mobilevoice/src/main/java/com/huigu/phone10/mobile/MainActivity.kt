@@ -402,7 +402,7 @@ class MainActivity : ComponentActivity() {
                         scope.launch {
                             val o = OperitBridge(this@MainActivity)
                             try { chats = o.listChats() }
-                            catch (_: Exception) { notice = "Operit 未返回聊天列表。请检查 Operit 已打开、连接插件与工作流已启用。" }
+                            catch (e: Exception) { notice = "拿不到聊天列表：" + (e.message ?: e.javaClass.simpleName) }
                             finally { o.close(); listing = false }
                         }
                     }
