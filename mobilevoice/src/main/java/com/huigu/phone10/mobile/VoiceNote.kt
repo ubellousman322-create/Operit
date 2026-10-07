@@ -19,9 +19,13 @@ data class VoiceNoteResult(val file: java.io.File?, val text: String, val durati
 
 /** 输入栏那个键的开关：再按一下就是停录，转写完把文字交回给界面。 */
 /** 系统认的附件写法：id 放完整路径，标签体留空。语音气泡就靠它出现。 */
+private val VOICE_QUOTE = '\u0022'
+
 fun voiceAttachmentTag(file: java.io.File): String =
-    "<attachment id=\"" + file.absolutePath + "\" filename=\"" + file.name +
-        "\" type="audio/wav\" size=\"" + file.length() + "\"></attachment>"
+    "<attachment id=" + VOICE_QUOTE + file.absolutePath + VOICE_QUOTE +
+        " filename=" + VOICE_QUOTE + file.name + VOICE_QUOTE +
+        " type=" + VOICE_QUOTE + "audio/wav" + VOICE_QUOTE +
+        " size=" + VOICE_QUOTE + file.length() + VOICE_QUOTE + "></attachment>"
 
 object VoiceNoteController {
     private val scope = kotlinx.coroutines.CoroutineScope(
