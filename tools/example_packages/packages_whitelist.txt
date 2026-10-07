@@ -41,3 +41,9 @@ worldbook
 qqbot
 thinking_guidance
 plan_mode
+com-raineiris-xhsreader-v1.1.1.toolpkg
+com-operit-voice-bar-v0.5.5-four-provider-voice-library.toolpkg
+com-community-ob-auto-breath-v1.6.1-183e58c2.toolpkg
+com-community-ob-auto-grow-v1.6.1-22e68aff.toolpkg
+com-moshu-ob-dashboard-v1.0.0.toolpkg
+com-operit-conversation-lock-v0.2.0-f08f52f1.toolpkg
