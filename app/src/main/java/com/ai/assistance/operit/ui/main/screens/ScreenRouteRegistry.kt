@@ -158,22 +158,6 @@ object ScreenRouteRegistry {
                 order = 10
             ),
             hostEntryDefinition(
-                entryId = "main.help",
-                screen = Screen.Help,
-                surface = NavigationSurface.MAIN_SIDEBAR_SYSTEM,
-                launchNavItem = NavItem.Help,
-                icon = NavItem.Help.icon,
-                order = 20
-            ),
-            hostEntryDefinition(
-                entryId = "main.about",
-                screen = Screen.About,
-                surface = NavigationSurface.MAIN_SIDEBAR_SYSTEM,
-                launchNavItem = NavItem.About,
-                icon = NavItem.About.icon,
-                order = 30
-            ),
-            hostEntryDefinition(
                 entryId = "toolbox.tool_tester",
                 screen = Screen.ToolTester,
                 surface = NavigationSurface.TOOLBOX,
