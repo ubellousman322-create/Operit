@@ -153,9 +153,6 @@ fun DrawerContent(
         val resolvedTopContentPadding =
                 topContentPadding ?:
                 WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        val fixedBottomItems = remember {
-                setOf(NavItem.Settings)
-        }
         val quickActionItems = remember {
                 setOf(NavItem.Packages, NavItem.Workflow)
         }
@@ -197,9 +194,7 @@ fun DrawerContent(
         val primaryNavItems =
                 remember(navItems) {
                         navItems.filterNot {
-                                it in fixedBottomItems ||
-                                        it in quickActionItems ||
-                                        it == NavItem.ShizukuCommands
+                                it in quickActionItems || it == NavItem.ShizukuCommands
                         }
                 }
         val handleScreenSelection: (Screen) -> Unit = { screen ->
@@ -259,18 +254,6 @@ fun DrawerContent(
                         Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 20.dp),
-                        thickness = 0.5.dp,
-                        color = appearance.dividerColor.copy(alpha = 0.5f)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                DrawerBottomShortcutRow(
-                        selectedItem = selectedItem,
-                        appearance = appearance,
-                        onNavItemClick = handleNavItemClick
-                )
         }
 }
 
@@ -733,115 +716,5 @@ private fun SidebarQuickActionBadge(
                         fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center
                 )
-        }
-}
-
-@Composable
-private fun DrawerBottomShortcutRow(
-        selectedItem: NavItem?,
-        appearance: NavigationDrawerAppearance,
-        onNavItemClick: (NavItem) -> Unit
-) {
-        Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-        ) {
-                BottomShortcutDrawerItem(
-                        modifier = Modifier.weight(1f),
-                        item = NavItem.Settings,
-                        selected = selectedItem == NavItem.Settings,
-                        appearance = appearance,
-                        onClick = { onNavItemClick(NavItem.Settings) }
-                )
-        }
-}
-
-@Composable
-private fun BottomShortcutDrawerItem(
-        modifier: Modifier = Modifier,
-        item: NavItem,
-        selected: Boolean,
-        appearance: NavigationDrawerAppearance,
-        onClick: () -> Unit
-) {
-        val itemShape = RoundedCornerShape(14.dp)
-        val selectedGlassOverlayColor =
-                if (selected) {
-                        appearance.selectedContainerColor.copy(alpha = 0.18f)
-                } else {
-                        Color.Transparent
-                }
-        val accentColor = appearance.selectedContentColor
-
-        Surface(
-                modifier =
-                        modifier
-                                .height(68.dp)
-                                .liquidGlass(
-                                        enabled = appearance.buttonLiquidGlassEnabled,
-                                        shape = itemShape,
-                                        containerColor = appearance.buttonContainerColor,
-                                        shadowElevation = if (selected) 6.dp else 4.dp,
-                                        borderWidth = 0.5.dp,
-                                        blurRadius = 12.dp,
-                                        overlayAlphaBoost = 0.04f,
-                                        enableLens = false
-                                )
-                                .clip(itemShape)
-                                .background(selectedGlassOverlayColor),
-                onClick = onClick,
-                color =
-                        if (appearance.buttonLiquidGlassEnabled) {
-                                Color.Transparent
-                        } else if (selected) {
-                                appearance.selectedContainerColor
-                        } else {
-                                Color.Transparent
-                        },
-                shape = itemShape
-        ) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                        if (selected) {
-                                Box(
-                                        modifier = Modifier
-                                                .align(Alignment.TopCenter)
-                                                .fillMaxWidth(0.4f)
-                                                .height(2.5.dp)
-                                                .padding(top = 4.dp)
-                                                .clip(RoundedCornerShape(2.dp))
-                                                .background(accentColor.copy(alpha = 0.7f))
-                                )
-                        }
-                        Column(
-                                modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp, vertical = 8.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                        ) {
-                                Icon(
-                                        imageVector = item.icon,
-                                        contentDescription = null,
-                                        tint =
-                                                if (selected) appearance.selectedContentColor
-                                                else appearance.itemColor,
-                                        modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.height(5.dp))
-                                Text(
-                                        text = stringResource(id = item.titleResId),
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                                letterSpacing = 0.1.sp
-                                        ),
-                                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                                        textAlign = TextAlign.Center,
-                                        color =
-                                                if (selected) appearance.selectedContentColor
-                                                else appearance.itemColor,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.fillMaxWidth()
-                                )
-                        }
-                }
         }
 }
