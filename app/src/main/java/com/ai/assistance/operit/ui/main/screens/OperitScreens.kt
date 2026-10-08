@@ -25,11 +25,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.common.NavItem
-import com.ai.assistance.operit.ui.features.about.screens.AboutScreen
 import com.ai.assistance.operit.ui.features.assistant.screens.AssistantConfigScreen
 import com.ai.assistance.operit.ui.features.chat.screens.AIChatScreen
 import com.ai.assistance.operit.ui.features.demo.screens.ShizukuDemoScreen
-import com.ai.assistance.operit.ui.features.help.screens.HelpScreen
 import com.ai.assistance.operit.ui.features.packages.screens.MarketHomeTab
 import com.ai.assistance.operit.ui.features.packages.screens.PackageManagerScreen
 import com.ai.assistance.operit.ui.features.packages.screens.ArtifactPublishScreen
@@ -622,40 +620,6 @@ sealed class Screen(
         }
     }
 
-    data object Help : Screen(navItem = NavItem.Help) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            HelpScreen(onBackPressed = onGoBack)
-        }
-    }
-
-    data object About : Screen(navItem = NavItem.About) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            AboutScreen(
-                navigateToUpdateHistory = {
-                    navigateTo(UpdateHistory)
-                }
-            )
-        }
-    }
-
     data object Agreement : Screen(navItem = NavItem.Agreement) {
         @Composable
         override fun Content(
@@ -675,7 +639,7 @@ sealed class Screen(
 
     data object UpdateHistory :
             Screen(
-                    navItem = NavItem.About,
+                    navItem = NavItem.Settings,
                     titleRes = R.string.update_history
             ) {
         @Composable
