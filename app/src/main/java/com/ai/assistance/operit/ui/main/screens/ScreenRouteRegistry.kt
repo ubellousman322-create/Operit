@@ -203,16 +203,6 @@ object ScreenRouteRegistry {
                 order = 50
             ),
             hostEntryDefinition(
-                entryId = "toolbox.agreement",
-                screen = Screen.Agreement,
-                surface = NavigationSurface.TOOLBOX,
-                launchNavItem = NavItem.Agreement,
-                titleResId = R.string.tool_user_agreement,
-                descriptionResId = R.string.tool_user_agreement_desc,
-                icon = Icons.Default.Policy,
-                order = 60
-            ),
-            hostEntryDefinition(
                 entryId = "toolbox.default_assistant_guide",
                 screen = Screen.DefaultAssistantGuide,
                 surface = NavigationSurface.TOOLBOX,
