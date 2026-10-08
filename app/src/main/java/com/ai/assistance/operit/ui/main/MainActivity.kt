@@ -40,8 +40,6 @@ import com.ai.assistance.operit.data.preferences.AgreementPreferences
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import com.ai.assistance.operit.data.preferences.androidPermissionPreferences
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
-import com.ai.assistance.operit.data.updates.UpdateManager
-import com.ai.assistance.operit.data.updates.UpdateStatus
 import com.ai.assistance.operit.ui.common.NavItem
 import com.ai.assistance.operit.ui.features.agreement.screens.AgreementScreen
 import com.ai.assistance.operit.ui.features.permission.screens.PermissionGuideScreen
@@ -79,7 +77,6 @@ class MainActivity : ComponentActivity() {
     // ======== 工具和管理器 ========
     private lateinit var toolHandler: AIToolHandler
     private lateinit var agreementPreferences: AgreementPreferences
-    private var updateCheckPerformed = false
     private lateinit var anrMonitor: AnrMonitor
     private lateinit var mcpRepository: MCPRepository
 
@@ -90,8 +87,6 @@ class MainActivity : ComponentActivity() {
     private var backPressedTime: Long = 0
     private val backPressedInterval: Long = 2000 // 两次点击的时间间隔，单位为毫秒
 
-    // UpdateManager实例
-    private lateinit var updateManager: UpdateManager
 
     // 是否显示权限引导界面
     private var showPermissionGuide by mutableStateOf(false)
@@ -211,8 +206,6 @@ class MainActivity : ComponentActivity() {
         // 设置初始界面
         setAppContent()
 
-        // 初始化并设置更新管理器
-        setupUpdateManager()
 
         // 只在首次创建时执行检查（非配置变更）
         if (savedInstanceState == null) {
@@ -743,73 +736,6 @@ class MainActivity : ComponentActivity() {
 
         AppLogger.d(TAG, "Selected refresh rate: $refreshRate Hz")
         return refreshRate
-    }
-
-    // ======== 设置更新管理器 ========
-    private fun setupUpdateManager() {
-        // 获取UpdateManager实例
-        updateManager = UpdateManager.getInstance(this)
-
-        // 观察更新状态（beta / 非 beta 都提示新版本）
-        updateManager.updateStatus.observe(
-            this,
-            Observer { status ->
-                when (status) {
-                    is UpdateStatus.Available -> showUpdateNotification(status.newVersion)
-                    is UpdateStatus.PatchAvailable -> showUpdateNotification(status.newVersion)
-                    else -> Unit
-                }
-            }
-        )
-
-        // 自动检查更新（仅提示，不自动下载）
-        lifecycleScope.launch {
-            // 延迟几秒，等待应用完全启动
-            delay(3000)
-            checkForUpdates()
-        }
-    }
-
-    private fun checkForUpdates() {
-        if (updateCheckPerformed) return
-        updateCheckPerformed = true
-
-        val appVersion =
-            try {
-                packageManager.getPackageInfo(packageName, 0).versionName
-                    ?: getString(R.string.unknown_value)
-            } catch (e: PackageManager.NameNotFoundException) {
-                getString(R.string.unknown_value)
-            }
-
-        // 使用UpdateManager检查更新
-        lifecycleScope.launch {
-            try {
-                updateManager.checkForUpdatesSilently(appVersion)
-                // 不需要显式处理更新状态，因为我们已经设置了观察者
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "更新检查失败: ${e.message}")
-            }
-        }
-    }
-
-    private fun showUpdateNotification(newVersion: String) {
-        val currentVersion =
-            try {
-                packageManager.getPackageInfo(packageName, 0).versionName
-                    ?: getString(R.string.unknown_value)
-            } catch (e: Exception) {
-                getString(R.string.unknown_value)
-            }
-
-        AppLogger.d(TAG, "发现新版本: $newVersion，当前版本: $currentVersion")
-
-        // 显示更新提示
-        Toast.makeText(
-            this,
-            getString(R.string.main_update_available_toast, newVersion),
-            Toast.LENGTH_LONG
-        ).show()
     }
 
 }
