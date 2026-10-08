@@ -371,9 +371,7 @@ fun OperitApp(
         NavItem.Toolbox,
         NavItem.ShizukuCommands,
         NavItem.Workflow,
-        NavItem.Settings,
-        NavItem.Help,
-        NavItem.About
+        NavItem.Settings
     )
 
     // Network state monitoring
