@@ -36,12 +36,10 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.AIForegroundService
 import com.ai.assistance.operit.core.application.OperitApplication
 import com.ai.assistance.operit.core.tools.AIToolHandler
-import com.ai.assistance.operit.data.preferences.AgreementPreferences
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import com.ai.assistance.operit.data.preferences.androidPermissionPreferences
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
 import com.ai.assistance.operit.ui.common.NavItem
-import com.ai.assistance.operit.ui.features.agreement.screens.AgreementScreen
 import com.ai.assistance.operit.ui.features.permission.screens.PermissionGuideScreen
 import com.ai.assistance.operit.ui.features.startup.screens.PluginLoadingScreenWithState
 import com.ai.assistance.operit.ui.features.startup.screens.PluginLoadingState
@@ -76,7 +74,6 @@ class MainActivity : ComponentActivity() {
 
     // ======== 工具和管理器 ========
     private lateinit var toolHandler: AIToolHandler
-    private lateinit var agreementPreferences: AgreementPreferences
     private lateinit var anrMonitor: AnrMonitor
     private lateinit var mcpRepository: MCPRepository
 
@@ -369,7 +366,7 @@ class MainActivity : ComponentActivity() {
             prepareStartupChatIfNeeded()
 
             // 3. 在协议已接受且无需权限引导时，启动插件加载
-            if (!showPermissionGuide && agreementPreferences.isAgreementAccepted()) {
+            if (!showPermissionGuide) {
                 startPluginLoading()
             }
         }
@@ -501,8 +498,6 @@ class MainActivity : ComponentActivity() {
 
         anrMonitor = AnrMonitor(this, lifecycleScope)
 
-        // 初始化协议偏好管理器
-        agreementPreferences = AgreementPreferences(this)
 
     }
 
@@ -593,27 +588,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             OperitTheme {
                 Box {
-                    // 检查是否需要显示用户协议
-                        if (!agreementPreferences.isAgreementAccepted()) {
-                            AgreementScreen(
-                                    onAgreementAccepted = {
-                                        agreementPreferences.acceptCurrentAgreement()
-                                        // 协议接受后，检查权限级别设置
-                                        lifecycleScope.launch {
-                                            // 确保使用非阻塞方式更新UI
-                                            delay(300) // 短暂延迟确保UI状态更新
-                                            checkPermissionLevelSet()
-                                            if (!showPermissionGuide) {
-                                                startPluginLoading()
-                                            }
-                                            // 重新设置应用内容
-                                            setAppContent()
-                                        }
-                                    }
-                            )
-                        }
                         // 检查是否需要显示权限引导界面
-                        else if (showPermissionGuide) {
+                        if (showPermissionGuide) {
                             PermissionGuideScreen(
                                     onComplete = {
                                         showPermissionGuide = false
