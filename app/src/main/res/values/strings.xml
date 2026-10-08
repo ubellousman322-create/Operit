@@ -13,7 +13,6 @@
     <string name="nav_adb_commands">权限授予</string>
     <string name="nav_settings">设置</string>
     <string name="nav_tool_permissions">工具权限</string>
-    <string name="nav_about">关于</string>
     <string name="update_history">更新历史</string>
     <string name="update_load_failed">加载失败</string>
     <string name="update_latest">最新</string>
@@ -84,8 +83,7 @@
     <string name="floating_thinking_2">思考中...</string>
     <string name="floating_didnt_hear_clearly">没有听清</string>
     <string name="floating_hello">你好</string>
-    <string name="nav_help">使用手册</string>
-
+    
     <!-- Color Picker -->
     <string name="colorpicker_select_primary">选择主色</string>
     <string name="colorpicker_select_secondary">选择次色</string>
