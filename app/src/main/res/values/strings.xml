@@ -13,12 +13,6 @@
     <string name="nav_adb_commands">权限授予</string>
     <string name="nav_settings">设置</string>
     <string name="nav_tool_permissions">工具权限</string>
-    <string name="update_history">更新历史</string>
-    <string name="update_load_failed">加载失败</string>
-    <string name="update_latest">最新</string>
-    <string name="update_view_release">查看发布</string>
-    <string name="update_download">下载</string>
-    <string name="action_retry">重试</string>
     <string name="common_collapse">收起</string>
     <string name="common_expand_more">展开更多</string>
     <string name="nav_packages">包管理</string>
@@ -582,15 +576,9 @@
     
     <!-- About Screen -->
     <string name="about_title">关于 Operit AI</string>
-    <string name="about_version">版本: %1$s</string>
     <string name="about_description">Operit AI是一个智能助手应用，能够帮助用户更高效地使用设备，提供界面分析、聊天对话等功能。</string>
-    <string name="about_developer">开发者: &lt;a href="https://github.com/AAswordman"&gt;AAswordman&lt;/a&gt;</string>
-    <string name="about_contact">联系我们: aaswordsman@foxmail.com</string>
     <string name="about_website">&lt;a href="https://github.com/AAswordman/Operit"&gt;GitHub: https://github.com/AAswordman/Operit&lt;/a&gt;</string>
     <string name="about_copyright">© 2025 - 2026 Operit. 保留所有权利。</string>
-    <string name="star_on_github">在 GitHub 点个 Star</string>
-    <string name="update_log">更新日志</string>
-    <string name="app_logo_description">应用图标</string>
     <string name="github_star_description">GitHub Star</string>
 
     <!-- AI Chat Screen -->
@@ -1674,17 +1662,13 @@
     <string name="settings_appearance_section">外观设置</string>
     
     <!-- 关于屏幕 -->
-    <string name="check_for_updates">检查更新</string>
     <string name="checking_updates">检查中...</string>
     <string name="new_version_found">发现新版本</string>
-    <string name="check_complete">检查完成</string>
     <string name="check_failed">检查失败</string>
     <string name="update_check">更新检查</string>
     <string name="unknown_value">未知</string>
     <string name="current_version">当前版本: %1$s</string>
     <string name="new_version">当前版本: %1$s -> 新版本: %2$s</string>
-    <string name="update_content">更新内容:</string>
-    <string name="already_latest_version">当前已是最新版本: %1$s</string>
     <string name="download">去下载</string>
     <string name="ok">确定</string>
     <string name="dialog_title_prompt">提示</string>
@@ -1692,58 +1676,24 @@
     <string name="code_editor">代码编辑器</string>
     <string name="export_starting">开始导出...</string>
     <string name="floating_window_permission_denied">未获得悬浮窗权限，已关闭悬浮窗模式</string>
-    <string name="select_download_source">选择下载源</string>
-    <string name="select_download_source_desc">请选择适合您网络环境的下载源：</string>
-    <string name="select_update_method">选择更新方式</string>
-    <string name="select_update_method_desc">请选择更新方式：</string>
-    <string name="update_via_browser">浏览器更新</string>
-    <string name="update_via_browser_desc">跳转浏览器下载（与原流程一致）</string>
-    <string name="update_in_app">软件内更新</string>
-    <string name="update_in_app_desc">在应用内下载 APK，完成后自动拉起安装</string>
-    <string name="full_update">全量更新</string>
-    <string name="full_update_preparing">准备更新到 %1$s，正在下载安装包</string>
-    <string name="full_update_downloading">正在下载安装包</string>
-    <string name="full_update_ready_to_install">准备安装</string>
-    <string name="full_update_failed">全量更新失败: %1$s</string>
-    <string name="auto_select">自动选择</string>
-    <string name="mirror_download">%1$s 镜像下载</string>
     <string name="china_mirror">国内加速镜像</string>
-    <string name="china_mirror_desc">通过国内镜像服务器下载，速度更快</string>
-    <string name="github_source">GitHub原始链接</string>
-    <string name="github_source_desc">直接从GitHub官方服务器下载，速度可能较慢</string>
     <string name="no_mirrors_found">未找到可用的镜像源</string>
     <string name="beta_plan">Beta 计划</string>
-    <string name="beta_plan_desc">加入后将会在有更新的测试版本的时候，wifi下自动下载30MB左右的补丁更新。</string>
     <string name="main_github_login_success">登录成功，欢迎 %1$s！</string>
     <string name="main_github_get_user_failed">获取用户信息失败: %1$s</string>
     <string name="main_github_login_failed">登录失败: %1$s</string>
     <string name="main_github_login_error">登录过程中发生错误: %1$s</string>
-    <string name="main_update_available_toast">发现新版本 %1$s，请前往「关于」页面查看详情</string>
     <string name="beta_plan_enabled">已加入 Beta 计划</string>
     <string name="beta_plan_disabled">未加入 Beta 计划</string>
     <string name="beta_plan_join">加入</string>
     <string name="beta_plan_leave">退出</string>
-    <string name="patch_update">补丁更新</string>
-    <string name="patch_update_desc">下载补丁并在本机合成 APK 后安装</string>
     <string name="prepare_patch_update">准备补丁更新...</string>
     <string name="patch_update_failed">补丁更新失败: %1$s</string>
     <string name="patch_update_success">补丁更新已准备完成</string>
-    <string name="patch_update_failed_simple">补丁更新失败</string>
-    <string name="patch_update_prepare_downloading">准备更新到 %1$s，正在下载补丁</string>
-    <string name="patch_update_prepare_testing_mirrors">准备更新到 %1$s，正在测速镜像</string>
-    <string name="patch_update_testing_mirrors">正在测速镜像</string>
-    <string name="patch_update_selected_mirror">已选择镜像：%1$s</string>
-    <string name="patch_update_mirror_progress">测速进度：%1$d/%2$d</string>
-    <string name="patch_update_selected_short">已选择：%1$s</string>
-    <string name="patch_update_mirror_available">可用</string>
-    <string name="patch_update_mirror_unavailable">不可用</string>
-    <string name="patch_update_mirror_test_failed">测速失败</string>
-    <string name="patch_update_launching_installer">正在拉起安装...</string>
     <string name="patch_update_stage_selecting_mirror">正在选择镜像</string>
     <string name="patch_update_stage_downloading_meta">正在下载补丁元信息</string>
     <string name="patch_update_label_meta">补丁元信息</string>
     <string name="patch_update_stage_resolving_chain">正在解析补丁链路</string>
-    <string name="patch_update_chain_progress">扫描进度：%1$d/%2$d</string>
     <string name="patch_update_stage_downloading_meta_step">正在下载补丁元信息 (%1$d/%2$d)</string>
     <string name="patch_update_label_meta_step">补丁元信息 %1$d/%2$d</string>
     <string name="patch_update_stage_downloading_patch_step">正在下载补丁包 (%1$d/%2$d)</string>
@@ -1755,9 +1705,6 @@
     <string name="patch_install_confirm_message">检测到新补丁版本：%1$s\n\n是否现在安装？</string>
     <string name="developer">开发者</string>
     <string name="contact">联系方式</string>
-    <string name="project_url">项目地址</string>
-    <string name="open_source_licenses">开源许可声明</string>
-    <string name="license_format">许可: %1$s</string>
     <string name="visit_project">访问项目</string>
     
     <!-- AccessibilityWizardCard -->
@@ -6080,7 +6027,6 @@
     <string name="backup_character_cards_import_result_failed">导入失败：未找到有效的角色卡</string>
 
     <!-- About Screen -->
-    <string name="about_version_unknown">未知</string>
 
     <!-- Default Assistant Guide -->
     <string name="default_assist_collapse">收起</string>
@@ -7674,8 +7620,6 @@
     <string name="mcp_merge_config">合并配置</string>
     <string name="mcp_manage_env_variables">管理环境变量</string>
     <string name="mcp_error_no_zip_selected">未选择ZIP文件</string>
-    <string name="update_unknown_error">未知错误</string>
-    <string name="update_version_title">版本 %1$s</string>
     <string name="avatar_reset">重置</string>
 
     <!-- WorkflowExecutor (新增) -->
