@@ -123,6 +123,7 @@ object ScreenRouteRegistry {
                 screen = Screen.MessageFavorites,
                 surface = NavigationSurface.MAIN_SIDEBAR_AI,
                 titleResId = R.string.message_favorites,
+                launchNavItem = NavItem.MessageFavorites,
                 descriptionResId = R.string.message_favorites_desc,
                 icon = Icons.Default.Star,
                 order = 30
