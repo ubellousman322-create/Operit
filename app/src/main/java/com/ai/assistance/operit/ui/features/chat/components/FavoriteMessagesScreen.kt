@@ -2,6 +2,7 @@ package com.ai.assistance.operit.ui.features.chat.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,11 +50,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.model.FavoriteMessageEntry
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
 import com.ai.assistance.operit.ui.theme.liquidGlass
+import com.ai.assistance.operit.util.ChatMarkupRegex
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -93,6 +96,40 @@ internal fun buildFavoriteMessageGroups(
         }
     }
     return groups.sortedByDescending { group -> group.entries.maxOf { it.timestamp } }
+}
+
+private val THINK_BLOCK_REGEX =
+    Regex("<think\\b[^>]*>[\\s\\S]*?</think\\s*>", RegexOption.IGNORE_CASE)
+private val THINK_TAG_REGEX = Regex("</?think\\b[^>]*>", RegexOption.IGNORE_CASE)
+private val ATTACHMENT_BLOCK_REGEX =
+    Regex("<attachment\\b[^>]*>[\\s\\S]*?</attachment\\s*>", RegexOption.IGNORE_CASE)
+private val ATTACHMENT_OPEN_TAG_REGEX = Regex("<attachment\\b[^>]*>", RegexOption.IGNORE_CASE)
+private val MISC_MARKUP_TAG_REGEX =
+    Regex(
+        "</?(?:workspace_attachment|voice|silent|proxy_sender|meme|sticker|plantodo|uno)\\b[^>]*>",
+        RegexOption.IGNORE_CASE,
+    )
+private val EXTRA_BLANK_LINES_REGEX = Regex("\\n{3,}")
+
+/**
+ * 收藏页要的是“话”，不是协议：把思考块、附件块、工具调用和各类标记都摘掉，
+ * 只留下真正说出口的那部分。
+ */
+internal fun sanitizeFavoriteContent(raw: String): String {
+    var text = raw
+    text = THINK_BLOCK_REGEX.replace(text, "\n")
+    text = ChatMarkupRegex.toolOrToolResultBlock.replace(text, "\n")
+    text = ATTACHMENT_BLOCK_REGEX.replace(text, "\n")
+    text = ATTACHMENT_OPEN_TAG_REGEX.replace(text, " ")
+    text = MISC_MARKUP_TAG_REGEX.replace(text, " ")
+    text = THINK_TAG_REGEX.replace(text, " ")
+    val openThinkIndex = text.indexOf("<think", ignoreCase = true)
+    if (openThinkIndex >= 0) {
+        text = text.substring(0, openThinkIndex)
+    }
+    text = text.lineSequence().joinToString("\n") { it.trim() }
+    text = EXTRA_BLANK_LINES_REGEX.replace(text, "\n\n")
+    return text.trim()
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -188,7 +225,9 @@ fun FavoriteMessagesScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     item {
-                        Column(modifier = Modifier.padding(start = 6.dp, top = 2.dp, bottom = 6.dp)) {
+                        Column(
+                            modifier = Modifier.padding(start = 6.dp, top = 2.dp, bottom = 6.dp)
+                        ) {
                             Text(
                                 text =
                                     stringResource(
@@ -203,7 +242,8 @@ fun FavoriteMessagesScreen(
                             Text(
                                 text = stringResource(R.string.message_favorites_hint),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
+                                color =
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                             )
                         }
                     }
@@ -246,7 +286,7 @@ fun FavoriteMessagesScreen(
 @Composable
 private fun FavoriteMessageGroupCard(
     group: FavoriteMessageGroup,
-    maxBubbleWidth: androidx.compose.ui.unit.Dp,
+    maxBubbleWidth: Dp,
     onJumpToEntry: (FavoriteMessageEntry) -> Unit,
     onRequestRemove: (FavoriteMessageEntry) -> Unit,
 ) {
@@ -309,17 +349,21 @@ private fun FavoriteMessageGroupCard(
 @Composable
 private fun FavoriteMessageBubble(
     entry: FavoriteMessageEntry,
-    maxBubbleWidth: androidx.compose.ui.unit.Dp,
+    maxBubbleWidth: Dp,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
     val isUser = entry.sender == "user"
-    val isThinking = !isUser && entry.previewContent.trimStart().startsWith("<think>")
+    val sanitized =
+        remember(entry.timestamp, entry.previewContent) {
+            sanitizeFavoriteContent(entry.previewContent)
+        }
+    val bodyText =
+        sanitized.ifBlank { stringResource(R.string.message_favorites_no_body) }
     val bubbleColor =
         when {
             isUser -> MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-            isThinking -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f)
-            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.62f)
+            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f)
         }
     val bubbleShape =
         RoundedCornerShape(
@@ -328,6 +372,8 @@ private fun FavoriteMessageBubble(
             bottomStart = if (isUser) 18.dp else 7.dp,
             bottomEnd = if (isUser) 7.dp else 18.dp,
         )
+    var expanded by remember(entry.timestamp) { mutableStateOf(false) }
+    var everOverflowed by remember(entry.timestamp) { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxWidth()) {
         Box(
@@ -338,28 +384,43 @@ private fun FavoriteMessageBubble(
                     .background(bubbleColor, bubbleShape)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
         ) {
-            Text(
-                text = favoritePreviewText(entry),
-                style = MaterialTheme.typography.bodyMedium,
-                color =
-                    if (isThinking) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
+            Column {
+                Text(
+                    text = bodyText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color =
+                        if (sanitized.isBlank()) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                    maxLines = if (expanded) Int.MAX_VALUE else 8,
+                    overflow = TextOverflow.Ellipsis,
+                    onTextLayout = { layout ->
+                        if (!expanded && layout.hasVisualOverflow) {
+                            everOverflowed = true
+                        }
                     },
-                maxLines = 5,
-                overflow = TextOverflow.Ellipsis,
-            )
+                )
+                if (everOverflowed) {
+                    Text(
+                        text =
+                            stringResource(
+                                if (expanded) {
+                                    R.string.message_favorites_collapse
+                                } else {
+                                    R.string.message_favorites_expand
+                                }
+                            ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier =
+                            Modifier.padding(top = 5.dp).clickable { expanded = !expanded },
+                    )
+                }
+            }
         }
     }
-}
-
-private fun favoritePreviewText(entry: FavoriteMessageEntry): String {
-    val text = entry.previewContent.replace('\n', ' ').trim()
-    if (text.isEmpty()) {
-        return "…"
-    }
-    return if (entry.contentLength > text.length) "$text…" else text
 }
 
 private fun formatFavoriteTimestamp(timestamp: Long): String =
