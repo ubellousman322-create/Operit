@@ -94,7 +94,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
     companion object {
         private const val TAG = "ChatHistoryManager"
         private const val LOCATOR_PREVIEW_CHAR_COUNT = 48
-        private const val FAVORITE_PREVIEW_CHAR_COUNT = 160
+        private const val FAVORITE_PREVIEW_CHAR_COUNT = 8000
         private const val FAVORITE_ENTRY_LIMIT = 800
         private const val TEXT_EXPORT_STREAMING_THRESHOLD_CHARACTER_COUNT = 4_000_000L
         private const val TEXT_EXPORT_WRITER_BUFFER_SIZE = 64 * 1024
