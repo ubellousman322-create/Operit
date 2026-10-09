@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="message_favorites">Favorites</string>
+    <string name="message_favorites_desc">Every starred message, in one place</string>
+    <string name="message_favorites_empty">No starred messages yet</string>
+    <string name="message_favorites_untitled_chat">Untitled chat</string>
+    <string name="message_favorites_remove">Remove from favorites</string>
+    <string name="message_favorites_sender_user">You</string>
+    <string name="message_favorites_sender_ai">Me</string>
+    <string name="message_favorites_sender_summary">Summary</string>
+</resources>
