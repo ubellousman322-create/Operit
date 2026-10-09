@@ -53,6 +53,7 @@ import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.ui.features.chat.components.ChatStyle
 import com.ai.assistance.operit.ui.features.chat.components.style.bubble.BubbleImageBackgroundSurface
 import com.ai.assistance.operit.ui.features.chat.components.style.bubble.BubbleImageStyleConfig
+import com.ai.assistance.operit.ui.features.chat.components.style.bubble.VoiceNotePaletteSection
 import com.ai.assistance.operit.ui.features.settings.components.ChatStyleOption
 import com.ai.assistance.operit.ui.features.settings.components.ColorSelectionItem
 import com.ai.assistance.operit.ui.features.settings.components.ThemeModeOption
