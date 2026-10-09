@@ -3,7 +3,9 @@ package com.huigu.phone10.mobile
 import java.util.UUID
 
 /** Named snapshots share the existing encrypted settings file, never a plaintext export. */
-data class VoiceProfile(val id: String, val name: String, val speech: SpeechConfig, val voiceName: String?)
+data class VoiceProfile(val id: String, val name: String, val speech: SpeechConfig, val voiceName: String?,
+    /** 通话专用提示词跟着方案走：换一套声音，就换一套说话方式。 */
+    val callPrompt: String? = null)
 
 internal fun MobileSettings.profiles(): List<VoiceProfile> = voiceProfiles.orEmpty()
 
@@ -23,14 +25,16 @@ internal fun MobileSettings.saveVoiceProfile(name: String, replaceId: String? = 
     require(existing.none { it.name == title && it.id != replaceId }) { "已有同名方案，请换个名字；修改已有方案请先在首页选择它。" }
     require(replaceId == null || existing.any { it.id == replaceId }) { "这个方案已移除，请重新保存。" }
     require(replaceId != null || existing.size < 20) { "最多保存 20 套语音方案，请先移除不用的方案。" }
-    val profile = VoiceProfile(replaceId ?: UUID.randomUUID().toString(), title, speech, voiceName)
+    val profile = VoiceProfile(replaceId ?: UUID.randomUUID().toString(), title, speech, voiceName,
+        callPrompt?.trim()?.takeIf { it.isNotEmpty() })
     return copy(activeVoiceProfileId = profile.id,
         voiceProfiles = if (replaceId == null) existing + profile else existing.map { if (it.id == replaceId) profile else it })
 }
 
 internal fun MobileSettings.selectVoiceProfile(id: String): MobileSettings {
     val profile = requireNotNull(profiles().firstOrNull { it.id == id }) { "这个方案已移除，请重新选择。" }
-    return copy(speech = profile.speech, voiceName = profile.voiceName, activeVoiceProfileId = id)
+    return copy(speech = profile.speech, voiceName = profile.voiceName,
+        callPrompt = profile.callPrompt, activeVoiceProfileId = id)
 }
 
 internal fun MobileSettings.removeVoiceProfile(id: String): MobileSettings =
