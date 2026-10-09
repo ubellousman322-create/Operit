@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.TableView
 import androidx.compose.material.icons.filled.Terminal
@@ -116,6 +117,15 @@ object ScreenRouteRegistry {
                 launchNavItem = NavItem.AiChat,
                 icon = NavItem.AiChat.icon,
                 order = 10
+            ),
+            hostEntryDefinition(
+                entryId = "main.message_favorites",
+                screen = Screen.MessageFavorites,
+                surface = NavigationSurface.MAIN_SIDEBAR_AI,
+                titleResId = R.string.message_favorites,
+                descriptionResId = R.string.message_favorites_desc,
+                icon = Icons.Default.Star,
+                order = 30
             ),
             hostEntryDefinition(
                 entryId = "main.assistant_config",
