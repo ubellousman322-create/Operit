@@ -11,6 +11,9 @@
     <string name="message_favorites_cancel">Cancel</string>
     <string name="message_favorites_hint">Tap one to jump back to it; long-press to remove it from favorites.</string>
     <string name="message_favorites_summary">%1$d starred · %2$d groups</string>
+    <string name="message_favorites_expand">Show full text</string>
+    <string name="message_favorites_collapse">Collapse</string>
+    <string name="message_favorites_no_body">(only reasoning or attachments here, no text)</string>
     <string name="message_favorites_sender_user">You</string>
     <string name="message_favorites_sender_ai">Me</string>
     <string name="message_favorites_sender_summary">Summary</string>
