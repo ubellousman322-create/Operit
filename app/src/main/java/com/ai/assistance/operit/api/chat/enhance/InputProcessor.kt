@@ -4,6 +4,7 @@ import android.content.Context
 import com.ai.assistance.operit.core.chat.hooks.buildActivePromptHookMetadata
 import com.ai.assistance.operit.core.chat.hooks.PromptHookContext
 import com.ai.assistance.operit.core.chat.hooks.PromptHookRegistry
+import com.ai.assistance.operit.integrations.mobilevoice.VoiceCallSession
 
 /**
  * Utility class for processing user input
@@ -23,7 +24,9 @@ object InputProcessor {
         roleCardId: String? = null,
         onHookTimeout: ((String) -> Unit)? = null
     ): String {
-        val activePromptMetadata = buildActivePromptHookMetadata(context, chatId, roleCardId)
+        val activePromptMetadata =
+            buildActivePromptHookMetadata(context, chatId, roleCardId) +
+                if (VoiceCallSession.isActive()) mapOf("voiceCall" to true) else emptyMap()
         val beforeContext =
             PromptHookRegistry.dispatchPromptInputHooks(
                 PromptHookContext(
