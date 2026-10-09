@@ -19,6 +19,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,13 +55,16 @@ fun VoiceNoteBubble(mark: VoiceNoteMark, context: Context, modifier: Modifier = 
     val peaks = remember(mark.file) { runCatching { readPeaks(file) }.getOrDefault(emptyList()) }
     var playing by remember(mark.file) { mutableStateOf(false) }
     val player = remember(mark.file) { arrayOfNulls<MediaPlayer>(1) }
+    LaunchedEffect(Unit) { VoiceNoteThemeStore.attach(context) }
+    val themeId by VoiceNoteThemeStore.current.collectAsState()
+    val palette = remember(themeId) { VoiceNoteThemes.byId(themeId) }
 
     Row(
         modifier =
             modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(18.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f))
+                .background(palette.backgroundBrush)
                 .clickable {
                     val current = player[0]
                     if (playing) {
@@ -90,10 +95,10 @@ fun VoiceNoteBubble(mark: VoiceNoteMark, context: Context, modifier: Modifier = 
                 Modifier
                     .size(30.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)),
+                    .background(palette.playBg),
             contentAlignment = Alignment.Center
         ) {
-            Text(if (playing) "❚❚" else "▶", color = Color.White, fontSize = 12.sp)
+            Text(if (playing) "❚❚" else "▶", color = palette.playIcon, fontSize = 12.sp)
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -109,14 +114,14 @@ fun VoiceNoteBubble(mark: VoiceNoteMark, context: Context, modifier: Modifier = 
                             .weight(1f)
                             .height((22f * value.coerceIn(0.12f, 1f)).dp)
                             .clip(RoundedCornerShape(1.dp))
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.75f))
+                            .background(if (playing) palette.waveActive else palette.waveIdle)
                     )
                 }
             }
             Text(
                 text = formatDuration(mark.durationMs),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = palette.durationColor
             )
         }
     }
