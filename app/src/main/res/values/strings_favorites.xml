@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="message_favorites">收藏</string>
+    <string name="message_favorites_desc">打过星的对话，都收在这里</string>
+    <string name="message_favorites_empty">还没有打过星的消息</string>
+    <string name="message_favorites_untitled_chat">未命名会话</string>
+    <string name="message_favorites_remove">取消收藏</string>
+    <string name="message_favorites_sender_user">你</string>
+    <string name="message_favorites_sender_ai">我</string>
+    <string name="message_favorites_sender_summary">摘要</string>
+</resources>
