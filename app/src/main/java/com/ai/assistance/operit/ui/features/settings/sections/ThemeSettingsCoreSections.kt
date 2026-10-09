@@ -832,6 +832,8 @@ internal fun ThemeSettingsChatStyleSection(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
+                VoiceNotePaletteSection()
+
                 Text(
                     text = stringResource(id = R.string.chat_style_bubble_text_style_title),
                     style = MaterialTheme.typography.bodyMedium,
