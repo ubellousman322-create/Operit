@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.components
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -86,7 +89,7 @@ internal fun buildFavoriteMessageGroups(
     return groups.sortedByDescending { group -> group.entries.maxOf { it.timestamp } }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun FavoriteMessagesScreen(
     onGoBack: () -> Unit,
@@ -98,6 +101,10 @@ fun FavoriteMessagesScreen(
     var entries by remember { mutableStateOf<List<FavoriteMessageEntry>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var reloadToken by remember { mutableStateOf(0) }
+    var removalTarget by
+        remember {
+            mutableStateOf<Pair<FavoriteMessageGroup, FavoriteMessageEntry>?>(null)
+        }
 
     LaunchedEffect(reloadToken) {
         loading = true
@@ -106,6 +113,16 @@ fun FavoriteMessagesScreen(
     }
 
     val groups = remember(entries) { buildFavoriteMessageGroups(entries) }
+
+    val confirmRemoval: (FavoriteMessageGroup, FavoriteMessageEntry) -> Unit = { group, entry ->
+        removalTarget = null
+        scope.launch {
+            withContext(Dispatchers.IO) {
+                manager.setMessageFavorite(group.chatId, entry.timestamp, false)
+            }
+            reloadToken += 1
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -146,6 +163,14 @@ fun FavoriteMessagesScreen(
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    item {
+                        Text(
+                            text = stringResource(R.string.message_favorites_hint),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 4.dp),
+                        )
+                    }
                     items(
                         items = groups,
                         key = { group -> group.chatId + "#" + group.entries.first().timestamp },
@@ -155,22 +180,29 @@ fun FavoriteMessagesScreen(
                             onJumpToEntry = { entry ->
                                 onJumpToFavorite(group.chatId, entry.timestamp)
                             },
-                            onRemoveEntry = { entry ->
-                                scope.launch {
-                                    withContext(Dispatchers.IO) {
-                                        manager.setMessageFavorite(
-                                            group.chatId,
-                                            entry.timestamp,
-                                            false,
-                                        )
-                                    }
-                                    reloadToken += 1
-                                }
-                            },
+                            onRequestRemove = { entry -> removalTarget = group to entry },
                         )
                     }
                 }
         }
+    }
+
+    removalTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { removalTarget = null },
+            title = { Text(stringResource(R.string.message_favorites_remove_title)) },
+            text = { Text(stringResource(R.string.message_favorites_remove_message)) },
+            confirmButton = {
+                TextButton(onClick = { confirmRemoval(target.first, target.second) }) {
+                    Text(stringResource(R.string.message_favorites_remove_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { removalTarget = null }) {
+                    Text(stringResource(R.string.message_favorites_cancel))
+                }
+            },
+        )
     }
 }
 
@@ -178,7 +210,7 @@ fun FavoriteMessagesScreen(
 private fun FavoriteMessageGroupCard(
     group: FavoriteMessageGroup,
     onJumpToEntry: (FavoriteMessageEntry) -> Unit,
-    onRemoveEntry: (FavoriteMessageEntry) -> Unit,
+    onRequestRemove: (FavoriteMessageEntry) -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
         Column(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
@@ -212,21 +244,25 @@ private fun FavoriteMessageGroupCard(
                 FavoriteMessageRow(
                     entry = entry,
                     onClick = { onJumpToEntry(entry) },
-                    onRemove = { onRemoveEntry(entry) },
+                    onLongClick = { onRequestRemove(entry) },
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FavoriteMessageRow(
     entry: FavoriteMessageEntry,
     onClick: () -> Unit,
-    onRemove: () -> Unit,
+    onLongClick: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 6.dp),
+        modifier =
+            Modifier.fillMaxWidth()
+                .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+                .padding(vertical = 8.dp),
         verticalAlignment = Alignment.Top,
     ) {
         Text(
@@ -243,14 +279,6 @@ private fun FavoriteMessageRow(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
-            Icon(
-                imageVector = Icons.Filled.Star,
-                contentDescription = stringResource(R.string.message_favorites_remove),
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(16.dp),
-            )
-        }
     }
 }
 
