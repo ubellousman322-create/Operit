@@ -12,6 +12,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.huigu.phone10.mobile.OperitLocalVoiceHost
 import com.huigu.phone10.mobile.OperitPending
+import com.huigu.phone10.mobile.SettingsStore
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -143,6 +144,21 @@ class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoice
             pending.acceptEmbedded(fail(pending, "OPERIT_INVALID_REQUEST"))
             return
         }
+        // 通话进行中：这一轮的系统提示末尾要贴通话专用提示词。
+        // 打字聊天不走这里，所以那边一个字都不会变；异常也会在 finally 里清干净。
+        VoiceCallSession.begin(readCallPrompt())
+        try {
+            handleReplyTurn(pending, text)
+        } finally {
+            VoiceCallSession.end()
+        }
+    }
+
+    /** 通话专用提示词写在耳畔的连接配置里；同一进程同一个包，直接读加密设置即可。 */
+    private fun readCallPrompt(): String? =
+        runCatching { SettingsStore(hostContext).load().callPrompt }.getOrNull()
+
+    private suspend fun handleReplyTurn(pending: OperitPending, text: String) {
         val request = ExternalChatRequest(
             requestId = pending.id,
             message = text,
