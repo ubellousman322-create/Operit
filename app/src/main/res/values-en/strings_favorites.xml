@@ -5,6 +5,11 @@
     <string name="message_favorites_empty">No starred messages yet</string>
     <string name="message_favorites_untitled_chat">Untitled chat</string>
     <string name="message_favorites_remove">Remove from favorites</string>
+    <string name="message_favorites_remove_title">Remove this favorite?</string>
+    <string name="message_favorites_remove_message">It will only disappear from here; the message in the chat stays untouched.</string>
+    <string name="message_favorites_remove_confirm">Remove</string>
+    <string name="message_favorites_cancel">Cancel</string>
+    <string name="message_favorites_hint">Tap one to jump back to it; long-press to remove it from favorites.</string>
     <string name="message_favorites_sender_user">You</string>
     <string name="message_favorites_sender_ai">Me</string>
     <string name="message_favorites_sender_summary">Summary</string>
