@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Token
@@ -19,6 +20,8 @@ import com.ai.assistance.operit.R
 // 应用导航项
 sealed class NavItem(val route: String, val titleResId: Int, val icon: ImageVector) {
         object AiChat : NavItem("ai_chat", R.string.nav_ai_chat, Icons.Default.Email)
+        object MessageFavorites :
+                NavItem("message_favorites", R.string.message_favorites, Icons.Default.Star)
         object ShizukuCommands :
                 NavItem("shizuku_commands", R.string.shizuku_commands, Icons.Default.Build)
         object AssistantConfig :
