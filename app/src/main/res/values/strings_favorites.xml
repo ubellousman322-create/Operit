@@ -5,6 +5,11 @@
     <string name="message_favorites_empty">还没有打过星的消息</string>
     <string name="message_favorites_untitled_chat">未命名会话</string>
     <string name="message_favorites_remove">取消收藏</string>
+    <string name="message_favorites_remove_title">取消这条收藏？</string>
+    <string name="message_favorites_remove_message">取消之后它只是不再收在这里，聊天里那条消息本身不会被动。</string>
+    <string name="message_favorites_remove_confirm">取消收藏</string>
+    <string name="message_favorites_cancel">算了</string>
+    <string name="message_favorites_hint">点一条跳回它原来的位置；长按可以取消收藏。</string>
     <string name="message_favorites_sender_user">你</string>
     <string name="message_favorites_sender_ai">我</string>
     <string name="message_favorites_sender_summary">摘要</string>
