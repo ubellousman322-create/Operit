@@ -11,6 +11,9 @@
     <string name="message_favorites_cancel">算了</string>
     <string name="message_favorites_hint">点一条跳回它原来的位置；长按可以取消收藏。</string>
     <string name="message_favorites_summary">%1$d 条收藏 · %2$d 组</string>
+    <string name="message_favorites_expand">展开全文</string>
+    <string name="message_favorites_collapse">收起</string>
+    <string name="message_favorites_no_body">（这条只有思考或附件，没有正文）</string>
     <string name="message_favorites_sender_user">你</string>
     <string name="message_favorites_sender_ai">我</string>
     <string name="message_favorites_sender_summary">摘要</string>
