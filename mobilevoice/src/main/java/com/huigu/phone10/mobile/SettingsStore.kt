@@ -28,6 +28,8 @@ data class MobileSettings(
     val listenOnly: Boolean = false,
     val confirmBeforeSend: Boolean = false,
     val allowIncoming: Boolean = true,
+    /** 通话专用提示词：只在通话时贴到系统提示末尾，随语音方案一起保存。 */
+    val callPrompt: String? = null,
 )
 
 /** User-owned credentials stay encrypted in this app's non-backup storage. */
