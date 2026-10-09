@@ -23,6 +23,7 @@ import com.ai.assistance.operit.core.chat.hooks.buildActivePromptHookMetadata
 import com.ai.assistance.operit.core.chat.hooks.mergeAdjacentTurns
 import com.ai.assistance.operit.core.chat.hooks.toPromptTurns
 import com.ai.assistance.operit.core.chat.hooks.toRoleContentPairs
+import com.ai.assistance.operit.integrations.mobilevoice.VoiceCallSession
 import com.ai.assistance.operit.core.application.ActivityLifecycleManager
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.StringResultData
@@ -722,6 +723,19 @@ class EnhancedAIService private constructor(private val context: Context) {
     }
 
     private fun bypassPromptHooks(context: PromptHookContext): PromptHookContext = context
+
+    /**
+     * 系统提示的最后一手。通话进行中时，把通话专用提示词追加在最后：
+     * 它不进聊天历史，也不随轮次移动位置，所以通话期间每一轮请求的前缀保持一致，
+     * 只有用户自己改动这段文字的那一轮才会让缓存重建一次。
+     */
+    private fun composeSystemPromptWithVoiceCall(context: PromptHookContext): PromptHookContext {
+        val composed = PromptHookRegistry.dispatchSystemPromptComposeHooks(context)
+        if (context.stage != "after_compose_system_prompt") return composed
+        val suffix = VoiceCallSession.promptForSystemSuffix() ?: return composed
+        val base = composed.systemPrompt ?: return composed
+        return composed.copy(systemPrompt = base + "\n\n" + suffix)
+    }
 
     private suspend fun buildPromptFinalizeMetadata(
         chatId: String?,
@@ -2651,7 +2665,7 @@ class EnhancedAIService private constructor(private val context: Context) {
             dispatchHistoryHooks: (PromptHookContext) -> PromptHookContext =
                 PromptHookRegistry::dispatchPromptHistoryHooks,
             dispatchSystemPromptComposeHooks: (PromptHookContext) -> PromptHookContext =
-                PromptHookRegistry::dispatchSystemPromptComposeHooks,
+                ::composeSystemPromptWithVoiceCall,
             dispatchToolPromptComposeHooks: (PromptHookContext) -> PromptHookContext =
                 PromptHookRegistry::dispatchToolPromptComposeHooks
     ): List<PromptTurn> {
