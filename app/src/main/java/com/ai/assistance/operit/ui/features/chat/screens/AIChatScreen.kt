@@ -78,6 +78,7 @@ import com.ai.assistance.operit.ui.features.chat.webview.computer.ComputerScreen
 import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatViewModel
 import com.ai.assistance.operit.ui.main.LocalTopBarActions
 import com.ai.assistance.operit.ui.main.PendingChatDraftHandler
+import com.ai.assistance.operit.ui.main.PendingMessageJumpHandler
 import com.ai.assistance.operit.ui.main.components.LocalAppBarContentColor
 import com.ai.assistance.operit.ui.main.screens.GestureStateHolder
 import com.ai.assistance.operit.ui.main.SharedFileHandler
@@ -394,6 +395,17 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
 
         actualViewModel.createNewChatWithDraft(draft)
         PendingChatDraftHandler.clearPendingDraft()
+    }
+    val pendingMessageJump by PendingMessageJumpHandler.pendingJump.collectAsState()
+    LaunchedEffect(pendingMessageJump, isCurrentScreen, currentChatId) {
+        if (!isCurrentScreen) return@LaunchedEffect
+        val jump = pendingMessageJump ?: return@LaunchedEffect
+        if (currentChatId != jump.chatId) {
+            actualViewModel.switchChat(jump.chatId)
+            return@LaunchedEffect
+        }
+        PendingMessageJumpHandler.clearPendingJump()
+        actualViewModel.revealMessageForCurrentChat(jump.timestamp)
     }
 
 
