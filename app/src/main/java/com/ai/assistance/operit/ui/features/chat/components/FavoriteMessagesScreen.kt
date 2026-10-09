@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,14 +15,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -31,6 +33,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,6 +43,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -48,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.model.FavoriteMessageEntry
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
+import com.ai.assistance.operit.ui.theme.liquidGlass
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -98,6 +104,7 @@ fun FavoriteMessagesScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val manager = remember(context) { ChatHistoryManager.getInstance(context) }
+    val maxBubbleWidth = (LocalConfiguration.current.screenWidthDp * 0.76f).dp
     var entries by remember { mutableStateOf<List<FavoriteMessageEntry>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var reloadToken by remember { mutableStateOf(0) }
@@ -125,14 +132,22 @@ fun FavoriteMessagesScreen(
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.message_favorites)) },
+                title = {
+                    Text(
+                        text = stringResource(R.string.message_favorites),
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onGoBack) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = null)
                     }
                 },
+                colors =
+                    TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
             )
         }
     ) { innerPadding ->
@@ -150,26 +165,47 @@ fun FavoriteMessagesScreen(
                     modifier = Modifier.fillMaxSize().padding(innerPadding),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        text = stringResource(R.string.message_favorites_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Outlined.StarOutline,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.size(36.dp),
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = stringResource(R.string.message_favorites_empty),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
 
             else ->
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(innerPadding),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     item {
-                        Text(
-                            text = stringResource(R.string.message_favorites_hint),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 4.dp),
-                        )
+                        Column(modifier = Modifier.padding(start = 6.dp, top = 2.dp, bottom = 6.dp)) {
+                            Text(
+                                text =
+                                    stringResource(
+                                        R.string.message_favorites_summary,
+                                        entries.size,
+                                        groups.size,
+                                    ),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = stringResource(R.string.message_favorites_hint),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
+                            )
+                        }
                     }
                     items(
                         items = groups,
@@ -177,6 +213,7 @@ fun FavoriteMessagesScreen(
                     ) { group ->
                         FavoriteMessageGroupCard(
                             group = group,
+                            maxBubbleWidth = maxBubbleWidth,
                             onJumpToEntry = { entry ->
                                 onJumpToFavorite(group.chatId, entry.timestamp)
                             },
@@ -209,86 +246,113 @@ fun FavoriteMessagesScreen(
 @Composable
 private fun FavoriteMessageGroupCard(
     group: FavoriteMessageGroup,
+    maxBubbleWidth: androidx.compose.ui.unit.Dp,
     onJumpToEntry: (FavoriteMessageEntry) -> Unit,
     onRequestRemove: (FavoriteMessageEntry) -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-        Column(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp),
+    Column(
+        modifier =
+            Modifier.fillMaxWidth()
+                .liquidGlass(
+                    enabled = true,
+                    shape = RoundedCornerShape(22.dp),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 12.dp,
+                    borderWidth = 0.6.dp,
+                    blurRadius = 14.dp,
+                    overlayAlphaBoost = 0.04f,
+                    enableLens = false,
                 )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text =
-                        group.chatTitle?.takeIf { it.isNotBlank() }
-                            ?: stringResource(R.string.message_favorites_untitled_chat),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = formatFavoriteTimestamp(group.entries.last().timestamp),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                .padding(horizontal = 14.dp, vertical = 13.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Filled.Star,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(13.dp),
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text =
+                    group.chatTitle?.takeIf { it.isNotBlank() }
+                        ?: stringResource(R.string.message_favorites_untitled_chat),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = formatFavoriteTimestamp(group.entries.last().timestamp),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+            )
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        group.entries.forEachIndexed { index, entry ->
+            if (index > 0) {
+                Spacer(modifier = Modifier.height(6.dp))
             }
-            Spacer(modifier = Modifier.height(6.dp))
-            group.entries.forEach { entry ->
-                FavoriteMessageRow(
-                    entry = entry,
-                    onClick = { onJumpToEntry(entry) },
-                    onLongClick = { onRequestRemove(entry) },
-                )
-            }
+            FavoriteMessageBubble(
+                entry = entry,
+                maxBubbleWidth = maxBubbleWidth,
+                onClick = { onJumpToEntry(entry) },
+                onLongClick = { onRequestRemove(entry) },
+            )
         }
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun FavoriteMessageRow(
+private fun FavoriteMessageBubble(
     entry: FavoriteMessageEntry,
+    maxBubbleWidth: androidx.compose.ui.unit.Dp,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
-    Row(
-        modifier =
-            Modifier.fillMaxWidth()
-                .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-                .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Text(
-            text = favoriteSpeakerLabel(entry.sender),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.width(30.dp),
+    val isUser = entry.sender == "user"
+    val isThinking = !isUser && entry.previewContent.trimStart().startsWith("<think>")
+    val bubbleColor =
+        when {
+            isUser -> MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+            isThinking -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f)
+            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.62f)
+        }
+    val bubbleShape =
+        RoundedCornerShape(
+            topStart = 18.dp,
+            topEnd = 18.dp,
+            bottomStart = if (isUser) 18.dp else 7.dp,
+            bottomEnd = if (isUser) 7.dp else 18.dp,
         )
-        Spacer(modifier = Modifier.width(6.dp))
-        Text(
-            text = favoritePreviewText(entry),
-            style = MaterialTheme.typography.bodyMedium,
-            maxLines = 4,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier =
+                Modifier.align(if (isUser) Alignment.CenterEnd else Alignment.CenterStart)
+                    .widthIn(max = maxBubbleWidth)
+                    .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+                    .background(bubbleColor, bubbleShape)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+        ) {
+            Text(
+                text = favoritePreviewText(entry),
+                style = MaterialTheme.typography.bodyMedium,
+                color =
+                    if (isThinking) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                maxLines = 5,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
-
-@Composable
-private fun favoriteSpeakerLabel(sender: String): String =
-    when (sender) {
-        "user" -> stringResource(R.string.message_favorites_sender_user)
-        "summary" -> stringResource(R.string.message_favorites_sender_summary)
-        else -> stringResource(R.string.message_favorites_sender_ai)
-    }
 
 private fun favoritePreviewText(entry: FavoriteMessageEntry): String {
     val text = entry.previewContent.replace('\n', ' ').trim()
