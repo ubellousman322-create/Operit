@@ -52,6 +52,11 @@ import java.util.Locale
             ErpanNavigationCard("选中聊天窗口", subtitle = if (listing) "正在读取…" else settings.displayChat(),
                 enabled = enabled && !listing, onClick = onChats)
             Hint("聊天模型、角色和历史在 Operit 中设置")
+            PromptField("通话提示词（选填）", settings.callPrompt.orEmpty(), enabled,
+                placeholder = "只在通话时贴在系统提示最末尾。例如：现在是通话，用短句、口语说话，别端着。") {
+                onChange(settings.copy(callPrompt = it.take(4000).ifBlank { null }))
+            }
+            Hint("只在通话时生效，不进聊天记录，位置固定在系统提示最后；随当前方案保存，改完下一句通话就是新的。")
             ConfigDivider()
             SectionTitle("语音方案")
             Text(profileName ?: "新方案", fontSize = 17.sp)
@@ -256,6 +261,21 @@ import java.util.Locale
             keyboardOptions = if (secret) KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false)
                 else KeyboardOptions.Default,
             trailingIcon = if (secret) { { TextButton(onClick = { reveal = !reveal }) { Text(if (reveal) "隐藏" else "显示", fontSize = 12.sp) } } } else null,
+            colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = ErpanColors.Line, focusedBorderColor = ErpanColors.Rose,
+                disabledBorderColor = ErpanColors.Line.copy(alpha = 0.65f)))
+    }
+}
+
+/** 多行输入：提示词不是密钥，不该挤在单行里。 */
+@Composable private fun PromptField(label: String, value: String, enabled: Boolean,
+    placeholder: String, onChange: (String) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Text(label, fontSize = 14.sp)
+        OutlinedTextField(value = value, onValueChange = onChange, enabled = enabled,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 104.dp).semantics { contentDescription = label },
+            minLines = 3, maxLines = 7, shape = RoundedCornerShape(9.dp),
+            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
+            placeholder = { Text(placeholder, fontSize = 13.sp, color = ErpanColors.Muted) },
             colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = ErpanColors.Line, focusedBorderColor = ErpanColors.Rose,
                 disabledBorderColor = ErpanColors.Line.copy(alpha = 0.65f)))
     }
