@@ -169,7 +169,11 @@ sealed class Screen(
     }
 
 
-    data object MessageFavorites : Screen(titleRes = R.string.message_favorites) {
+    data object MessageFavorites :
+            Screen(
+                    navItem = NavItem.MessageFavorites,
+                    titleRes = R.string.message_favorites
+            ) {
         @Composable
         override fun Content(
                 navController: NavController,
