@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.ai.assistance.operit.data.model.ChatMessageLocatorPreview
+import com.ai.assistance.operit.data.model.FavoriteMessageEntry
 import com.ai.assistance.operit.data.model.MessageEntity
 
 /** 消息DAO接口，定义对消息表的数据访问方法 */
@@ -242,4 +243,34 @@ interface MessageDao {
     /** 批量重命名消息中的角色名 */
     @Query("UPDATE messages SET roleName = :newName WHERE roleName = :oldName")
     suspend fun renameRoleName(oldName: String, newName: String): Int
+
+    /** 跨会话读取所有已收藏消息（连同所属会话标题），供收藏页使用 */
+    @Query(
+        """
+        SELECT
+            messages.chatId AS chatId,
+            chats.title AS chatTitle,
+            (
+                SELECT COUNT(*)
+                FROM messages AS earlier
+                WHERE earlier.chatId = messages.chatId
+                    AND earlier.timestamp < messages.timestamp
+            ) AS messageIndex,
+            messages.timestamp AS timestamp,
+            messages.sender AS sender,
+            SUBSTR(messages.content, 1, :previewCharCount) AS previewContent,
+            LENGTH(messages.content) AS contentLength,
+            messages.displayMode AS displayMode,
+            messages.isFavorite AS isFavorite
+        FROM messages
+        LEFT JOIN chats ON chats.id = messages.chatId
+        WHERE messages.isFavorite = 1
+        ORDER BY messages.chatId ASC, messages.timestamp ASC
+        LIMIT :maxCount
+        """
+    )
+    suspend fun getFavoriteMessageEntries(
+        previewCharCount: Int,
+        maxCount: Int,
+    ): List<FavoriteMessageEntry>
 }
