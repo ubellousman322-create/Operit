@@ -27,6 +27,8 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.common.NavItem
 import com.ai.assistance.operit.ui.features.assistant.screens.AssistantConfigScreen
 import com.ai.assistance.operit.ui.features.chat.screens.AIChatScreen
+import com.ai.assistance.operit.ui.features.chat.components.FavoriteMessagesScreen
+import com.ai.assistance.operit.ui.main.PendingMessageJumpHandler
 import com.ai.assistance.operit.ui.features.demo.screens.ShizukuDemoScreen
 import com.ai.assistance.operit.ui.features.packages.screens.MarketHomeTab
 import com.ai.assistance.operit.ui.features.packages.screens.PackageManagerScreen
@@ -166,6 +168,27 @@ sealed class Screen(
         }
     }
 
+
+    data object MessageFavorites : Screen(titleRes = R.string.message_favorites) {
+        @Composable
+        override fun Content(
+                navController: NavController,
+                navigateTo: ScreenNavigationHandler,
+                onGoBack: () -> Unit,
+                hasBackgroundImage: Boolean,
+                onLoading: (Boolean) -> Unit,
+                onError: (String) -> Unit,
+                onGestureConsumed: (Boolean) -> Unit
+        ) {
+            FavoriteMessagesScreen(
+                    onGoBack = onGoBack,
+                    onJumpToFavorite = { chatId, timestamp ->
+                        PendingMessageJumpHandler.setPendingJump(chatId, timestamp)
+                        navigateTo(AiChat)
+                    }
+            )
+        }
+    }
 
     data object Packages : Screen(navItem = NavItem.Packages) {
         @Composable
