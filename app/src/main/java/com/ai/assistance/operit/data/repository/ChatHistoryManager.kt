@@ -11,6 +11,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.backup.OperitBackupDirs
 import com.ai.assistance.operit.data.db.AppDatabase
 import com.ai.assistance.operit.data.model.ChatEntity
+import com.ai.assistance.operit.data.model.FavoriteMessageEntry
 import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.ChatMessageLocatorPreview
@@ -93,6 +94,8 @@ class ChatHistoryManager private constructor(private val context: Context) {
     companion object {
         private const val TAG = "ChatHistoryManager"
         private const val LOCATOR_PREVIEW_CHAR_COUNT = 48
+        private const val FAVORITE_PREVIEW_CHAR_COUNT = 160
+        private const val FAVORITE_ENTRY_LIMIT = 800
         private const val TEXT_EXPORT_STREAMING_THRESHOLD_CHARACTER_COUNT = 4_000_000L
         private const val TEXT_EXPORT_WRITER_BUFFER_SIZE = 64 * 1024
         private const val TEXT_EXPORT_PROGRESS_UPDATE_CHARACTER_COUNT = 256 * 1024L
@@ -2485,6 +2488,19 @@ class ChatHistoryManager private constructor(private val context: Context) {
                 }
             } catch (e: Exception) {
                 AppLogger.e(TAG, "加载聊天定位轻量预览失败", e)
+                emptyList()
+            }
+        }
+    }
+
+    suspend fun loadFavoriteMessageEntries(
+        maxCount: Int = FAVORITE_ENTRY_LIMIT,
+    ): List<FavoriteMessageEntry> {
+        return withContext(Dispatchers.IO) {
+            try {
+                messageDao.getFavoriteMessageEntries(FAVORITE_PREVIEW_CHAR_COUNT, maxCount)
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "加载收藏消息失败", e)
                 emptyList()
             }
         }
