@@ -492,24 +492,61 @@ private fun NewSidebarTopContent(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        Text(
-                text = stringResource(id = R.string.nav_group_ai_features),
-                style = MaterialTheme.typography.titleSmall,
-                color = appearance.titleColor.copy(alpha = 0.82f),
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(start = 28.dp, end = 20.dp, bottom = 2.dp)
-        )
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        navItems.forEach { item ->
-                CompactNavigationDrawerItem(
-                        icon = item.icon,
-                        label = stringResource(id = item.titleResId),
-                        selected = selectedItem == item,
-                        appearance = appearance,
-                        onClick = { onNavItemClick(item) }
+        val settingsGroup =
+                setOf(
+                        NavItem.AssistantConfig,
+                        NavItem.ToolPermissions,
+                        NavItem.ChatHistorySettings,
+                        NavItem.TokenConfig,
+                        NavItem.ShizukuCommands,
+                        NavItem.Settings
                 )
+        val toolItems = navItems.filterNot { it in settingsGroup }
+        val settingItems = navItems.filter { it in settingsGroup }
+
+        if (toolItems.isNotEmpty()) {
+                Text(
+                        text = "工具",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = appearance.titleColor.copy(alpha = 0.82f),
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(start = 28.dp, end = 20.dp, bottom = 2.dp)
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                toolItems.forEach { item ->
+                        CompactNavigationDrawerItem(
+                                icon = item.icon,
+                                label = stringResource(id = item.titleResId),
+                                selected = selectedItem == item,
+                                appearance = appearance,
+                                onClick = { onNavItemClick(item) }
+                        )
+                }
+        }
+
+        if (settingItems.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(14.dp))
+                Text(
+                        text = "设置",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = appearance.titleColor.copy(alpha = 0.82f),
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(start = 28.dp, end = 20.dp, bottom = 2.dp)
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                settingItems.forEach { item ->
+                        CompactNavigationDrawerItem(
+                                icon = item.icon,
+                                label = stringResource(id = item.titleResId),
+                                selected = selectedItem == item,
+                                appearance = appearance,
+                                onClick = { onNavItemClick(item) }
+                        )
+                }
         }
         if (pluginEntries.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(14.dp))
