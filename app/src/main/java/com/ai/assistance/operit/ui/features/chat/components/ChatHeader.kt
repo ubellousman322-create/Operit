@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.PictureInPicture
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.*
@@ -67,7 +67,7 @@ fun ChatHeader(
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
                                         Icon(
-                                                imageVector = Icons.Default.History,
+                                                imageVector = Icons.Default.DarkMode,
                                                 contentDescription =
                                                         if (showChatHistorySelector) stringResource(R.string.hide_history) else stringResource(R.string.show_history),
                                                 tint =
@@ -102,7 +102,7 @@ fun ChatHeader(
                                         modifier = Modifier.matchParentSize()
                                 ) {
                                         Icon(
-                                                imageVector = Icons.Default.History,
+                                                imageVector = Icons.Default.DarkMode,
                                                 contentDescription =
                                                         if (showChatHistorySelector) stringResource(R.string.hide_history) else stringResource(R.string.show_history),
                                                 tint =
