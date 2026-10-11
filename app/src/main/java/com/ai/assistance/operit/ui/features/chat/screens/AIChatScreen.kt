@@ -133,6 +133,7 @@ fun AIChatScreen(
         onNavigateToOnboardingModelConfig: () -> Unit = {},
         onNavigateToModelPrompts: () -> Unit = {},
         onNavigateToPackageManager: () -> Unit = {},
+        onNavigateToFavorites: () -> Unit = {},
         onGestureConsumed: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -1203,6 +1204,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                                         actualViewModel.showChatHistorySelector(false)
                                         when (route) {
                                             "packages" -> onNavigateToPackageManager()
+                                            "favorites" -> onNavigateToFavorites(),
                                             "settings" -> onNavigateToSettings()
                                             "token_config" -> onNavigateToTokenConfig()
                                             "memory" -> onNavigateToMemoryBase()
