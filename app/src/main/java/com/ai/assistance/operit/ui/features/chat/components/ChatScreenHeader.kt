@@ -141,6 +141,38 @@ fun ChatScreenHeader(
 
     val launchFloatingWindow = useFloatingWindowLauncher(actualViewModel, permissionLauncher)
 
+    val currentChatId by actualViewModel.currentChatId.collectAsState()
+    val chatHistoryList by actualViewModel.chatHistories.collectAsState()
+    val currentChatTitle = chatHistoryList.firstOrNull { it.id == currentChatId }?.title.orEmpty()
+    var showRenameDialog by remember { mutableStateOf(false) }
+    var renameText by remember { mutableStateOf("") }
+
+    if (showRenameDialog) {
+        AlertDialog(
+                onDismissRequest = { showRenameDialog = false },
+                title = { Text("给这条会话起个名字") },
+                text = {
+                    OutlinedTextField(
+                            value = renameText,
+                            onValueChange = { renameText = it },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                            onClick = {
+                                currentChatId?.let { actualViewModel.updateChatTitle(it, renameText) }
+                                showRenameDialog = false
+                            }
+                    ) { Text("好") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showRenameDialog = false }) { Text("算了") }
+                }
+        )
+    }
+
     Row(
             modifier =
                     modifier
@@ -164,7 +196,12 @@ fun ChatScreenHeader(
                 runningTaskCount = activeStreamingChatIds.size,
                 activeCharacterName = activeCharacterGroup?.name ?: activeCharacterCard?.name ?: "",
                 activeCharacterAvatarUri = activeCharacterAvatarUri,
-                onCharacterClick = onCharacterSwitcherClick
+                onCharacterClick = onCharacterSwitcherClick,
+                chatTitle = currentChatTitle,
+                onTitleClick = {
+                        renameText = currentChatTitle
+                        showRenameDialog = true
+                }
         )
 
         Row(
