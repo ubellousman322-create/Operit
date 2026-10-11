@@ -22,7 +22,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.CodeOff
+import androidx.compose.material.icons.filled.PictureInPicture
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.PictureInPictureOff
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -826,6 +828,15 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     LaunchedEffect(isCurrentScreen, embedded, showWebView, showAiComputer, isWorkspacePreparing, appBarContentColor, hasBoundWorkspace) {
         if (isCurrentScreen && !embedded) {
             setTopBarActions {
+                // 悬浮窗口
+                IconButton(onClick = { launchFloatingWindow() }) {
+                    Icon(
+                            imageVector = Icons.Default.PictureInPicture,
+                            contentDescription = "悬浮窗口",
+                            tint = appBarContentColor
+                    )
+                }
+
                 // AI电脑模式切换按钮
                 IconButton(
                         enabled = !isWorkspacePreparing,
