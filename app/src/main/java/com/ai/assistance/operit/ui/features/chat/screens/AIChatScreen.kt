@@ -1198,6 +1198,18 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                                     autoSwitchChatOnCharacterSelect = autoSwitchChatOnCharacterSelect,
                                     onAutoSwitchChatOnCharacterSelectChange = {
                                         autoSwitchChatOnCharacterSelect = it
+                                    },
+                                    onOpenToolsAndSettings = { route ->
+                                        actualViewModel.showChatHistorySelector(false)
+                                        when (route) {
+                                            "packages" -> onNavigateToPackageManager()
+                                            "settings" -> onNavigateToSettings()
+                                            "token_config" -> onNavigateToTokenConfig()
+                                            "memory" -> onNavigateToMemoryBase()
+                                            "model_config" -> onNavigateToModelConfig()
+                                            "prompts" -> onNavigateToModelPrompts()
+                                            else -> {}
+                                        }
                                     }
                                 )
                             }
