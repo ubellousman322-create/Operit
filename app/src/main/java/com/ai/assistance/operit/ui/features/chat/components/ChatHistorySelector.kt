@@ -472,6 +472,8 @@ fun ChatHistorySelector(
     var showToolsAndSettings by remember { mutableStateOf(false) }
     var showGroupsView by remember { mutableStateOf(false) }
     var chatToMove by remember { mutableStateOf<ChatHistory?>(null) }
+    var bulkGroupName by remember { mutableStateOf<String?>(null) }
+    var bulkSelected by remember { mutableStateOf(emptySet<String>()) }
 
     val context = LocalContext.current
     val chatHistoryManager = remember { ChatHistoryManager.getInstance(context) }
@@ -759,6 +761,59 @@ fun ChatHistorySelector(
         onUpdateChatOrderAndGroup(newOrderedHistories, finalMovedItem, finalMovedItem.group)
     }
 
+    if (bulkGroupName != null) {
+        val targetGroup = bulkGroupName!!
+        AlertDialog(
+            onDismissRequest = { bulkGroupName = null },
+            title = { Text(text = "加入分组：" + targetGroup) },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    chatHistories.forEach { historyItem ->
+                        val checked = bulkSelected.contains(historyItem.id)
+                        Row(
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .clickable {
+                                        bulkSelected =
+                                            if (checked) bulkSelected - historyItem.id
+                                            else bulkSelected + historyItem.id
+                                    }
+                                    .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (checked) "✓" else "○",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = historyItem.title,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        chatHistories
+                            .filter { bulkSelected.contains(it.id) }
+                            .forEach { picked ->
+                                onUpdateChatOrderAndGroup(chatHistories, picked, targetGroup)
+                            }
+                        bulkGroupName = null
+                    }
+                ) { Text(text = "加入") }
+            },
+            dismissButton = {
+                TextButton(onClick = { bulkGroupName = null }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
     if (chatToMove != null) {
         val moveTarget = chatToMove!!
         val knownGroups = remember(chatHistories) { chatHistories.mapNotNull { it.group }.distinct().sorted() }
@@ -2239,6 +2294,16 @@ fun ChatHistorySelector(
                                     )
                                 }
                             }
+                            Text(
+                                text = "＋",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier =
+                                    Modifier.clickable {
+                                        bulkGroupName = item.name
+                                        bulkSelected = emptySet()
+                                    }.padding(horizontal = 8.dp, vertical = 6.dp)
+                            )
                             Surface(
                                 modifier = Modifier
                                     .weight(1f)
