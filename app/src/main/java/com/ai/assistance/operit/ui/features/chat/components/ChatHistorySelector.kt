@@ -132,6 +132,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.flowOf
+import androidx.compose.material.icons.filled.PictureInPicture
 
 private data class GroupTarget(
     val groupName: String,
@@ -448,7 +449,8 @@ fun ChatHistorySelector(
         autoSwitchChatOnCharacterSelect: Boolean,
         onAutoSwitchChatOnCharacterSelectChange: (Boolean) -> Unit,
         onQuickScrollInteractionChange: (Boolean) -> Unit = {},
-        onOpenToolsAndSettings: ((String) -> Unit)? = null,
+        onOpenToolsAndSettings: ((String) -> Unit)? = null,,
+        onLaunchFloatingWindow: (() -> Unit)? = null,
         activePrompt: ActivePrompt
 ) {
     var chatToEdit by remember { mutableStateOf<ChatHistory?>(null) }
@@ -2640,6 +2642,20 @@ fun ChatHistorySelector(
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.weight(1f)
+
+                            if (onLaunchFloatingWindow != null) {
+                                    IconButton(
+                                            onClick = onLaunchFloatingWindow,
+                                            modifier = Modifier.size(28.dp)
+                                    ) {
+                                            Icon(
+                                                    imageVector = Icons.Default.PictureInPicture,
+                                                    contentDescription = "悬浮窗",
+                                                    modifier = Modifier.size(16.dp),
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                    }
+                            }
                             )
                             Text(
                                     text = if (showToolsAndSettings) "收起" else "展开",
