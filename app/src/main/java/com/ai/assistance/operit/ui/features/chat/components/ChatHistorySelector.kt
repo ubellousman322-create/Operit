@@ -471,6 +471,7 @@ fun ChatHistorySelector(
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showToolsAndSettings by remember { mutableStateOf(false) }
     var showGroupsView by remember { mutableStateOf(false) }
+    var chatToMove by remember { mutableStateOf<ChatHistory?>(null) }
 
     val context = LocalContext.current
     val chatHistoryManager = remember { ChatHistoryManager.getInstance(context) }
@@ -758,6 +759,45 @@ fun ChatHistorySelector(
         onUpdateChatOrderAndGroup(newOrderedHistories, finalMovedItem, finalMovedItem.group)
     }
 
+    if (chatToMove != null) {
+        val moveTarget = chatToMove!!
+        val knownGroups = remember(chatHistories) { chatHistories.mapNotNull { it.group }.distinct().sorted() }
+        AlertDialog(
+            onDismissRequest = { chatToMove = null },
+            title = { Text(text = "移入分组") },
+            text = {
+                Column {
+                    knownGroups.forEach { groupName ->
+                        Text(
+                            text = groupName,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .clickable {
+                                        onUpdateChatOrderAndGroup(chatHistories, moveTarget, groupName)
+                                        chatToMove = null
+                                    }
+                                    .padding(vertical = 12.dp)
+                        )
+                    }
+                    Text(
+                        text = ungroupedText,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .clickable {
+                                    onUpdateChatOrderAndGroup(chatHistories, moveTarget, null)
+                                    chatToMove = null
+                                }
+                                .padding(vertical = 12.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { chatToMove = null }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
     if (chatItemActionTarget != null) {
         val resolvedTargetChat = remember(chatItemActionTarget, chatHistories) {
             val target = chatItemActionTarget
@@ -990,6 +1030,42 @@ fun ChatHistorySelector(
                         }
                     }
 
+                    // 移入分组
+                    Surface(
+                        modifier =
+                            Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable {
+                                chatToMove = resolvedTargetChat
+                                chatItemActionTarget = null
+                            },
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccountTree,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clearAndSetSemantics {}
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = "移入分组",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.clearAndSetSemantics {}
+                            )
+                        }
+                    }
                     // 锁定/解锁选项
                     Surface(
                         modifier = Modifier
@@ -2549,6 +2625,24 @@ private fun LatestChatCard(history: ChatHistory, onClick: () -> Unit) {
                         maxLines = 1,
                         color = MaterialTheme.colorScheme.onSurface
                 )
+                val preview =
+                        remember(history) {
+                                history.messages
+                                        .lastOrNull()
+                                        ?.content
+                                        ?.replace("\n", " ")
+                                        ?.take(42)
+                                        .orEmpty()
+                        }
+                if (preview.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                                text = preview,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1
+                        )
+                }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                         text = "继续 →",
