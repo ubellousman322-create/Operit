@@ -36,6 +36,11 @@ fun ToolsAndSettingsScreen(onGoBack: () -> Unit, onOpen: (String) -> Unit) {
                                         "包管理" to "packages",
                                         "工具箱" to "toolbox"
                                 ),
+                        "插件" to
+                                listOf(
+                                        "OB 记忆" to "memory",
+                                        "AI 的电子嘴巴" to "plugins"
+                                ),
                         "设置" to
                                 listOf(
                                         "助手配置" to "assistant_config",
