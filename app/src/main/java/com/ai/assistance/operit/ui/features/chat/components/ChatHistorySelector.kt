@@ -2407,6 +2407,14 @@ fun ChatHistorySelector(
                                                                 }
                                                             }
                                                         }
+                                                        if (!activeStreamingChatIds.contains(item.history.id)) {
+                                                            Spacer(modifier = Modifier.width(6.dp))
+                                                            Text(
+                                                                text = formatHistoryTime(item.history.updatedAt),
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                color = contentColor.copy(alpha = 0.6f)
+                                                            )
+                                                        }
                                                         if (activeStreamingChatIds.contains(item.history.id)) {
                                                             Spacer(modifier = Modifier.width(4.dp))
                                                             CircularProgressIndicator(
@@ -2547,5 +2555,19 @@ private fun LatestChatCard(history: ChatHistory, onClick: () -> Unit) {
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                 )
+        }
+}
+
+private fun formatHistoryTime(updatedAt: java.time.LocalDateTime): String {
+        val today = java.time.LocalDate.now()
+        val date = updatedAt.toLocalDate()
+        return when {
+                date == today -> "%02d:%02d".format(updatedAt.hour, updatedAt.minute)
+                date == today.minusDays(1) -> "昨天"
+                date.isAfter(today.minusDays(7)) -> {
+                        val names = listOf("周一", "周二", "周三", "周四", "周五", "周六", "周日")
+                        names[(date.dayOfWeek.value - 1).coerceIn(0, 6)]
+                }
+                else -> "%d-%d".format(updatedAt.monthValue, updatedAt.dayOfMonth)
         }
 }
