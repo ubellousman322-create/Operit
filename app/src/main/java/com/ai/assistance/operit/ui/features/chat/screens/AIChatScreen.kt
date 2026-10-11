@@ -23,8 +23,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.PictureInPicture
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.PictureInPictureOff
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -871,7 +869,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                         Icon(
                                 imageVector =
                                 if (hasBoundWorkspace) Icons.Default.Code
-                                else Icons.Default.CodeOff,
+                                else Icons.Default.Code,
                                 contentDescription =
                                 if (hasBoundWorkspace) stringResource(R.string.workspace)
                                 else stringResource(R.string.setup_workspace),
