@@ -2456,9 +2456,9 @@ fun ChatHistorySelector(
                             val isDeleting = deletingChatIds.contains(item.history.id)
                             val isSelected = item.history.id == currentId
                             val containerColor = if (isSelected) {
-                                MaterialTheme.colorScheme.primaryContainer
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                             } else {
-                                MaterialTheme.colorScheme.surface
+                                Color.Transparent
                             }
                             val contentColor = if (isSelected) {
                                 MaterialTheme.colorScheme.onPrimaryContainer
@@ -2512,7 +2512,7 @@ fun ChatHistorySelector(
                                                     .fillMaxWidth(),
                                                 color = containerColor,
                                                 shape = MaterialTheme.shapes.medium,
-                                                shadowElevation = if (isDragging) 8.dp else 0.dp
+                                                shadowElevation = 0.dp
                                             ) {
                                                 Box(
                                                     modifier = Modifier
@@ -2535,22 +2535,6 @@ fun ChatHistorySelector(
                                                             },
                                                         verticalAlignment = Alignment.CenterVertically
                                                     ) {
-                                                        val dragDescription = stringResource(R.string.drag_item, item.history.title)
-                                                        IconButton(
-                                                            modifier = Modifier
-                                                                .draggableHandle()
-                                                                .semantics {
-                                                                    contentDescription = dragDescription
-                                                                },
-                                                            onClick = {}
-                                                        ) {
-                                                            Icon(
-                                                                imageVector = Icons.Default.DragHandle,
-                                                                contentDescription = null,
-                                                                tint = contentColor
-                                                            )
-                                                        }
-                                                        Spacer(modifier = Modifier.width(8.dp))
                                                         Column(
                                                             modifier = Modifier
                                                                 .weight(1f)
