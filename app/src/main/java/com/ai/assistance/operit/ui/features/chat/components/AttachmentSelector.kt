@@ -44,6 +44,8 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.ScreenshotMonitor
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
@@ -94,6 +96,7 @@ fun AttachmentSelectorPanel(
         onAttachLocation: () -> Unit = {},
         onAttachMemory: () -> Unit = {},
         onAttachPackage: (String) -> Unit = {},
+        onOpenFavorites: () -> Unit = {},
         onTakePhoto: (Uri) -> Unit,
         userQuery: String = "",
         onDismiss: () -> Unit
@@ -185,39 +188,15 @@ fun AttachmentSelectorPanel(
                                         onClick = launchCameraCapture
                                 ),
                                 AttachmentPanelItem(
-                                        icon = Icons.Default.Memory,
-                                        label = context.getString(R.string.attachment_memory),
-                                        onClick = {
-                                            onAttachMemory()
-                                            onDismiss()
-                                        }
-                                ),
-                                AttachmentPanelItem(
                                         icon = Icons.Default.Description,
                                         label = context.getString(R.string.attachment_file),
                                         onClick = { filePickerLauncher.launch("*/*") }
                                 ),
                                 AttachmentPanelItem(
-                                        icon = Icons.Default.ScreenshotMonitor,
-                                        label = context.getString(R.string.attachment_screen_content),
+                                        icon = Icons.Default.Call,
+                                        label = "语音通话",
                                         onClick = {
-                                            onAttachScreenContent()
-                                            onDismiss()
-                                        }
-                                ),
-                                AttachmentPanelItem(
-                                        icon = Icons.Default.Notifications,
-                                        label = context.getString(R.string.attachment_notifications),
-                                        onClick = {
-                                            onAttachNotifications()
-                                            onDismiss()
-                                        }
-                                ),
-                                AttachmentPanelItem(
-                                        icon = Icons.Default.LocationOn,
-                                        label = context.getString(R.string.attachment_location),
-                                        onClick = {
-                                            onAttachLocation()
+                                            launchVoiceCall(context)
                                             onDismiss()
                                         }
                                 ),
@@ -225,8 +204,17 @@ fun AttachmentSelectorPanel(
                                         icon = Icons.Default.AutoAwesome,
                                         label = context.getString(R.string.attachment_package),
                                         onClick = { showPackageDialog = true }
+                                ),
+                                AttachmentPanelItem(
+                                        icon = Icons.Default.Favorite,
+                                        label = "收藏",
+                                        onClick = {
+                                            onOpenFavorites()
+                                            onDismiss()
+                                        }
                                 )
                         )
+
 
                 val pages = panelItems.chunked(8).ifEmpty { listOf(emptyList()) }
                 val pagerState = rememberPagerState(pageCount = { pages.size })
@@ -334,6 +322,7 @@ fun AttachmentSelectorPopupPanel(
         onAttachLocation: () -> Unit = {},
         onAttachMemory: () -> Unit = {},
         onAttachPackage: (String) -> Unit = {},
+        onOpenFavorites: () -> Unit = {},
         onTakePhoto: (Uri) -> Unit,
         onDismiss: () -> Unit
 ) {
@@ -391,39 +380,15 @@ fun AttachmentSelectorPopupPanel(
                             onClick = launchCameraCapture
                     ),
                     AttachmentPanelItem(
-                            icon = Icons.Default.Memory,
-                            label = context.getString(R.string.attachment_memory),
-                            onClick = {
-                                onAttachMemory()
-                                onDismiss()
-                            }
-                    ),
-                    AttachmentPanelItem(
                             icon = Icons.Default.Description,
                             label = context.getString(R.string.attachment_file),
                             onClick = { filePickerLauncher.launch("*/*") }
                     ),
                     AttachmentPanelItem(
-                            icon = Icons.Default.ScreenshotMonitor,
-                            label = context.getString(R.string.attachment_screen_content),
+                            icon = Icons.Default.Call,
+                            label = "语音通话",
                             onClick = {
-                                onAttachScreenContent()
-                                onDismiss()
-                            }
-                    ),
-                    AttachmentPanelItem(
-                            icon = Icons.Default.Notifications,
-                            label = context.getString(R.string.attachment_notifications),
-                            onClick = {
-                                onAttachNotifications()
-                                onDismiss()
-                            }
-                    ),
-                    AttachmentPanelItem(
-                            icon = Icons.Default.LocationOn,
-                            label = context.getString(R.string.attachment_location),
-                            onClick = {
-                                onAttachLocation()
+                                launchVoiceCall(context)
                                 onDismiss()
                             }
                     ),
@@ -431,8 +396,17 @@ fun AttachmentSelectorPopupPanel(
                             icon = Icons.Default.AutoAwesome,
                             label = context.getString(R.string.attachment_package),
                             onClick = { showPackageDialog = true }
+                    ),
+                    AttachmentPanelItem(
+                            icon = Icons.Default.Favorite,
+                            label = "收藏",
+                            onClick = {
+                                onOpenFavorites()
+                                onDismiss()
+                            }
                     )
             )
+
 
     Popup(
             alignment = Alignment.TopStart,
@@ -863,5 +837,17 @@ private fun buildAttachmentPackageSubtitle(option: AttachmentPackageOption): Str
         typeLabel
     } else {
         "$typeLabel · ${option.description}"
+    }
+}
+
+
+private fun launchVoiceCall(context: android.content.Context) {
+    runCatching {
+        context.startActivity(
+            android.content.Intent().apply {
+                setClassName(context.packageName, "com.huigu.phone10.mobile.MainActivity")
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        )
     }
 }
