@@ -147,6 +147,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     // 设置权限系统的颜色方案
     LaunchedEffect(colorScheme) { actualViewModel.setPermissionSystemColorScheme(colorScheme) }
 
+    val floatingTypography = MaterialTheme.typography
     val floatingPermissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission()
@@ -154,7 +155,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
             if (isGranted) {
                 actualViewModel.launchWindowFloatingModeAfterMicPermissionGranted(
                     colorScheme = colorScheme,
-                    typography = MaterialTheme.typography,
+                    typography = floatingTypography,
                     moveTaskToBackOnReady = true
                 )
             }
@@ -1221,7 +1222,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                                         actualViewModel.showChatHistorySelector(false)
                                         when (route) {
                                             "packages" -> onNavigateToPackageManager()
-                                            "favorites" -> onNavigateToFavorites(),
+                                            "favorites" -> onNavigateToFavorites()
                                             "settings" -> onNavigateToSettings()
                                             "token_config" -> onNavigateToTokenConfig()
                                             "memory" -> onNavigateToMemoryBase()
