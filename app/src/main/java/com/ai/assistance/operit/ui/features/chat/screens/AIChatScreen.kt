@@ -1122,6 +1122,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                                         disableUserPreferenceDescription,
                                 onNavigateToMemoryBase = onNavigateToMemoryBase,
                                 onNavigateToPackageManager = onNavigateToPackageManager,
+                                onOpenFavorites = { onNavigateToFavorites() },
                                 toolPromptVisibility = toolPromptVisibility,
                                 toolPromptOrder = toolPromptOrder,
                                 onSaveToolOrder = { order ->
@@ -1530,6 +1531,7 @@ private fun ChatInputBottomBar(
     disableUserPreferenceDescription: Boolean,
     onNavigateToMemoryBase: () -> Unit,
     onNavigateToPackageManager: () -> Unit,
+    onOpenFavorites: () -> Unit = {},
     toolPromptVisibility: Map<String, Boolean>,
     toolPromptOrder: List<String> = emptyList(),
     onSaveToolOrder: (List<String>) -> Unit = {},
@@ -1954,6 +1956,7 @@ private fun ChatInputBottomBar(
                     actualViewModel::toggleDisableUserPreferenceDescription,
                 onNavigateToMemoryBase = onNavigateToMemoryBase,
                 onNavigateToPackageManager = onNavigateToPackageManager,
+                onOpenFavorites = onOpenFavorites,
                 toolPromptVisibility = toolPromptVisibility,
                 onSaveToolPromptVisibilityMap = actualViewModel::saveToolPromptVisibilityMap,
                 toolOrder = toolPromptOrder,
