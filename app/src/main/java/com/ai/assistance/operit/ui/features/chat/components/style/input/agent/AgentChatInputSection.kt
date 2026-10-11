@@ -43,6 +43,7 @@ import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.material.icons.outlined.TipsAndUpdates
 import androidx.compose.material.icons.rounded.Psychology
 import androidx.compose.material.icons.rounded.Save
@@ -90,6 +91,8 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.rememberAsyncImagePainter
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isShiftPressed
@@ -133,6 +136,7 @@ import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.ChatModelOverrideManager
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.model.ActivePrompt
+import com.ai.assistance.operit.data.repository.CustomEmojiRepository
 import com.ai.assistance.operit.data.preferences.FunctionConfigMapping
 import com.ai.assistance.operit.data.preferences.FunctionalConfigManager
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
@@ -167,6 +171,7 @@ import com.ai.assistance.operit.ui.theme.waterGlass
 import com.ai.assistance.operit.util.ChatUtils
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.Image
 
 @Composable
 fun AgentChatInputSection(
@@ -469,6 +474,8 @@ fun AgentChatInputSection(
                 actualViewModel.showToast(context.getString(R.string.microphone_permission_denied_toast))
             }
         }
+
+    val (showEmojiPanel, setShowEmojiPanel) = remember { mutableStateOf(false) }
 
     val (showAttachmentPanel, setShowAttachmentPanel) =
         remember { mutableStateOf(externalAttachmentPanelState ?: false) }
@@ -874,6 +881,34 @@ fun AgentChatInputSection(
                                 modifier = Modifier.size(24.dp),
                             )
                         }
+                        Box(
+                            modifier =
+                                Modifier
+                                    .padding(start = 4.dp)
+                                    .size(36.dp)
+                                    .clickable(
+                                        enabled = true,
+                                        onClick = {
+                                            showModelSelectorPopup.value = false
+                                            showExtraSettingsPopup.value = false
+                                            setShowAttachmentPanel(false)
+                                            setShowEmojiPanel(!showEmojiPanel)
+                                        },
+                                    ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.EmojiEmotions,
+                                contentDescription = "表情",
+                                tint =
+                                    if (showEmojiPanel) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f)
+                                    },
+                                modifier = Modifier.size(24.dp),
+                            )
+                        }
                         OutlinedTextField(
                             value = userMessage,
                             onValueChange = onUserMessageChange,
@@ -1190,6 +1225,34 @@ fun AgentChatInputSection(
                                     modifier = Modifier.size(24.dp),
                                 )
                             }
+                                Box(
+                                    modifier =
+                                        Modifier
+                                            .padding(start = 4.dp)
+                                            .size(36.dp)
+                                            .clickable(
+                                                enabled = true,
+                                                onClick = {
+                                                    showModelSelectorPopup.value = false
+                                                    showExtraSettingsPopup.value = false
+                                                    setShowAttachmentPanel(false)
+                                                    setShowEmojiPanel(!showEmojiPanel)
+                                                },
+                                            ),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.EmojiEmotions,
+                                        contentDescription = "表情",
+                                        tint =
+                                            if (showEmojiPanel) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f)
+                                            },
+                                        modifier = Modifier.size(24.dp),
+                                    )
+                                }
                             OutlinedTextField(
                                 value = userMessage,
                                 onValueChange = onUserMessageChange,
@@ -1512,6 +1575,13 @@ fun AgentChatInputSection(
                 onOpenFavorites = onOpenFavorites,
                 onTakePhoto = onTakePhoto,
                 onDismiss = { setShowAttachmentPanel(false) },
+            )
+
+            AgentEmojiPanel(
+                visible = showEmojiPanel,
+                popupContainerColor = popupContainerColor,
+                onPick = { path -> onAttachmentRequest(path) },
+                onDismiss = { setShowEmojiPanel(false) },
             )
 
             if (showFullscreenInput.value) {
@@ -3470,3 +3540,85 @@ private fun expandCornerRadius(base: CornerRadius, expansion: Float): CornerRadi
         x = (base.x + expansion).coerceAtLeast(0f),
         y = (base.y + expansion).coerceAtLeast(0f),
     )
+
+@Composable
+private fun AgentEmojiPanel(
+    visible: Boolean,
+    popupContainerColor: Color,
+    onPick: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    if (!visible) return
+    val context = LocalContext.current
+    val repository = remember { CustomEmojiRepository.getInstance(context) }
+    val promptManager = remember { ActivePromptManager.getInstance(context) }
+    val activePrompt by
+        promptManager.activePromptFlow.collectAsState(
+            initial = ActivePrompt.CharacterCard(CharacterCardManager.DEFAULT_CHARACTER_CARD_ID)
+        )
+    val emojis by
+        remember(activePrompt) { repository.getAllEmojis(activePrompt) }
+            .collectAsState(initial = emptyList())
+
+    Popup(
+        alignment = Alignment.BottomStart,
+        onDismissRequest = onDismiss,
+        properties =
+            PopupProperties(
+                focusable = true,
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true,
+            ),
+    ) {
+        Card(
+            modifier =
+                Modifier
+                    .padding(bottom = 48.dp, start = 12.dp)
+                    .width(300.dp)
+                    .heightIn(max = 320.dp),
+            shape = RoundedCornerShape(8.dp),
+            colors = CardDefaults.cardColors(containerColor = popupContainerColor),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        ) {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp)
+                        .verticalScroll(rememberScrollState()),
+            ) {
+                if (emojis.isEmpty()) {
+                    Text(
+                        text = "还没有自定义表情。在设置里的 Waifu 那页加几张，这边就跟着有了。",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    emojis.chunked(4).forEach { row ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            row.forEach { emoji ->
+                                val file = repository.getEmojiFile(activePrompt, emoji)
+                                Image(
+                                    painter = rememberAsyncImagePainter(model = file),
+                                    contentDescription = emoji.emotionCategory,
+                                    contentScale = ContentScale.Crop,
+                                    modifier =
+                                        Modifier
+                                            .size(60.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable {
+                                                onPick(file.absolutePath)
+                                                onDismiss()
+                                            },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
