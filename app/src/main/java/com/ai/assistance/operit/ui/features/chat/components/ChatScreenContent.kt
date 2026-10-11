@@ -1205,7 +1205,8 @@ fun ChatHistorySelectorPanel(
         onAutoSwitchCharacterCardChange: (Boolean) -> Unit,
         autoSwitchChatOnCharacterSelect: Boolean,
         onAutoSwitchChatOnCharacterSelectChange: (Boolean) -> Unit,
-        onOpenToolsAndSettings: ((String) -> Unit)? = null
+        onOpenToolsAndSettings: ((String) -> Unit)? = null,
+        onLaunchFloatingWindow: (() -> Unit)? = null
 ) {
     // 历史选择器面板（不再包含遮罩层，遮罩层已在外部处理）
     Box(
@@ -1275,6 +1276,7 @@ fun ChatHistorySelectorPanel(
                     onChatScreenGestureConsumed(consumed)
                 },
                 onOpenToolsAndSettings = onOpenToolsAndSettings,
+                onLaunchFloatingWindow = onLaunchFloatingWindow,
                 activePrompt = activePrompt
         )
     }
