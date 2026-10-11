@@ -472,7 +472,6 @@ fun ChatHistorySelector(
     var isSearching by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showToolsAndSettings by remember { mutableStateOf(false) }
-    var showToolsAndSettingsDialog by remember { mutableStateOf(false) }
     var showGroupsView by remember { mutableStateOf(false) }
     var chatToMove by remember { mutableStateOf<ChatHistory?>(null) }
     var bulkGroupName by remember { mutableStateOf<String?>(null) }
@@ -2634,7 +2633,26 @@ fun ChatHistorySelector(
                     Row(
                             modifier =
                                     Modifier.fillMaxWidth()
-                                            .clickable { showToolsAndSettingsDialog = true }
+                                            .clickable { showGroupsView = true }
+                                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                    ) {
+                            Text(
+                                    text = "分组管理",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                    text = "›",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                            )
+                    }
+                    Row(
+                            modifier =
+                                    Modifier.fillMaxWidth()
+                                            .clickable { onOpenToolsAndSettings?.invoke("tools_settings") }
                                             .padding(horizontal = 10.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -2651,15 +2669,6 @@ fun ChatHistorySelector(
                                     color = MaterialTheme.colorScheme.primary
                             )
 
-                    }
-                    if (showToolsAndSettingsDialog) {
-                            ToolsAndSettingsDialog(
-                                    onDismiss = { showToolsAndSettingsDialog = false },
-                                    onOpen = { route ->
-                                            showToolsAndSettingsDialog = false
-                                            onOpenToolsAndSettings?.invoke(route)
-                                    }
-                            )
                     }
             }
             HistoryQuickScroller(
@@ -2765,39 +2774,3 @@ private fun formatHistoryTime(updatedAt: java.time.LocalDateTime): String {
         }
 }
 
-@Composable
-private fun ToolsAndSettingsDialog(onDismiss: () -> Unit, onOpen: (String) -> Unit) {
-        val entries =
-                listOf(
-                        "包管理" to "packages",
-                        "记忆库" to "memory",
-                        "模型配置" to "model_config",
-                        "设置" to "settings",
-                        "提示词" to "prompts",
-                        "Token 配置" to "token_config"
-                )
-        AlertDialog(
-                onDismissRequest = onDismiss,
-                title = { Text("工具与设置") },
-                text = {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                                entries.forEach { pair ->
-                                        Row(
-                                                modifier =
-                                                        Modifier.fillMaxWidth()
-                                                                .clickable { onOpen(pair.second) }
-                                                                .padding(horizontal = 4.dp, vertical = 12.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                                Text(
-                                                        text = pair.first,
-                                                        style = MaterialTheme.typography.bodyMedium,
-                                                        color = MaterialTheme.colorScheme.onSurface
-                                                )
-                                        }
-                                }
-                        }
-                },
-                confirmButton = { TextButton(onClick = onDismiss) { Text("关闭") } }
-        )
-}
