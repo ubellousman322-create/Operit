@@ -2530,7 +2530,6 @@ fun ChatHistorySelector(
                                                     "包管理" to "packages",
                                                     "工作流" to "workflow",
                                                     "工具箱" to "toolbox",
-                                                    "收藏" to "message_favorites",
                                                     "助手配置" to "assistant_config",
                                                     "工具权限" to "tool_permissions",
                                                     "对话历史设置" to "chat_history_settings",
