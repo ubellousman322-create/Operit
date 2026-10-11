@@ -215,6 +215,7 @@ sealed class Screen(
                             "workflow" -> navigateTo(Workflow)
                             "packages" -> navigateTo(Packages)
                             "toolbox" -> navigateTo(Toolbox)
+                            "plugins" -> navigateTo(Packages)
                             "favorites" -> navigateTo(MessageFavorites)
                             "assistant_config" -> navigateTo(AssistantConfig)
                             "model_config" -> navigateTo(ModelConfig)
