@@ -449,7 +449,7 @@ fun ChatHistorySelector(
         autoSwitchChatOnCharacterSelect: Boolean,
         onAutoSwitchChatOnCharacterSelectChange: (Boolean) -> Unit,
         onQuickScrollInteractionChange: (Boolean) -> Unit = {},
-        onOpenToolsAndSettings: ((String) -> Unit)? = null,,
+        onOpenToolsAndSettings: ((String) -> Unit)? = null,
         onLaunchFloatingWindow: (() -> Unit)? = null,
         activePrompt: ActivePrompt
 ) {
@@ -2643,6 +2643,13 @@ fun ChatHistorySelector(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.weight(1f)
 
+                            )
+                            Text(
+                                    text = if (showToolsAndSettings) "收起" else "展开",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                            )
+
                             if (onLaunchFloatingWindow != null) {
                                     IconButton(
                                             onClick = onLaunchFloatingWindow,
@@ -2656,12 +2663,6 @@ fun ChatHistorySelector(
                                             )
                                     }
                             }
-                            )
-                            Text(
-                                    text = if (showToolsAndSettings) "收起" else "展开",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary
-                            )
                     }
                     if (showToolsAndSettings) {
                             ToolEntryRows(
