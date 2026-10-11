@@ -28,6 +28,7 @@ import com.ai.assistance.operit.ui.common.NavItem
 import com.ai.assistance.operit.ui.features.assistant.screens.AssistantConfigScreen
 import com.ai.assistance.operit.ui.features.chat.screens.AIChatScreen
 import com.ai.assistance.operit.ui.features.chat.components.FavoriteMessagesScreen
+import com.ai.assistance.operit.ui.features.chat.components.ToolsAndSettingsScreen
 import com.ai.assistance.operit.ui.main.PendingMessageJumpHandler
 import com.ai.assistance.operit.ui.features.demo.screens.ShizukuDemoScreen
 import com.ai.assistance.operit.ui.features.packages.screens.MarketHomeTab
@@ -162,6 +163,7 @@ sealed class Screen(
                     onNavigateToModelPrompts = { navigateTo(ModelPromptsSettings) },
                     onNavigateToPackageManager = { navigateTo(Packages) },
                     onNavigateToFavorites = { navigateTo(MessageFavorites) },
+                    onNavigateToToolsAndSettings = { navigateTo(ToolsAndSettings) },
                     onLoading = onLoading,
                     onError = onError,
                     onGestureConsumed = onGestureConsumed
@@ -190,6 +192,40 @@ sealed class Screen(
                     onJumpToFavorite = { chatId, timestamp ->
                         PendingMessageJumpHandler.setPendingJump(chatId, timestamp)
                         navigateTo(AiChat)
+                    }
+            )
+        }
+    }
+
+    data object ToolsAndSettings : Screen(navItem = NavItem.Settings) {
+        @Composable
+        override fun Content(
+                navController: NavController,
+                navigateTo: ScreenNavigationHandler,
+                onGoBack: () -> Unit,
+                hasBackgroundImage: Boolean,
+                onLoading: (Boolean) -> Unit,
+                onError: (String) -> Unit,
+                onGestureConsumed: (Boolean) -> Unit
+        ) {
+            ToolsAndSettingsScreen(
+                    onGoBack = onGoBack,
+                    onOpen = { route ->
+                        when (route) {
+                            "workflow" -> navigateTo(Workflow)
+                            "packages" -> navigateTo(Packages)
+                            "toolbox" -> navigateTo(Toolbox)
+                            "favorites" -> navigateTo(MessageFavorites)
+                            "assistant_config" -> navigateTo(AssistantConfig)
+                            "model_config" -> navigateTo(ModelConfig)
+                            "prompts" -> navigateTo(ModelPromptsSettings)
+                            "appearance" -> navigateTo(ThemeSettings)
+                            "tool_permissions" -> navigateTo(ToolPermission)
+                            "backup" -> navigateTo(ChatBackupSettings)
+                            "token_config" -> navigateTo(TokenConfig)
+                            "settings" -> navigateTo(Settings)
+                            else -> {}
+                        }
                     }
             )
         }
