@@ -661,7 +661,9 @@ fun ChatHistorySelector(
                 }
 
                 // 时间流：置顶优先，其余按最后一次聊天时间倒序；分组不再占主列表
+                val latestIdForCard = filteredHistories.maxByOrNull { it.updatedAt }?.id
                 filteredHistories
+                        .filter { it.id != latestIdForCard }
                         .sortedWith(
                                 compareByDescending<ChatHistory> { it.pinned }
                                         .thenByDescending { it.updatedAt }
@@ -1927,6 +1929,15 @@ fun ChatHistorySelector(
                     .fillMaxWidth()
                     .padding(start = 10.dp, end = 22.dp)
             ) {
+                item(key = "latest-chat-card") {
+                    val latest = filteredHistories.maxByOrNull { it.updatedAt }
+                    if (latest != null) {
+                        LatestChatCard(
+                            history = latest,
+                            onClick = { onSelectChat(latest.id) }
+                        )
+                    }
+                }
                 items(
                     items = flatItems,
                     key = {
@@ -2463,5 +2474,34 @@ private fun ToolEntryRows(entries: List<Pair<String, String>>, onOpen: ((String)
                                 )
                         }
                 }
+        }
+}
+
+@Composable
+private fun LatestChatCard(history: ChatHistory, onClick: () -> Unit) {
+        Column(
+                modifier =
+                        Modifier.fillMaxWidth()
+                                .clickable(onClick = onClick)
+                                .padding(horizontal = 6.dp, vertical = 10.dp)
+        ) {
+                Text(
+                        text = "最近一次",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                        text = history.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 1,
+                        color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                        text = "继续 →",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                )
         }
 }
