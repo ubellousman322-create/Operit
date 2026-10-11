@@ -843,136 +843,10 @@ fun AgentChatInputSection(
                             .fillMaxWidth()
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                 ) {
-                    OutlinedTextField(
-                        value = userMessage,
-                        onValueChange = onUserMessageChange,
-                        visualTransformation = mentionVisualTransformation,
-                        placeholder = {
-                            Text(
-                                if (isWorkspaceOpen) {
-                                    context.getString(R.string.input_question_with_workspace)
-                                } else {
-                                    context.getString(R.string.input_question_hint)
-                                },
-                                style = inputTextStyle,
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp).onPreviewKeyEvent(onEnterToSendKeyEvent),
-                        textStyle = inputTextStyle,
-                        maxLines = 6,
-                        minLines = 1,
-                        singleLine = false,
-                        keyboardOptions =
-                            KeyboardOptions(
-                                imeAction = if (enableEnterToSend) ImeAction.Send else ImeAction.Default
-                            ),
-                        keyboardActions =
-                            if (enableEnterToSend) {
-                                KeyboardActions(onSend = { handleEnterSendAction() })
-                            } else {
-                                KeyboardActions()
-                            },
-                        colors =
-                            OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color.Transparent,
-                                unfocusedBorderColor = Color.Transparent,
-                                disabledBorderColor = Color.Transparent,
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                disabledContainerColor = Color.Transparent,
-                            ),
-                        shape = RoundedCornerShape(14.dp),
-                        trailingIcon = {
-                            IconButton(onClick = { showFullscreenInput.value = true }) {
-                                Icon(
-                                    imageVector = Icons.Default.Fullscreen,
-                                    contentDescription = stringResource(R.string.chat_fullscreen_input),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        },
-                        enabled = !isProcessing || allowTextInputWhileProcessing,
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Box(
-                            modifier = Modifier.weight(1f),
-                            contentAlignment = Alignment.CenterStart,
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color.Transparent,
-                                modifier =
-                                    Modifier
-                                        .widthIn(min = 0.dp, max = 220.dp)
-                                        .border(
-                                            width = 1.dp,
-                                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                                            shape = RoundedCornerShape(12.dp),
-                                        )
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .clickable(onClick = onModelSelectorClick),
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        text = modelLabel,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.widthIn(max = 160.dp),
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Icon(
-                                        imageVector =
-                                            if (showModelSelectorPopup.value) {
-                                                Icons.Default.KeyboardArrowUp
-                                            } else {
-                                                Icons.Default.KeyboardArrowDown
-                                            },
-                                        contentDescription = context.getString(R.string.select_model_config),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                }
-                            }
-                        }
-
-                        Box(
-                            modifier =
-                                Modifier
-                                    .padding(start = 6.dp)
-                                    .size(34.dp)
-                                    .clickable(
-                                        enabled = true,
-                                        onClick = {
-                                            showModelSelectorPopup.value = false
-                                            showExtraSettingsPopup.value = !showExtraSettingsPopup.value
-                                        },
-                                    ),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Tune,
-                                contentDescription = context.getString(R.string.settings_options),
-                                tint =
-                                    if (showExtraSettingsPopup.value) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    },
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
-
                         Box(
                             modifier =
                                 Modifier
@@ -1000,7 +874,56 @@ fun AgentChatInputSection(
                                 modifier = Modifier.size(24.dp),
                             )
                         }
-
+                        OutlinedTextField(
+                            value = userMessage,
+                            onValueChange = onUserMessageChange,
+                            visualTransformation = mentionVisualTransformation,
+                            placeholder = {
+                                Text(
+                                    if (isWorkspaceOpen) {
+                                        context.getString(R.string.input_question_with_workspace)
+                                    } else {
+                                        context.getString(R.string.input_question_hint)
+                                    },
+                                    style = inputTextStyle,
+                                )
+                            },
+                            modifier = Modifier.weight(1f).heightIn(min = 44.dp).onPreviewKeyEvent(onEnterToSendKeyEvent),
+                            textStyle = inputTextStyle,
+                            maxLines = 6,
+                            minLines = 1,
+                            singleLine = false,
+                            keyboardOptions =
+                                KeyboardOptions(
+                                    imeAction = if (enableEnterToSend) ImeAction.Send else ImeAction.Default
+                                ),
+                            keyboardActions =
+                                if (enableEnterToSend) {
+                                    KeyboardActions(onSend = { handleEnterSendAction() })
+                                } else {
+                                    KeyboardActions()
+                                },
+                            colors =
+                                OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Color.Transparent,
+                                    unfocusedBorderColor = Color.Transparent,
+                                    disabledBorderColor = Color.Transparent,
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    disabledContainerColor = Color.Transparent,
+                                ),
+                            shape = RoundedCornerShape(14.dp),
+                            trailingIcon = {
+                                IconButton(onClick = { showFullscreenInput.value = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Fullscreen,
+                                        contentDescription = stringResource(R.string.chat_fullscreen_input),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            },
+                            enabled = !isProcessing || allowTextInputWhileProcessing,
+                        )
                         Spacer(modifier = Modifier.width(6.dp))
 
                         val actionButtonBackground =
@@ -1116,6 +1039,83 @@ fun AgentChatInputSection(
                         }
                     }
 
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.CenterStart,
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color.Transparent,
+                                modifier =
+                                    Modifier
+                                        .widthIn(min = 0.dp, max = 220.dp)
+                                        .border(
+                                            width = 1.dp,
+                                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                                            shape = RoundedCornerShape(12.dp),
+                                        )
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable(onClick = onModelSelectorClick),
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = modelLabel,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.widthIn(max = 160.dp),
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Icon(
+                                        imageVector =
+                                            if (showModelSelectorPopup.value) {
+                                                Icons.Default.KeyboardArrowUp
+                                            } else {
+                                                Icons.Default.KeyboardArrowDown
+                                            },
+                                        contentDescription = context.getString(R.string.select_model_config),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                            }
+                        }
+                        Box(
+                            modifier =
+                                Modifier
+                                    .padding(start = 6.dp)
+                                    .size(34.dp)
+                                    .clickable(
+                                        enabled = true,
+                                        onClick = {
+                                            showModelSelectorPopup.value = false
+                                            showExtraSettingsPopup.value = !showExtraSettingsPopup.value
+                                        },
+                                    ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Tune,
+                                contentDescription = context.getString(R.string.settings_options),
+                                tint =
+                                    if (showExtraSettingsPopup.value) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
+
                     tokenLimitWarning()
                 }
             }
@@ -1159,136 +1159,10 @@ fun AgentChatInputSection(
                                 .fillMaxWidth()
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                     ) {
-                        OutlinedTextField(
-                            value = userMessage,
-                            onValueChange = onUserMessageChange,
-                            visualTransformation = mentionVisualTransformation,
-                            placeholder = {
-                                Text(
-                                    if (isWorkspaceOpen) {
-                                        context.getString(R.string.input_question_with_workspace)
-                                    } else {
-                                        context.getString(R.string.input_question_hint)
-                                    },
-                                    style = inputTextStyle,
-                                )
-                            },
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp).onPreviewKeyEvent(onEnterToSendKeyEvent),
-                            textStyle = inputTextStyle,
-                            maxLines = 6,
-                            minLines = 1,
-                            singleLine = false,
-                            keyboardOptions =
-                                KeyboardOptions(
-                                    imeAction = if (enableEnterToSend) ImeAction.Send else ImeAction.Default
-                                ),
-                            keyboardActions =
-                                if (enableEnterToSend) {
-                                    KeyboardActions(onSend = { handleEnterSendAction() })
-                                } else {
-                                    KeyboardActions()
-                                },
-                            colors =
-                                OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color.Transparent,
-                                    unfocusedBorderColor = Color.Transparent,
-                                    disabledBorderColor = Color.Transparent,
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent,
-                                    disabledContainerColor = Color.Transparent,
-                                ),
-                            shape = RoundedCornerShape(14.dp),
-                            trailingIcon = {
-                                IconButton(onClick = { showFullscreenInput.value = true }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Fullscreen,
-                                        contentDescription = stringResource(R.string.chat_fullscreen_input),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            },
-                            enabled = !isProcessing || allowTextInputWhileProcessing,
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Box(
-                                modifier = Modifier.weight(1f),
-                                contentAlignment = Alignment.CenterStart,
-                            ) {
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = Color.Transparent,
-                                    modifier =
-                                        Modifier
-                                            .widthIn(min = 0.dp, max = 220.dp)
-                                            .border(
-                                                width = 1.dp,
-                                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                                                shape = RoundedCornerShape(12.dp),
-                                            )
-                                            .clip(RoundedCornerShape(12.dp))
-                                            .clickable(onClick = onModelSelectorClick),
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Text(
-                                            text = modelLabel,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            modifier = Modifier.widthIn(max = 160.dp),
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Icon(
-                                            imageVector =
-                                                if (showModelSelectorPopup.value) {
-                                                    Icons.Default.KeyboardArrowUp
-                                                } else {
-                                                    Icons.Default.KeyboardArrowDown
-                                                },
-                                            contentDescription = context.getString(R.string.select_model_config),
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(18.dp),
-                                        )
-                                    }
-                                }
-                            }
-
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .padding(start = 6.dp)
-                                            .size(34.dp)
-                                            .clickable(
-                                                enabled = true,
-                                                onClick = {
-                                                    showModelSelectorPopup.value = false
-                                                    showExtraSettingsPopup.value = !showExtraSettingsPopup.value
-                                                },
-                                            ),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Tune,
-                                    contentDescription = context.getString(R.string.settings_options),
-                                    tint =
-                                        if (showExtraSettingsPopup.value) {
-                                            MaterialTheme.colorScheme.primary
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        },
-                                    modifier = Modifier.size(20.dp),
-                                )
-                            }
-
                                 Box(
                                     modifier =
                                         Modifier
@@ -1316,7 +1190,56 @@ fun AgentChatInputSection(
                                     modifier = Modifier.size(24.dp),
                                 )
                             }
-
+                            OutlinedTextField(
+                                value = userMessage,
+                                onValueChange = onUserMessageChange,
+                                visualTransformation = mentionVisualTransformation,
+                                placeholder = {
+                                    Text(
+                                        if (isWorkspaceOpen) {
+                                            context.getString(R.string.input_question_with_workspace)
+                                        } else {
+                                            context.getString(R.string.input_question_hint)
+                                        },
+                                        style = inputTextStyle,
+                                    )
+                                },
+                                modifier = Modifier.weight(1f).heightIn(min = 44.dp).onPreviewKeyEvent(onEnterToSendKeyEvent),
+                                textStyle = inputTextStyle,
+                                maxLines = 6,
+                                minLines = 1,
+                                singleLine = false,
+                                keyboardOptions =
+                                    KeyboardOptions(
+                                        imeAction = if (enableEnterToSend) ImeAction.Send else ImeAction.Default
+                                    ),
+                                keyboardActions =
+                                    if (enableEnterToSend) {
+                                        KeyboardActions(onSend = { handleEnterSendAction() })
+                                    } else {
+                                        KeyboardActions()
+                                    },
+                                colors =
+                                    OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = Color.Transparent,
+                                        unfocusedBorderColor = Color.Transparent,
+                                        disabledBorderColor = Color.Transparent,
+                                        focusedContainerColor = Color.Transparent,
+                                        unfocusedContainerColor = Color.Transparent,
+                                        disabledContainerColor = Color.Transparent,
+                                    ),
+                                shape = RoundedCornerShape(14.dp),
+                                trailingIcon = {
+                                    IconButton(onClick = { showFullscreenInput.value = true }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Fullscreen,
+                                            contentDescription = stringResource(R.string.chat_fullscreen_input),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                },
+                                enabled = !isProcessing || allowTextInputWhileProcessing,
+                            )
                             Spacer(modifier = Modifier.width(6.dp))
 
                             val actionButtonBackground =
@@ -1429,6 +1352,83 @@ fun AgentChatInputSection(
                                         modifier = Modifier.size(18.dp),
                                     )
                                 }
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(
+                                modifier = Modifier.weight(1f),
+                                contentAlignment = Alignment.CenterStart,
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color.Transparent,
+                                    modifier =
+                                        Modifier
+                                            .widthIn(min = 0.dp, max = 220.dp)
+                                            .border(
+                                                width = 1.dp,
+                                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                                                shape = RoundedCornerShape(12.dp),
+                                            )
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .clickable(onClick = onModelSelectorClick),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(
+                                            text = modelLabel,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.widthIn(max = 160.dp),
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Icon(
+                                            imageVector =
+                                                if (showModelSelectorPopup.value) {
+                                                    Icons.Default.KeyboardArrowUp
+                                                } else {
+                                                    Icons.Default.KeyboardArrowDown
+                                                },
+                                            contentDescription = context.getString(R.string.select_model_config),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                    }
+                                }
+                            }
+                                Box(
+                                    modifier =
+                                        Modifier
+                                            .padding(start = 6.dp)
+                                            .size(34.dp)
+                                            .clickable(
+                                                enabled = true,
+                                                onClick = {
+                                                    showModelSelectorPopup.value = false
+                                                    showExtraSettingsPopup.value = !showExtraSettingsPopup.value
+                                                },
+                                            ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Tune,
+                                    contentDescription = context.getString(R.string.settings_options),
+                                    tint =
+                                        if (showExtraSettingsPopup.value) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
+                                    modifier = Modifier.size(20.dp),
+                                )
                             }
                         }
 
