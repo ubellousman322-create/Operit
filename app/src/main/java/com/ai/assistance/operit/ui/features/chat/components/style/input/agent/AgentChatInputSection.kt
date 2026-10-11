@@ -1448,6 +1448,8 @@ fun AgentChatInputSection(
                 onThinkingOptionIdChange = onThinkingOptionIdChange,
                 enableMaxContextMode = enableMaxContextMode,
                 onToggleEnableMaxContextMode = onToggleEnableMaxContextMode,
+                disableStreamOutput = disableStreamOutput,
+                onToggleDisableStreamOutput = onToggleDisableStreamOutput,
                 baseContextLengthInK = baseContextLengthInK,
                 maxContextLengthInK = maxContextLengthInK,
                 currentChatId = currentChatId,
@@ -1536,6 +1538,8 @@ private fun AgentModelSelectorPopup(
     onThinkingOptionIdChange: (String) -> Unit,
     enableMaxContextMode: Boolean,
     onToggleEnableMaxContextMode: () -> Unit,
+    disableStreamOutput: Boolean = false,
+    onToggleDisableStreamOutput: () -> Unit = {},
     baseContextLengthInK: Float,
     maxContextLengthInK: Float,
     currentChatId: String?,
@@ -1751,6 +1755,19 @@ private fun AgentModelSelectorPopup(
                                         normalLengthText,
                                         maxLengthText,
                                     )
+                        },
+                    )
+                    AgentSimpleToggleSettingItem(
+                        title = stringResource(R.string.disable_stream_output),
+                        icon =
+                            if (disableStreamOutput) Icons.Outlined.Block
+                            else Icons.Outlined.Speed,
+                        isChecked = disableStreamOutput,
+                        onToggle = onToggleDisableStreamOutput,
+                        onInfoClick = {
+                            infoPopupContent =
+                                context.getString(R.string.disable_stream_output) to
+                                    "开着：边生成边往外显示；关掉：等整段生成完再一次性显示"
                         },
                     )
                     ChatModelScopeToggleItem(
