@@ -112,6 +112,7 @@ import com.ai.assistance.operit.plugins.chatview.ChatViewEvent
 import com.ai.assistance.operit.plugins.chatview.ChatViewHookParams
 import com.ai.assistance.operit.plugins.chatview.ChatViewHookPluginRegistry
 import java.util.UUID
+import com.ai.assistance.operit.ui.features.chat.components.useFloatingWindowLauncher
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -145,6 +146,20 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
 
     // 设置权限系统的颜色方案
     LaunchedEffect(colorScheme) { actualViewModel.setPermissionSystemColorScheme(colorScheme) }
+
+    val floatingPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+            if (isGranted) {
+                actualViewModel.launchWindowFloatingModeAfterMicPermissionGranted(
+                    colorScheme = colorScheme,
+                    typography = MaterialTheme.typography,
+                    moveTaskToBackOnReady = true
+                )
+            }
+        }
+    val launchFloatingWindow = useFloatingWindowLauncher(actualViewModel, floatingPermissionLauncher)
 
     // Monitor shared files from external apps
     val sharedFiles by SharedFileHandler.sharedFiles.collectAsState()
@@ -1201,6 +1216,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                                     onAutoSwitchChatOnCharacterSelectChange = {
                                         autoSwitchChatOnCharacterSelect = it
                                     },
+                                    onLaunchFloatingWindow = launchFloatingWindow,
                                     onOpenToolsAndSettings = { route ->
                                         actualViewModel.showChatHistorySelector(false)
                                         when (route) {
