@@ -448,6 +448,7 @@ fun ChatHistorySelector(
         autoSwitchChatOnCharacterSelect: Boolean,
         onAutoSwitchChatOnCharacterSelectChange: (Boolean) -> Unit,
         onQuickScrollInteractionChange: (Boolean) -> Unit = {},
+        onOpenToolsAndSettings: ((String) -> Unit)? = null,
         activePrompt: ActivePrompt
 ) {
     var chatToEdit by remember { mutableStateOf<ChatHistory?>(null) }
@@ -468,6 +469,7 @@ fun ChatHistorySelector(
     var matchedChatIdsByContent by remember { mutableStateOf<Set<String>>(emptySet()) }
     var isSearching by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var showToolsAndSettings by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val chatHistoryManager = remember { ChatHistoryManager.getInstance(context) }
@@ -2496,6 +2498,49 @@ fun ChatHistorySelector(
             }
             }
 
+            Column(
+                    modifier =
+                            Modifier.align(Alignment.BottomCenter)
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 10.dp, vertical = 8.dp)
+            ) {
+                    Row(
+                            modifier =
+                                    Modifier.fillMaxWidth()
+                                            .clickable { showToolsAndSettings = !showToolsAndSettings }
+                                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                    ) {
+                            Text(
+                                    text = "工具与设置",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                    text = if (showToolsAndSettings) "收起" else "展开",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                            )
+                    }
+                    if (showToolsAndSettings) {
+                            ToolEntryRows(
+                                    entries =
+                                            listOf(
+                                                    "包管理" to "packages",
+                                                    "工作流" to "workflow",
+                                                    "工具箱" to "toolbox",
+                                                    "收藏" to "message_favorites",
+                                                    "助手配置" to "assistant_config",
+                                                    "工具权限" to "tool_permissions",
+                                                    "对话历史设置" to "chat_history_settings",
+                                                    "Token 配置" to "token_config",
+                                                    "设置" to "settings"
+                                            ),
+                                    onOpen = onOpenToolsAndSettings
+                            )
+                    }
+            }
             HistoryQuickScroller(
                 listState = actualLazyListState,
                 itemCount = flatItems.size,
@@ -2506,4 +2551,25 @@ fun ChatHistorySelector(
             )
         }
     }
+}
+
+@Composable
+private fun ToolEntryRows(entries: List<Pair<String, String>>, onOpen: ((String) -> Unit)?) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+                entries.forEach { pair ->
+                        Row(
+                                modifier =
+                                        Modifier.fillMaxWidth()
+                                                .clickable { onOpen?.invoke(pair.second) }
+                                                .padding(horizontal = 14.dp, vertical = 9.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                        ) {
+                                Text(
+                                        text = pair.first,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                )
+                        }
+                }
+        }
 }
