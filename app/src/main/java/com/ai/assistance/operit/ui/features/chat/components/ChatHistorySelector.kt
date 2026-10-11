@@ -2650,35 +2650,44 @@ fun ChatHistorySelector(
                                     color = MaterialTheme.colorScheme.primary
                             )
 
-                            if (onLaunchFloatingWindow != null) {
-                                    IconButton(
-                                            onClick = onLaunchFloatingWindow,
-                                            modifier = Modifier.size(28.dp)
-                                    ) {
-                                            Icon(
-                                                    imageVector = Icons.Default.PictureInPicture,
-                                                    contentDescription = "悬浮窗",
-                                                    modifier = Modifier.size(16.dp),
-                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                    }
-                            }
                     }
                     if (showToolsAndSettings) {
                             ToolEntryRows(
                                     entries =
                                             listOf(
+                                                    "__group__" to "工具",
                                                     "包管理" to "packages",
-                                                    "工作流" to "workflow",
-                                                    "工具箱" to "toolbox",
-                                                    "助手配置" to "assistant_config",
-                                                    "工具权限" to "tool_permissions",
-                                                    "对话历史设置" to "chat_history_settings",
-                                                    "Token 配置" to "token_config",
-                                                    "设置" to "settings"
+                                                    "记忆库" to "memory",
+                                                    "模型配置" to "model_config",
+                                                    "__group__" to "设置",
+                                                    "设置" to "settings",
+                                                    "提示词" to "prompts",
+                                                    "Token 配置" to "token_config"
                                             ),
                                     onOpen = onOpenToolsAndSettings
                             )
+                            if (onLaunchFloatingWindow != null) {
+                                    Row(
+                                            modifier =
+                                                    Modifier.fillMaxWidth()
+                                                            .clickable { onLaunchFloatingWindow() }
+                                                            .padding(horizontal = 14.dp, vertical = 9.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                            Icon(
+                                                    imageVector = Icons.Default.PictureInPicture,
+                                                    contentDescription = "悬浮窗口",
+                                                    modifier = Modifier.size(16.dp),
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                    text = "悬浮窗口",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                    }
+                            }
                     }
             }
             HistoryQuickScroller(
@@ -2697,6 +2706,14 @@ fun ChatHistorySelector(
 private fun ToolEntryRows(entries: List<Pair<String, String>>, onOpen: ((String) -> Unit)?) {
         Column(modifier = Modifier.fillMaxWidth()) {
                 entries.forEach { pair ->
+                        if (pair.first == "__group__") {
+                                Text(
+                                        text = pair.second,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(start = 14.dp, top = 10.dp, bottom = 2.dp)
+                                )
+                        } else {
                         Row(
                                 modifier =
                                         Modifier.fillMaxWidth()
@@ -2709,6 +2726,7 @@ private fun ToolEntryRows(entries: List<Pair<String, String>>, onOpen: ((String)
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurface
                                 )
+                        }
                         }
                 }
         }
