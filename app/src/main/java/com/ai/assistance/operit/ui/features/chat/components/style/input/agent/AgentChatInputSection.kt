@@ -226,6 +226,7 @@ fun AgentChatInputSection(
     onToggleDisableUserPreferenceDescription: () -> Unit = {},
     onNavigateToMemoryBase: () -> Unit = {},
     onNavigateToPackageManager: () -> Unit = {},
+    onOpenFavorites: () -> Unit = {},
     toolPromptVisibility: Map<String, Boolean> = emptyMap(),
     onSaveToolPromptVisibilityMap: (Map<String, Boolean>) -> Unit = {},
     toolOrder: List<String> = emptyList(),
@@ -1506,6 +1507,7 @@ fun AgentChatInputSection(
                 onAttachLocation = onAttachLocation,
                 onAttachMemory = onAttachMemory,
                 onAttachPackage = onAttachPackage,
+                onOpenFavorites = onOpenFavorites,
                 onTakePhoto = onTakePhoto,
                 onDismiss = { setShowAttachmentPanel(false) },
             )
