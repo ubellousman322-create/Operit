@@ -1255,6 +1255,43 @@ fun ChatHistorySelector(
 
                     Spacer(modifier = Modifier.height(16.dp))
                     
+                    // 把对话加进这个组
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable {
+                                val target = groupActionTarget
+                                groupActionTarget = null
+                                bulkGroupName = target?.groupName
+                                bulkSelected = emptySet()
+                            },
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccountTree,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clearAndSetSemantics {}
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = "把对话加进这个组",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.clearAndSetSemantics {}
+                            )
+                        }
+                    }
                     // 重命名选项
                     Surface(
                         modifier = Modifier
