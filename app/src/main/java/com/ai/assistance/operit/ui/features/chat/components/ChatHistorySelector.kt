@@ -765,7 +765,7 @@ fun ChatHistorySelector(
         val targetGroup = bulkGroupName!!
         AlertDialog(
             onDismissRequest = { bulkGroupName = null },
-            title = { Text(text = "加入分组：" + targetGroup) },
+            title = { Text(text = "管理分组：" + targetGroup) },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     chatHistories.forEach { historyItem ->
@@ -800,11 +800,15 @@ fun ChatHistorySelector(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        chatHistories
-                            .filter { bulkSelected.contains(it.id) }
-                            .forEach { picked ->
-                                onUpdateChatOrderAndGroup(chatHistories, picked, targetGroup)
+                        chatHistories.forEach { each ->
+                            val shouldBeIn = bulkSelected.contains(each.id)
+                            val isIn = each.group == targetGroup
+                            if (shouldBeIn && !isIn) {
+                                onUpdateChatOrderAndGroup(chatHistories, each, targetGroup)
+                            } else if (!shouldBeIn && isIn) {
+                                onUpdateChatOrderAndGroup(chatHistories, each, null)
                             }
+                        }
                         bulkGroupName = null
                     }
                 ) { Text(text = "加入") }
@@ -1265,7 +1269,8 @@ fun ChatHistorySelector(
                                 val target = groupActionTarget
                                 groupActionTarget = null
                                 bulkGroupName = target?.groupName
-                                bulkSelected = emptySet()
+                                bulkSelected =
+                                    chatHistories.filter { it.group == target?.groupName }.map { it.id }.toSet()
                             },
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                     ) {
@@ -2338,7 +2343,8 @@ fun ChatHistorySelector(
                                 modifier =
                                     Modifier.clickable {
                                         bulkGroupName = item.name
-                                        bulkSelected = emptySet()
+                                        bulkSelected =
+                                            chatHistories.filter { it.group == item.name }.map { it.id }.toSet()
                                     }.padding(horizontal = 8.dp, vertical = 6.dp)
                             )
                             Surface(
