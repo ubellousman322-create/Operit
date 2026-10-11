@@ -34,8 +34,7 @@ fun ToolsAndSettingsScreen(onGoBack: () -> Unit, onOpen: (String) -> Unit) {
                                 listOf(
                                         "工作流" to "workflow",
                                         "包管理" to "packages",
-                                        "工具箱" to "toolbox",
-                                        "收藏" to "favorites"
+                                        "工具箱" to "toolbox"
                                 ),
                         "设置" to
                                 listOf(
