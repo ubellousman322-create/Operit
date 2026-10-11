@@ -472,6 +472,7 @@ fun ChatHistorySelector(
     var isSearching by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showToolsAndSettings by remember { mutableStateOf(false) }
+    var showToolsAndSettingsDialog by remember { mutableStateOf(false) }
     var showGroupsView by remember { mutableStateOf(false) }
     var chatToMove by remember { mutableStateOf<ChatHistory?>(null) }
     var bulkGroupName by remember { mutableStateOf<String?>(null) }
@@ -2633,7 +2634,7 @@ fun ChatHistorySelector(
                     Row(
                             modifier =
                                     Modifier.fillMaxWidth()
-                                            .clickable { showToolsAndSettings = !showToolsAndSettings }
+                                            .clickable { showToolsAndSettingsDialog = true }
                                             .padding(horizontal = 10.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -2645,49 +2646,20 @@ fun ChatHistorySelector(
 
                             )
                             Text(
-                                    text = if (showToolsAndSettings) "收起" else "展开",
+                                    text = "\u203a",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary
                             )
 
                     }
-                    if (showToolsAndSettings) {
-                            ToolEntryRows(
-                                    entries =
-                                            listOf(
-                                                    "__group__" to "工具",
-                                                    "包管理" to "packages",
-                                                    "记忆库" to "memory",
-                                                    "模型配置" to "model_config",
-                                                    "__group__" to "设置",
-                                                    "设置" to "settings",
-                                                    "提示词" to "prompts",
-                                                    "Token 配置" to "token_config"
-                                            ),
-                                    onOpen = onOpenToolsAndSettings
-                            )
-                            if (onLaunchFloatingWindow != null) {
-                                    Row(
-                                            modifier =
-                                                    Modifier.fillMaxWidth()
-                                                            .clickable { onLaunchFloatingWindow() }
-                                                            .padding(horizontal = 14.dp, vertical = 9.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                            Icon(
-                                                    imageVector = Icons.Default.PictureInPicture,
-                                                    contentDescription = "悬浮窗口",
-                                                    modifier = Modifier.size(16.dp),
-                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                    text = "悬浮窗口",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurface
-                                            )
+                    if (showToolsAndSettingsDialog) {
+                            ToolsAndSettingsDialog(
+                                    onDismiss = { showToolsAndSettingsDialog = false },
+                                    onOpen = { route ->
+                                            showToolsAndSettingsDialog = false
+                                            onOpenToolsAndSettings?.invoke(route)
                                     }
-                            }
+                            )
                     }
             }
             HistoryQuickScroller(
@@ -2791,4 +2763,41 @@ private fun formatHistoryTime(updatedAt: java.time.LocalDateTime): String {
                 }
                 else -> "%d-%d".format(updatedAt.monthValue, updatedAt.dayOfMonth)
         }
+}
+
+@Composable
+private fun ToolsAndSettingsDialog(onDismiss: () -> Unit, onOpen: (String) -> Unit) {
+        val entries =
+                listOf(
+                        "包管理" to "packages",
+                        "记忆库" to "memory",
+                        "模型配置" to "model_config",
+                        "设置" to "settings",
+                        "提示词" to "prompts",
+                        "Token 配置" to "token_config"
+                )
+        AlertDialog(
+                onDismissRequest = onDismiss,
+                title = { Text("工具与设置") },
+                text = {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                                entries.forEach { pair ->
+                                        Row(
+                                                modifier =
+                                                        Modifier.fillMaxWidth()
+                                                                .clickable { onOpen(pair.second) }
+                                                                .padding(horizontal = 4.dp, vertical = 12.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                                Text(
+                                                        text = pair.first,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                        }
+                                }
+                        }
+                },
+                confirmButton = { TextButton(onClick = onDismiss) { Text("关闭") } }
+        )
 }
