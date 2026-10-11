@@ -470,6 +470,7 @@ fun ChatHistorySelector(
     var isSearching by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showToolsAndSettings by remember { mutableStateOf(false) }
+    var showGroupsView by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val chatHistoryManager = remember { ChatHistoryManager.getInstance(context) }
@@ -651,7 +652,8 @@ fun ChatHistorySelector(
                     groupNameById,
                     groupPrefix,
                     historyDisplayMode,
-                    activeCharacterCardName
+                    activeCharacterCardName,
+                     showGroupsView
             ) {
                 fun characterKey(name: String) = "character::$name"
                 fun groupKey(characterName: String?, groupValue: String?): String {
@@ -661,14 +663,35 @@ fun ChatHistorySelector(
                 }
 
                 // 时间流：置顶优先，其余按最后一次聊天时间倒序；分组不再占主列表
-                val latestIdForCard = filteredHistories.maxByOrNull { it.updatedAt }?.id
-                filteredHistories
-                        .filter { it.id != latestIdForCard }
-                        .sortedWith(
-                                compareByDescending<ChatHistory> { it.pinned }
-                                        .thenByDescending { it.updatedAt }
-                        )
-                        .map { HistoryListItem.Item(it) }
+                if (showGroupsView) {
+                    filteredHistories
+                            .groupBy { it.group }
+                            .flatMap { (groupValue, histories) ->
+                                val header =
+                                        HistoryListItem.Header(
+                                                key = "group::" + (groupValue ?: "ungrouped"),
+                                                name = groupValue ?: ungroupedText,
+                                                groupValue = groupValue,
+                                                characterCardName = null
+                                        )
+                                listOf(header) +
+                                        histories
+                                                .sortedWith(
+                                                        compareByDescending<ChatHistory> { it.pinned }
+                                                                .thenByDescending { it.updatedAt }
+                                                )
+                                                .map { HistoryListItem.Item(it) }
+                            }
+                } else {
+                    val latestIdForCard = filteredHistories.maxByOrNull { it.updatedAt }?.id
+                    filteredHistories
+                            .filter { it.id != latestIdForCard }
+                            .sortedWith(
+                                    compareByDescending<ChatHistory> { it.pinned }
+                                            .thenByDescending { it.updatedAt }
+                            )
+                            .map { HistoryListItem.Item(it) }
+                }
             }
 
     val reorderableState = rememberReorderableLazyListState(actualLazyListState) { from, to ->
@@ -1929,6 +1952,27 @@ fun ChatHistorySelector(
                     .fillMaxWidth()
                     .padding(start = 10.dp, end = 22.dp)
             ) {
+                item(key = "view-switch") {
+                    Row(
+                            modifier =
+                                    Modifier.fillMaxWidth()
+                                            .clickable { showGroupsView = !showGroupsView }
+                                            .padding(horizontal = 6.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                    ) {
+                            Text(
+                                    text = if (showGroupsView) "按分组" else "按时间",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                    text = "切换",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                            )
+                    }
+                }
                 item(key = "latest-chat-card") {
                     val latest = filteredHistories.maxByOrNull { it.updatedAt }
                     if (latest != null) {
