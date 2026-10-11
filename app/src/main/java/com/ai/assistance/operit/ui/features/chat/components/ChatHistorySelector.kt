@@ -660,120 +660,13 @@ fun ChatHistorySelector(
                     return "group::$characterPart::$groupPart"
                 }
 
-                when (historyDisplayMode) {
-                    ChatHistoryDisplayMode.BY_CHARACTER_CARD -> {
-                        data class BindingBucket(
-                            val key: String,
-                            val displayName: String,
-                            val characterCardName: String?,
-                            val characterGroupId: String?
+                // 时间流：置顶优先，其余按最后一次聊天时间倒序；分组不再占主列表
+                filteredHistories
+                        .sortedWith(
+                                compareByDescending<ChatHistory> { it.pinned }
+                                        .thenByDescending { it.updatedAt }
                         )
-                        fun resolveBindingBucket(history: ChatHistory): BindingBucket {
-                            val groupId = history.characterGroupId?.trim()?.takeIf { it.isNotBlank() }
-                            if (!groupId.isNullOrBlank()) {
-                                val groupName = groupNameById[groupId]?.takeIf { it.isNotBlank() }
-                                val displayName =
-                                    if (!groupName.isNullOrBlank()) {
-                                        "$groupPrefix: $groupName"
-                                    } else {
-                                        context.getString(R.string.missing_character_group_id, groupId)
-                                    }
-                                return BindingBucket(
-                                    key = "binding::group::$groupId",
-                                    displayName = displayName,
-                                    characterCardName = null,
-                                    characterGroupId = groupId
-                                )
-                            }
-
-                            val cardName = history.characterCardName?.takeIf { it.isNotBlank() }
-                            if (!cardName.isNullOrBlank()) {
-                                return BindingBucket(
-                                    key = "binding::card::$cardName",
-                                    displayName = cardName,
-                                    characterCardName = cardName,
-                                    characterGroupId = null
-                                )
-                            }
-
-                            return BindingBucket(
-                                key = "binding::unbound",
-                                displayName = unboundCharacterText,
-                                characterCardName = null,
-                                characterGroupId = null
-                            )
-                        }
-
-                        filteredHistories
-                            .groupBy { resolveBindingBucket(it) }
-                            .flatMap { (bindingBucket, histories) ->
-                                val cKey = characterKey(bindingBucket.key)
-                                val children =
-                                        if (collapsedCharacters.contains(cKey)) {
-                                            emptyList()
-                                        } else {
-                                            histories
-                                                .groupBy { it.group }
-                                                .flatMap { (groupValue, groupedHistories) ->
-                                                    val displayName = groupValue ?: ungroupedText
-                                                    val gKey = groupKey(bindingBucket.key, groupValue)
-                                                    val header =
-                                                            HistoryListItem.Header(
-                                                                    key = gKey,
-                                                                    name = displayName,
-                                                                    groupValue = groupValue,
-                                                                    characterCardName = bindingBucket.characterCardName
-                                                            )
-                                                    val items =
-                                                            if (collapsedGroups.contains(gKey)) {
-                                                                emptyList()
-                                                            } else {
-                                                                groupedHistories.map {
-                                                                    HistoryListItem.Item(it)
-                                                                }
-                                                    }
-                                                    listOf(header) + items
-                                                }
-                                        }
-                                listOf(
-                                    HistoryListItem.CharacterHeader(
-                                        key = cKey,
-                                        name = bindingBucket.displayName,
-                                        characterCardName = bindingBucket.characterCardName,
-                                        characterGroupId = bindingBucket.characterGroupId
-                                    )
-                                ) + children
-                            }
-                    }
-                    else -> {
-                        filteredHistories
-                            .groupBy { it.group }
-                            .flatMap { (groupValue, histories) ->
-                                val displayName = groupValue ?: ungroupedText
-                                val gKey = groupKey(null, groupValue)
-                                // 在仅显示当前角色卡模式下，使用当前角色卡名称
-                                val effectiveCharacterCardName = if (historyDisplayMode == ChatHistoryDisplayMode.CURRENT_CHARACTER_ONLY) {
-                                    activeCharacterCardName
-                                } else {
-                                    null
-                                }
-                                val header =
-                                        HistoryListItem.Header(
-                                                key = gKey,
-                                                name = displayName,
-                                                groupValue = groupValue,
-                                                characterCardName = effectiveCharacterCardName
-                                        )
-                                val items =
-                                        if (collapsedGroups.contains(gKey)) {
-                                            emptyList()
-                                        } else {
-                                            histories.map { HistoryListItem.Item(it) }
-                                        }
-                                listOf(header) + items
-                            }
-                    }
-                }
+                        .map { HistoryListItem.Item(it) }
             }
 
     val reorderableState = rememberReorderableLazyListState(actualLazyListState) { from, to ->
