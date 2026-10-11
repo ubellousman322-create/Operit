@@ -42,7 +42,9 @@ fun ChatHeader(
         runningTaskCount: Int = 0,
         activeCharacterName: String,
         activeCharacterAvatarUri: String?,
-        onCharacterClick: () -> Unit
+        onCharacterClick: () -> Unit,
+        chatTitle: String = "",
+        onTitleClick: () -> Unit = {}
 ) {
         val displayCharacterName = activeCharacterName.toChatHeaderName()
 
@@ -123,7 +125,6 @@ fun ChatHeader(
                                 Modifier
                                         .widthIn(max = 176.dp)
                                         .clip(CircleShape)
-                                        .clickable(onClick = onCharacterClick)
                                         .padding(horizontal = 8.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -134,6 +135,7 @@ fun ChatHeader(
                                         Modifier
                                                 .size(24.dp)
                                                 .clip(CircleShape)
+                                                .clickable(onClick = onCharacterClick)
                                                 .background(MaterialTheme.colorScheme.secondaryContainer),
                                 contentAlignment = Alignment.Center
                         ) {
@@ -154,11 +156,16 @@ fun ChatHeader(
                                 }
                         }
                         Text(
-                                text = displayCharacterName,
+                                text = if (chatTitle.isNotBlank()) chatTitle else displayCharacterName,
                                 style = MaterialTheme.typography.bodyMedium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.widthIn(max = 116.dp)
+                                modifier =
+                                        Modifier
+                                                .widthIn(max = 116.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .clickable(onClick = onTitleClick)
+                                                .padding(horizontal = 6.dp, vertical = 4.dp)
                         )
                 }
         }
