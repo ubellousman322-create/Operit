@@ -2458,7 +2458,7 @@ fun ChatHistorySelector(
                                                     Row(
                                                         modifier = Modifier
                                                             .fillMaxWidth()
-                                                            .padding(horizontal = 12.dp, vertical = 9.dp)
+                                                            .padding(horizontal = 14.dp, vertical = 10.dp)
                                                             .semantics(mergeDescendants = false) {
                                                                 contentDescription = "$titlePreview, $groupName"
                                                             }
@@ -2587,29 +2587,72 @@ private fun LatestChatCard(history: ChatHistory, onClick: () -> Unit) {
         Surface(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
                 onClick = onClick,
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.58f),
-                shadowElevation = 6.dp
+                shape = RoundedCornerShape(26.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shadowElevation = 10.dp
         ) {
-                Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                Box(
+                        modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                        Brush.linearGradient(
+                                                colors = listOf(
+                                                        MaterialTheme.colorScheme.primaryContainer,
+                                                        MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.62f)
+                                                )
+                                        )
+                                )
+                                .padding(horizontal = 20.dp, vertical = 18.dp)
                 ) {
-                        Text(
-                                text = history.title,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.weight(1f)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                                text = "继续 →",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary
-                        )
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                                modifier = Modifier
+                                                        .size(7.dp)
+                                                        .background(MaterialTheme.colorScheme.primary, CircleShape)
+                                        )
+                                        Spacer(modifier = Modifier.width(7.dp))
+                                        Text(
+                                                text = "最近",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.primary
+                                        )
+                                }
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text(
+                                        text = history.title,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                        Text(
+                                                text = "继续对话",
+                                                style = MaterialTheme.typography.labelLarge,
+                                                color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Spacer(modifier = Modifier.weight(1f))
+                                        Box(
+                                                modifier = Modifier
+                                                        .size(38.dp)
+                                                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                                                contentAlignment = Alignment.Center
+                                        ) {
+                                                Icon(
+                                                        imageVector = Icons.Default.KeyboardArrowRight,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                                        modifier = Modifier.size(26.dp)
+                                                )
+                                        }
+                                }
+                        }
                 }
         }
 }
