@@ -212,6 +212,14 @@ fun AttachmentSelectorPanel(
                                             onOpenFavorites()
                                             onDismiss()
                                         }
+                                ),
+                                AttachmentPanelItem(
+                                        icon = Icons.Default.Memory,
+                                        label = "记忆",
+                                        onClick = {
+                                            onAttachMemory()
+                                            onDismiss()
+                                        }
                                 )
                         )
 
@@ -402,6 +410,14 @@ fun AttachmentSelectorPopupPanel(
                             label = "收藏",
                             onClick = {
                                 onOpenFavorites()
+                                onDismiss()
+                            }
+                    ),
+                    AttachmentPanelItem(
+                            icon = Icons.Default.Memory,
+                            label = "记忆",
+                            onClick = {
+                                onAttachMemory()
                                 onDismiss()
                             }
                     )
