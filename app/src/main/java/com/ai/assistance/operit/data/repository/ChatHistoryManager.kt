@@ -3,6 +3,7 @@ package com.ai.assistance.operit.data.repository
 import android.content.Context
 import android.net.Uri
 import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.ChatUtils
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -89,6 +90,12 @@ data class AddedMessageVariant(
     val selectedVariantIndex: Int,
     val message: ChatMessage,
 )
+
+private val PREVIEW_TOOL_BLOCK = Regex("<tool\\b[\\s\\S]*?</tool>", RegexOption.IGNORE_CASE)
+private val PREVIEW_PARAM_BLOCK = Regex("<param\\b[\\s\\S]*?</param>", RegexOption.IGNORE_CASE)
+private val PREVIEW_WORKFLOW_BLOCK =
+        Regex("<workflow\\b[\\s\\S]*?</workflow>", RegexOption.IGNORE_CASE)
+private val PREVIEW_WHITESPACE = Regex("\\s+")
 
 class ChatHistoryManager private constructor(private val context: Context) {
     companion object {
@@ -458,6 +465,19 @@ class ChatHistoryManager private constructor(private val context: Context) {
         val CURRENT_CHAT_ID = stringPreferencesKey("current_chat_id")
     }
 
+    /** 预览只留正文：剥掉思维链、工具调用与工作流提示。 */
+    private fun sanitizePreview(raw: String?): String? {
+        if (raw.isNullOrBlank()) {
+            return null
+        }
+        var text = ChatUtils.removeThinkingContent(raw)
+        text = PREVIEW_TOOL_BLOCK.replace(text, " ")
+        text = PREVIEW_PARAM_BLOCK.replace(text, " ")
+        text = PREVIEW_WORKFLOW_BLOCK.replace(text, " ")
+        text = PREVIEW_WHITESPACE.replace(text, " ").trim()
+        return text.ifBlank { null }
+    }
+
     // 辅助函数：批量转换，附带每个聊天的最后一条消息（时间与预览）
     private suspend fun List<ChatEntity>.toChatHistoryList(): List<ChatHistory> {
         val lastMessages =
@@ -498,7 +518,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
             locked = this.locked,
             pinned = this.pinned,
             lastMessageTimestamp = lastMessage?.timestamp,
-            lastMessagePreview = lastMessage?.content?.replace("\n", " ")?.trim(),
+            lastMessagePreview = sanitizePreview(lastMessage?.content),
         )
     }
 
