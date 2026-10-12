@@ -203,6 +203,12 @@ interface MessageDao {
     @Update
     suspend fun updateMessage(message: MessageEntity)
 
+    /** 获取每个聊天的最后一条消息（侧栏显示时间与预览用） */
+    @Query(
+        "SELECT m.* FROM messages m INNER JOIN (SELECT chatId, MAX(timestamp) AS maxTimestamp FROM messages GROUP BY chatId) t ON m.chatId = t.chatId AND m.timestamp = t.maxTimestamp"
+    )
+    suspend fun getLastMessagesByChatId(): List<MessageEntity>
+
     /** 获取指定聊天中最大的序号 */
     @Query("SELECT MAX(orderIndex) FROM messages WHERE chatId = :chatId")
     suspend fun getMaxOrderIndex(chatId: String): Int?
