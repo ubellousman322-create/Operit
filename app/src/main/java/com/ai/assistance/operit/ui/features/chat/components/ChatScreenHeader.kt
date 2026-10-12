@@ -185,7 +185,7 @@ fun ChatScreenHeader(
                                     if (chatHeaderTransparent) Color.Transparent
                                     else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
                             )
-                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                            .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 6.dp)
                             .statusBarsPadding(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
