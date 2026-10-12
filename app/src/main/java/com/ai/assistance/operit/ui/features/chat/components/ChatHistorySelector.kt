@@ -1912,7 +1912,13 @@ fun ChatHistorySelector(
                     )
                     onNewChat(characterCardName, characterGroupId)
                 },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.new_chat))
                 Spacer(modifier = Modifier.width(8.dp))
@@ -2446,7 +2452,7 @@ fun ChatHistorySelector(
                                                 color =
                                                     if (isSelected) containerColor
                                                     else MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.82f),
-                                                shape = RoundedCornerShape(14.dp),
+                                                shape = RoundedCornerShape(18.dp),
                                                 shadowElevation = 1.dp
                                             ) {
                                                 Box(
@@ -2587,72 +2593,40 @@ private fun LatestChatCard(history: ChatHistory, onClick: () -> Unit) {
         Surface(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
                 onClick = onClick,
-                shape = RoundedCornerShape(26.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shadowElevation = 10.dp
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                shadowElevation = 2.dp
         ) {
-                Box(
-                        modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                        Brush.linearGradient(
-                                                colors = listOf(
-                                                        MaterialTheme.colorScheme.primaryContainer,
-                                                        MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.62f)
-                                                )
-                                        )
+                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                        modifier = Modifier
+                                                .size(7.dp)
+                                                .background(MaterialTheme.colorScheme.primary, CircleShape)
                                 )
-                                .padding(horizontal = 20.dp, vertical = 18.dp)
-                ) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(
-                                                modifier = Modifier
-                                                        .size(7.dp)
-                                                        .background(MaterialTheme.colorScheme.primary, CircleShape)
-                                        )
-                                        Spacer(modifier = Modifier.width(7.dp))
-                                        Text(
-                                                text = "最近",
-                                                style = MaterialTheme.typography.labelMedium,
-                                                color = MaterialTheme.colorScheme.primary
-                                        )
-                                }
-                                Spacer(modifier = Modifier.height(10.dp))
+                                Spacer(modifier = Modifier.width(7.dp))
                                 Text(
-                                        text = history.title,
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        text = "最近",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary
                                 )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                        Text(
-                                                text = "继续对话",
-                                                style = MaterialTheme.typography.labelLarge,
-                                                color = MaterialTheme.colorScheme.primary
-                                        )
-                                        Spacer(modifier = Modifier.weight(1f))
-                                        Box(
-                                                modifier = Modifier
-                                                        .size(38.dp)
-                                                        .background(MaterialTheme.colorScheme.primary, CircleShape),
-                                                contentAlignment = Alignment.Center
-                                        ) {
-                                                Icon(
-                                                        imageVector = Icons.Default.KeyboardArrowRight,
-                                                        contentDescription = null,
-                                                        tint = MaterialTheme.colorScheme.onPrimary,
-                                                        modifier = Modifier.size(26.dp)
-                                                )
-                                        }
-                                }
                         }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                                text = history.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                                text = "继续 →",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.align(Alignment.End)
+                        )
                 }
         }
 }
