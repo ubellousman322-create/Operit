@@ -36,6 +36,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -118,7 +120,7 @@ private suspend fun resolveSidebarPermissionStatus(
         }
 }
 
-/** Content for the expanded navigation drawer. Chat stays the primary destination. */
+/** Expanded phone/tablet sidebar: the conversation history is the sidebar itself. */
 @Composable
 fun DrawerContent(
         navItems: List<NavItem>,
@@ -134,53 +136,93 @@ fun DrawerContent(
         onScreenSelected: (Screen) -> Unit,
         onNavigationEntrySelected: (NavigationEntrySpec) -> Unit
 ) {
+        val context = LocalContext.current
+        val chatCore = remember(context) {
+                com.ai.assistance.operit.api.chat.ChatRuntimeHolder.getInstance(context)
+                        .getCore(com.ai.assistance.operit.api.chat.ChatRuntimeSlot.MAIN)
+        }
+        val historyDelegate = remember(chatCore) { chatCore.getChatHistoryDelegate() }
+        val chatHistories by chatCore.chatHistories.collectAsState()
+        val currentChatId by chatCore.currentChatId.collectAsState()
+        val activeStreamingChatIds by chatCore.activeStreamingChatIds.collectAsState()
+        val activePromptManager = remember(context) {
+                com.ai.assistance.operit.data.preferences.ActivePromptManager.getInstance(context)
+        }
+        val activePrompt by activePromptManager.activePromptFlow.collectAsState(
+                initial = com.ai.assistance.operit.data.model.ActivePrompt.CharacterCard(
+                        com.ai.assistance.operit.data.preferences.CharacterCardManager.DEFAULT_CHARACTER_CARD_ID
+                )
+        )
+        val historyListState = androidx.compose.foundation.lazy.rememberLazyListState()
+        var searchQuery by remember { mutableStateOf("") }
+        var historyDisplayMode by com.ai.assistance.operit.ui.common.rememberLocal(
+                "chat_history_display_mode",
+                com.ai.assistance.operit.ui.features.chat.viewmodel.ChatHistoryDisplayMode.BY_FOLDER
+        )
+        var autoSwitchCharacterCard by com.ai.assistance.operit.ui.common.rememberLocal(
+                "chat_history_auto_switch_character_card",
+                false
+        )
+        var autoSwitchChatOnCharacterSelect by com.ai.assistance.operit.ui.common.rememberLocal(
+                "chat_history_auto_switch_chat_on_character_select",
+                false
+        )
         val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        val resolvedTopContentPadding =
-                topContentPadding
-                        ?: WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        val handleScreenSelection: (Screen) -> Unit = { screen ->
+        val resolvedTopContentPadding = topContentPadding
+                ?: WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+        val closeDrawer: () -> Unit = {
                 scope.launch {
-                        if (
-                                drawerState.currentValue == DrawerValue.Open ||
-                                        drawerState.targetValue == DrawerValue.Open
-                        ) {
+                        if (drawerState.currentValue == DrawerValue.Open || drawerState.targetValue == DrawerValue.Open) {
                                 drawerState.close()
                         }
-                        onScreenSelected(screen)
                 }
         }
-
-        Column(
-                modifier =
-                        Modifier.fillMaxHeight()
-                                .padding(
-                                        top = resolvedTopContentPadding,
-                                        end = 8.dp,
-                                        bottom = bottomInset
-                                )
-        ) {
-                Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                        CompactNavigationDrawerItem(
-                                icon = NavItem.AiChat.icon,
-                                label = stringResource(id = NavItem.AiChat.titleResId),
-                                selected = selectedItem == NavItem.AiChat,
-                                appearance = appearance,
-                                onClick = { handleScreenSelection(Screen.AiChat) }
+        com.ai.assistance.operit.ui.features.chat.components.ChatHistorySelector(
+                modifier = Modifier.fillMaxHeight().padding(
+                        top = resolvedTopContentPadding,
+                        end = 8.dp,
+                        bottom = bottomInset
+                ),
+                onNewChat = { cardName, groupId ->
+                        historyDelegate.createNewChat(
+                                characterCardName = cardName,
+                                characterGroupId = groupId
                         )
-                        Spacer(modifier = Modifier.weight(1f))
-                        HorizontalDivider(color = appearance.dividerColor)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        CompactNavigationDrawerItem(
-                                icon = NavItem.Settings.icon,
-                                label = "工具与设置",
-                                selected = selectedRouteId == ScreenRouteRegistry.routeIdOf(Screen.ToolsAndSettings),
-                                appearance = appearance,
-                                onClick = { handleScreenSelection(Screen.ToolsAndSettings) }
-                        )
-                }
-        }
+                        closeDrawer()
+                },
+                onSelectChat = { chatId ->
+                        chatCore.switchChat(chatId)
+                        closeDrawer()
+                },
+                onDeleteChat = { chatId -> chatCore.deleteChatHistory(chatId) },
+                onUpdateChatTitle = historyDelegate::updateChatTitle,
+                onUpdateChatBinding = historyDelegate::updateChatCharacterBinding,
+                onCreateGroup = historyDelegate::createGroup,
+                onUpdateChatOrderAndGroup = historyDelegate::updateChatOrderAndGroup,
+                onUpdateGroupName = historyDelegate::updateGroupName,
+                onDeleteGroup = historyDelegate::deleteGroup,
+                chatHistories = chatHistories,
+                currentId = currentChatId,
+                activeStreamingChatIds = activeStreamingChatIds,
+                lazyListState = historyListState,
+                onBack = closeDrawer,
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it },
+                historyDisplayMode = historyDisplayMode,
+                onDisplayModeChange = { historyDisplayMode = it },
+                autoSwitchCharacterCard = autoSwitchCharacterCard,
+                onAutoSwitchCharacterCardChange = { autoSwitchCharacterCard = it },
+                autoSwitchChatOnCharacterSelect = autoSwitchChatOnCharacterSelect,
+                onAutoSwitchChatOnCharacterSelectChange = { autoSwitchChatOnCharacterSelect = it },
+                onOpenToolsAndSettings = { route ->
+                        if (route == "tools_settings") {
+                                closeDrawer()
+                                onScreenSelected(Screen.ToolsAndSettings)
+                        }
+                },
+                activePrompt = activePrompt
+        )
 }
-
 /** Compact tablet rail: chat on top, tools and settings anchored at the bottom. */
 @Composable
 fun CollapsedDrawerContent(
