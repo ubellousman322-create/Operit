@@ -176,6 +176,7 @@ fun ChatScreenHeader(
         )
     }
 
+    val openChatDrawer = LocalOpenChatDrawer.current
     Row(
             modifier =
                     modifier
@@ -191,7 +192,7 @@ fun ChatScreenHeader(
     ) {
         ChatHeader(
                 showChatHistorySelector = showChatHistorySelector,
-                onToggleChatHistorySelector = { LocalOpenChatDrawer.current?.invoke() },
+                onToggleChatHistorySelector = { openChatDrawer?.invoke() },
                 modifier = Modifier.weight(1f),
                 isFloatingMode = isFloatingMode,
                 onLaunchFloatingWindow = launchFloatingWindow,
