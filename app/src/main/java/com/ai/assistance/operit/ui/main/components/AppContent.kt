@@ -68,6 +68,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -133,6 +134,12 @@ private enum class ScreenVisibility {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
+/**
+ * Opens the global navigation drawer. The chat page owns its own header, so the moon
+ * button reaches the drawer through this local instead of a duplicate in-page panel.
+ */
+val LocalOpenChatDrawer = staticCompositionLocalOf<(() -> Unit)?> { null }
+
 @Composable
 fun AppContent(
         currentRouteEntry: RouteEntry,
@@ -262,12 +269,14 @@ fun AppContent(
 
     CompositionLocalProvider(
         LocalAppBarContentColor provides appBarContentColor,
+        LocalOpenChatDrawer provides { scope.launch { drawerState.open() } },
     ) {
         // 使用Scaffold来正确处理顶部栏和内容的布局
         // contentWindowInsets = WindowInsets(0) 让内容可以延伸到系统栏下方，使背景能够完全填充
         Scaffold(
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
+                if (currentScreen !is Screen.AiChat) {
                 // 单一工具栏 - 使用小型化的设计
                 // 使用 windowInsets 参数让 TopAppBar 自己处理状态栏的 insets
                 TopAppBar(
@@ -367,6 +376,7 @@ fun AppContent(
                     ),
                     // Scaffold会处理 insets, 这里不再需要手动添加 modifier
                 )
+                }
             },
             containerColor = Color.Transparent
         ) { innerPadding ->
