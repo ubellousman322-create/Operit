@@ -6,6 +6,10 @@ import android.provider.Settings
 import androidx.annotation.RequiresApi
 import com.ai.assistance.operit.util.AppLogger
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -1276,6 +1280,34 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
             }
         }
 
+        // 工作区与终端是全屏浮层，需要一个看得见的退出入口，系统返回键也应能关掉它们
+        val fullscreenOverlayActive = !embedded && (showWebView || showAiComputer)
+        val closeFullscreenOverlay = {
+            if (showWebView) {
+                actualViewModel.onWorkspaceButtonClick()
+            } else if (showAiComputer) {
+                actualViewModel.toggleAiComputer()
+            }
+        }
+        BackHandler(enabled = fullscreenOverlayActive) { closeFullscreenOverlay() }
+        if (fullscreenOverlayActive) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopStart) {
+                Surface(
+                        onClick = closeFullscreenOverlay,
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                        shadowElevation = 8.dp,
+                        modifier = Modifier.statusBarsPadding().padding(start = 12.dp, top = 10.dp)
+                ) {
+                    Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "退出",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(10.dp).size(22.dp)
+                    )
+                }
+            }
+        }
         AnimatedVisibility(
             visible = !embedded && isWorkspacePreparing,
             enter = fadeIn(animationSpec = tween(180)),
