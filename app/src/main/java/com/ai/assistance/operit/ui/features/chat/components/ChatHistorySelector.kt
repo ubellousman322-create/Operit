@@ -1915,7 +1915,7 @@ fun ChatHistorySelector(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
@@ -2302,7 +2302,7 @@ fun ChatHistorySelector(
                                             }
                                         )
                                     },
-                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.70f),
                                 shadowElevation = 2.dp,
                                 shape = MaterialTheme.shapes.medium
                             ) {
@@ -2451,7 +2451,7 @@ fun ChatHistorySelector(
                                                     .padding(vertical = 3.dp),
                                                 color =
                                                     if (isSelected) containerColor
-                                                    else MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.82f),
+                                                    else MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.70f),
                                                 shape = RoundedCornerShape(18.dp),
                                                 shadowElevation = 1.dp
                                             ) {
@@ -2565,9 +2565,9 @@ fun ChatHistorySelector(
 
             Surface(
                     modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-                    tonalElevation = 6.dp,
-                    shadowElevation = 8.dp
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 2.dp
             ) {
                     Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
                             HistoryBottomAction(
@@ -2594,7 +2594,7 @@ private fun LatestChatCard(history: ChatHistory, onClick: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
                 onClick = onClick,
                 shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.74f),
                 shadowElevation = 2.dp
         ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp)) {
@@ -2636,9 +2636,9 @@ private fun HistoryBottomAction(label: String, onClick: () -> Unit) {
         Surface(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = onClick,
-                shape = RoundedCornerShape(14.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),
-                tonalElevation = 2.dp
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.70f),
+                tonalElevation = 0.dp
         ) {
                 Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 11.dp),
