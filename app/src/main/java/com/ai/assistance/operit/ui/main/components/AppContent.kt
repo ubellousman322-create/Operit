@@ -273,7 +273,9 @@ fun AppContent(
                 TopAppBar(
                     windowInsets = WindowInsets.statusBars,
                     title = {
-                        if (titleContent != null) {
+                        if (currentScreen is Screen.AiChat) {
+                            // ChatScreenHeader renders the editable conversation title.
+                        } else if (titleContent != null) {
                             titleContent.content()
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -313,7 +315,8 @@ fun AppContent(
                         }
                     },
                     navigationIcon = {
-                        // 导航按钮逻辑
+                        // 聊天页使用内容内的月牙历史入口，不再重复显示全局汉堡按钮。
+                        if (currentScreen !is Screen.AiChat) {
                         IconButton(
                             onClick = {
                                 if (canGoBack) {
@@ -347,8 +350,9 @@ fun AppContent(
                                 tint = appBarContentColor
                             )
                         }
+                        }
                     },
-                    actions = actions,
+                    actions = { if (currentScreen !is Screen.AiChat) actions() },
                     colors =
                     TopAppBarDefaults.topAppBarColors(
                         containerColor =
