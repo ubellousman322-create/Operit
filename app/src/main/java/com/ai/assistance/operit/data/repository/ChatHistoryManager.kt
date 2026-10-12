@@ -458,8 +458,19 @@ class ChatHistoryManager private constructor(private val context: Context) {
         val CURRENT_CHAT_ID = stringPreferencesKey("current_chat_id")
     }
 
+    // 辅助函数：批量转换，附带每个聊天的最后一条消息（时间与预览）
+    private suspend fun List<ChatEntity>.toChatHistoryList(): List<ChatHistory> {
+        val lastMessages =
+                runCatching { messageDao.getLastMessagesByChatId() }
+                        .getOrDefault(emptyList())
+                        .associateBy { it.chatId }
+        return map { entity -> entity.toChatHistory(lastMessages[entity.id]) }
+    }
+
     // 辅助函数：将ChatEntity转换为ChatHistory
-    private fun ChatEntity.toChatHistory(): ChatHistory {
+    private fun ChatEntity.toChatHistory(
+        lastMessage: MessageEntity? = null,
+    ): ChatHistory {
         val createdAt = Instant.ofEpochMilli(this.createdAt)
             .atZone(ZoneId.systemDefault())
             .toLocalDateTime()
@@ -485,7 +496,9 @@ class ChatHistoryManager private constructor(private val context: Context) {
             characterCardName = this.characterCardName, // 映射characterCardName字段
             characterGroupId = this.characterGroupId, // 映射characterGroupId字段
             locked = this.locked,
-            pinned = this.pinned
+            pinned = this.pinned,
+            lastMessageTimestamp = lastMessage?.timestamp,
+            lastMessagePreview = lastMessage?.content?.replace("\n", " ")?.trim(),
         )
     }
 
@@ -497,7 +510,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
 
             // 使用withContext将处理移至IO线程
             kotlinx.coroutines.withContext(Dispatchers.IO) {
-                chatEntities.map { it.toChatHistory() }
+                chatEntities.toChatHistoryList()
             }
         }
 
@@ -554,7 +567,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
 
         return sourceFlow.map { chatEntities ->
             kotlinx.coroutines.withContext(Dispatchers.IO) {
-                chatEntities.map { it.toChatHistory() }
+                chatEntities.toChatHistoryList()
             }
         }
     }
