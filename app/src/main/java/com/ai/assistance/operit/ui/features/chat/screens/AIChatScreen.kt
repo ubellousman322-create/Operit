@@ -1280,7 +1280,9 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
             }
         }
 
-        // 工作区与终端是全屏浮层，需要一个看得见的退出入口，系统返回键也应能关掉它们
+        // 工作区与终端是全屏浮层，需要一个看得见的退出入口，系统返回键也应能关掉它们。
+        // 退出键放右上、让开状态栏那一行：终端左上角有 local 状态条、右上角有自己的按钮，
+        // 只有这条横向位置两边都不占。
         val fullscreenOverlayActive = !embedded && (showWebView || showAiComputer)
         val closeFullscreenOverlay = {
             if (showWebView) {
@@ -1295,9 +1297,9 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                 Surface(
                         onClick = closeFullscreenOverlay,
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.86f),
                         shadowElevation = 8.dp,
-                        modifier = Modifier.padding(top = 56.dp, end = 12.dp)
+                        modifier = Modifier.padding(top = 72.dp, end = 12.dp)
                 ) {
                     Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
