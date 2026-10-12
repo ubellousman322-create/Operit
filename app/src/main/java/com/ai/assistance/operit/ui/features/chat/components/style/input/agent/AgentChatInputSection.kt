@@ -906,32 +906,6 @@ fun AgentChatInputSection(
                                 }
                             }
                         }
-                        Box(
-                            modifier =
-                                Modifier
-                                    .padding(start = 6.dp)
-                                    .size(34.dp)
-                                    .clickable(
-                                        enabled = true,
-                                        onClick = {
-                                            showModelSelectorPopup.value = false
-                                            showExtraSettingsPopup.value = !showExtraSettingsPopup.value
-                                        },
-                                    ),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Tune,
-                                contentDescription = context.getString(R.string.settings_options),
-                                tint =
-                                    if (showExtraSettingsPopup.value) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    },
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
                     }
 
                     Row(
@@ -942,7 +916,7 @@ fun AgentChatInputSection(
                             modifier =
                                 Modifier
                                     .padding(start = 0.dp)
-                                    .size(32.dp)
+                                    .size(28.dp)
                                     .clickable(
                                         enabled = true,
                                         onClick = {
@@ -962,14 +936,14 @@ fun AgentChatInputSection(
                                     } else {
                                         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f)
                                     },
-                                modifier = Modifier.size(24.dp),
+                                modifier = Modifier.size(21.dp),
                             )
                         }
                         Box(
                             modifier =
                                 Modifier
                                     .padding(start = 0.dp)
-                                    .size(32.dp)
+                                    .size(28.dp)
                                     .clickable(
                                         enabled = true,
                                         onClick = {
@@ -990,7 +964,7 @@ fun AgentChatInputSection(
                                     } else {
                                         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f)
                                     },
-                                modifier = Modifier.size(24.dp),
+                                modifier = Modifier.size(21.dp),
                             )
                         }
                         OutlinedTextField(
@@ -1252,32 +1226,6 @@ fun AgentChatInputSection(
                                     }
                                 }
                             }
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .padding(start = 6.dp)
-                                            .size(34.dp)
-                                            .clickable(
-                                                enabled = true,
-                                                onClick = {
-                                                    showModelSelectorPopup.value = false
-                                                    showExtraSettingsPopup.value = !showExtraSettingsPopup.value
-                                                },
-                                            ),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Tune,
-                                    contentDescription = context.getString(R.string.settings_options),
-                                    tint =
-                                        if (showExtraSettingsPopup.value) {
-                                            MaterialTheme.colorScheme.primary
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        },
-                                    modifier = Modifier.size(20.dp),
-                                )
-                            }
                         }
 
                         Row(
@@ -1288,7 +1236,7 @@ fun AgentChatInputSection(
                                     modifier =
                                         Modifier
                                             .padding(start = 0.dp)
-                                            .size(32.dp)
+                                            .size(28.dp)
                                             .clickable(
                                                 enabled = true,
                                                 onClick = {
@@ -1308,14 +1256,14 @@ fun AgentChatInputSection(
                                         } else {
                                             MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f)
                                         },
-                                    modifier = Modifier.size(24.dp),
+                                    modifier = Modifier.size(21.dp),
                                 )
                             }
                                 Box(
                                     modifier =
                                         Modifier
                                             .padding(start = 0.dp)
-                                            .size(32.dp)
+                                            .size(28.dp)
                                             .clickable(
                                                 enabled = true,
                                                 onClick = {
@@ -1336,7 +1284,7 @@ fun AgentChatInputSection(
                                             } else {
                                                 MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f)
                                             },
-                                        modifier = Modifier.size(24.dp),
+                                        modifier = Modifier.size(21.dp),
                                     )
                                 }
                             OutlinedTextField(
