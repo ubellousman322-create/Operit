@@ -103,6 +103,9 @@ private tailrec fun Context.findActivity(): Activity? =
         else -> null
     }
 
+/** Opens the global navigation drawer; the chat page has no in-page panel of its own. */
+val LocalOpenChatDrawer = staticCompositionLocalOf<(() -> Unit)?> { null }
+
 private fun Activity.manifestSoftInputMode(): Int =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         packageManager.getActivityInfo(
@@ -134,12 +137,6 @@ private enum class ScreenVisibility {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
-/**
- * Opens the global navigation drawer. The chat page owns its own header, so the moon
- * button reaches the drawer through this local instead of a duplicate in-page panel.
- */
-val LocalOpenChatDrawer = staticCompositionLocalOf<(() -> Unit)?> { null }
-
 @Composable
 fun AppContent(
         currentRouteEntry: RouteEntry,
