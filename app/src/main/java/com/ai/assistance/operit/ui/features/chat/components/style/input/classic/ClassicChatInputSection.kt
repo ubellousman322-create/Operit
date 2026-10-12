@@ -104,6 +104,7 @@ fun ClassicChatInputSection(
     onAttachLocation: () -> Unit = {},
     onAttachMemory: () -> Unit = {},
     onAttachPackage: (String) -> Unit = {},
+    onOpenFavorites: () -> Unit = {},
     onTakePhoto: (Uri) -> Unit,
     hasBackgroundImage: Boolean = false,
     chatInputTransparent: Boolean = false,
@@ -596,7 +597,7 @@ fun ClassicChatInputSection(
                     },
                 )
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(4.dp))
 
                 // Attachment button (+ 按钮) - 确保圆形
 
@@ -636,7 +637,7 @@ fun ClassicChatInputSection(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
 
                 // Send button (发送按钮) - 确保圆形
                 Box(
@@ -775,6 +776,7 @@ fun ClassicChatInputSection(
                 onAttachLocation = onAttachLocation,
                 onAttachMemory = onAttachMemory,
                 onAttachPackage = onAttachPackage,
+                onOpenFavorites = onOpenFavorites,
                 onTakePhoto = onTakePhoto,
                 userQuery = userMessage.text,
                 onDismiss = { setShowAttachmentPanel(false) }
