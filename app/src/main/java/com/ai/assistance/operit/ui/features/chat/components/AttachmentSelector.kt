@@ -442,49 +442,66 @@ fun AttachmentSelectorPopupPanel(
                                         indication = null,
                                         onClick = onDismiss
                                 ),
-                contentAlignment = Alignment.BottomEnd
+                contentAlignment = Alignment.BottomCenter
         ) {
             Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
                     color = containerColor,
-                    shadowElevation = 4.dp,
+                    shadowElevation = 6.dp,
                     modifier =
-                            Modifier.padding(bottom = 44.dp, end = 12.dp)
-                                    .width(200.dp)
-                                    .heightIn(max = 420.dp)
+                            Modifier.fillMaxWidth()
+                                    .padding(bottom = 44.dp)
                                     .clickable(
                                             interactionSource = remember { MutableInteractionSource() },
                                             indication = null,
                                             onClick = {}
                                     )
             ) {
-                Column(
-                        modifier =
-                                Modifier.fillMaxWidth()
-                                        .padding(vertical = 4.dp)
-                                        .verticalScroll(rememberScrollState())
-                ) {
-                    panelItems.forEach { item ->
+                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp)) {
+                    panelItems.chunked(4).forEach { rowItems ->
                         Row(
                                 modifier =
                                         Modifier.fillMaxWidth()
-                                                .height(36.dp)
-                                                .clickable(onClick = item.onClick)
-                                                .padding(horizontal = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Icon(
-                                    imageVector = item.icon,
-                                    contentDescription = item.label,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                    modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                    text = item.label,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                            )
+                            rowItems.forEach { item ->
+                                Column(
+                                        modifier =
+                                                Modifier.weight(1f)
+                                                        .clip(RoundedCornerShape(14.dp))
+                                                        .clickable(onClick = item.onClick)
+                                                        .padding(vertical = 10.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Box(
+                                            modifier =
+                                                    Modifier.size(46.dp)
+                                                            .clip(RoundedCornerShape(14.dp))
+                                                            .background(
+                                                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)
+                                                            ),
+                                            contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                                imageVector = item.icon,
+                                                contentDescription = item.label,
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(23.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                            text = item.label,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1
+                                    )
+                                }
+                            }
+                            repeat((4 - rowItems.size).coerceAtLeast(0)) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
                         }
                     }
                 }
