@@ -1840,7 +1840,7 @@ fun ChatHistorySelector(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp)
+                .padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 2.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -2004,24 +2004,28 @@ fun ChatHistorySelector(
                 contentPadding = PaddingValues(bottom = 126.dp)
             ) {
                 item(key = "view-switch") {
-                    Row(
-                            modifier =
-                                    Modifier.fillMaxWidth()
-                                            .clickable { showGroupsView = !showGroupsView }
-                                            .padding(horizontal = 6.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                    Surface(
+                            onClick = { showGroupsView = !showGroupsView },
+                            shape = RoundedCornerShape(100.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.padding(start = 6.dp, top = 8.dp, bottom = 2.dp)
                     ) {
-                            Text(
-                                    text = if (showGroupsView) "按分组" else "按时间",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.weight(1f)
-                            )
-                            Text(
-                                    text = "切换",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary
-                            )
+                            Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                    Text(
+                                            text = if (showGroupsView) "按分组" else "按时间",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                            text = "⇄",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.primary
+                                    )
+                            }
                     }
                 }
                 item(key = "latest-chat-card") {
@@ -2454,7 +2458,7 @@ fun ChatHistorySelector(
                                                     Row(
                                                         modifier = Modifier
                                                             .fillMaxWidth()
-                                                            .padding(horizontal = 10.dp)
+                                                            .padding(horizontal = 12.dp, vertical = 9.dp)
                                                             .semantics(mergeDescendants = false) {
                                                                 contentDescription = "$titlePreview, $groupName"
                                                             }
@@ -2527,8 +2531,8 @@ fun ChatHistorySelector(
                                                             Icon(
                                                                 imageVector = Icons.Default.PushPin,
                                                                 contentDescription = null,
-                                                                tint = contentColor.copy(alpha = 0.6f),
-                                                                modifier = Modifier.size(16.dp)
+                                                                tint = contentColor.copy(alpha = 0.42f),
+                                                                modifier = Modifier.size(15.dp)
                                                             )
                                                         }
                                                         if (item.history.locked) {
@@ -2536,8 +2540,8 @@ fun ChatHistorySelector(
                                                             Icon(
                                                                 imageVector = Icons.Default.Lock,
                                                                 contentDescription = null,
-                                                                tint = contentColor.copy(alpha = 0.6f),
-                                                                modifier = Modifier.size(16.dp)
+                                                                tint = contentColor.copy(alpha = 0.42f),
+                                                                modifier = Modifier.size(15.dp)
                                                             )
                                                         }
                                                     }
@@ -2587,21 +2591,24 @@ private fun LatestChatCard(history: ChatHistory, onClick: () -> Unit) {
                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.58f),
                 shadowElevation = 6.dp
         ) {
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                ) {
                         Text(
                                 text = history.title,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.weight(1f)
                         )
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(
                                 text = "继续 →",
                                 style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.align(Alignment.End)
+                                color = MaterialTheme.colorScheme.primary
                         )
                 }
         }
