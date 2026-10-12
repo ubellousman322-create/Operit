@@ -21,9 +21,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.PictureInPicture
-import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -822,64 +819,11 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     }
 
 
-    // 当showWebView或showAiComputer状态改变时，更新TopAppBar的actions
-    // 使用DisposableEffect确保当AIChatScreen离开组合时，actions被清空
-    LaunchedEffect(isCurrentScreen, embedded, showWebView, showAiComputer, isWorkspacePreparing, appBarContentColor, hasBoundWorkspace) {
+    // 聊天页自己的顶栏承载月牙、头像、标题、悬浮窗和上下文圆环。
+    // 终端与工作区收进模型面板，避免系统 TopAppBar 再挤一排图标。
+    LaunchedEffect(isCurrentScreen, embedded) {
         if (isCurrentScreen && !embedded) {
-            setTopBarActions {
-                // 悬浮窗口
-                IconButton(onClick = { launchFloatingWindow() }) {
-                    Icon(
-                            imageVector = Icons.Default.PictureInPicture,
-                            contentDescription = "悬浮窗口",
-                            tint = appBarContentColor
-                    )
-                }
-
-                // AI电脑模式切换按钮
-                IconButton(
-                        enabled = !isWorkspacePreparing,
-                        onClick = {
-                            actualViewModel.onAiComputerButtonClick()
-                        }
-                ) {
-                    Icon(
-                            imageVector = Icons.Default.Terminal,
-                            contentDescription = stringResource(R.string.ai_computer),
-                            tint =
-                            if (showAiComputer) MaterialTheme.colorScheme.primaryContainer
-                            else appBarContentColor
-                    )
-                }
-
-                // Web开发模式切换按钮
-                IconButton(
-                        enabled = !isWorkspacePreparing,
-                        onClick = {
-                            actualViewModel.onWorkspaceButtonClick()
-                        }
-                ) {
-                    if (isWorkspacePreparing) {
-                        CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp,
-                                color = appBarContentColor
-                        )
-                    } else {
-                        Icon(
-                                imageVector =
-                                if (hasBoundWorkspace) Icons.Default.Code
-                                else Icons.Default.Code,
-                                contentDescription =
-                                if (hasBoundWorkspace) stringResource(R.string.workspace)
-                                else stringResource(R.string.setup_workspace),
-                                tint =
-                                if (showWebView) MaterialTheme.colorScheme.primaryContainer
-                                else appBarContentColor
-                        )
-                    }
-                }
-            }
+            setTopBarActions {}
         }
     }
 
@@ -1137,6 +1081,11 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                                 showInputProcessingStatus = showInputProcessingStatus,
                                 enableTools = enableTools,
                                 isWorkspaceOpen = isWorkspaceOpen,
+                                showAiComputer = showAiComputer,
+                                showWorkspace = showWebView,
+                                isWorkspacePreparing = isWorkspacePreparing,
+                                onOpenAiComputer = actualViewModel::onAiComputerButtonClick,
+                                onOpenWorkspace = actualViewModel::onWorkspaceButtonClick,
                                 enableThinkingMode = enableThinkingMode,
                                 thinkingOptionId = thinkingOptionId,
                                 enableMaxContextMode = enableMaxContextMode,
@@ -1549,6 +1498,11 @@ private fun ChatInputBottomBar(
     showInputProcessingStatus: Boolean,
     enableTools: Boolean,
     isWorkspaceOpen: Boolean,
+    showAiComputer: Boolean,
+    showWorkspace: Boolean,
+    isWorkspacePreparing: Boolean,
+    onOpenAiComputer: () -> Unit,
+    onOpenWorkspace: () -> Unit,
     enableThinkingMode: Boolean,
     thinkingOptionId: String,
     enableMaxContextMode: Boolean,
@@ -1960,6 +1914,11 @@ private fun ChatInputBottomBar(
                 replyToMessage = replyToMessage,
                 onClearReply = actualViewModel::clearReplyToMessage,
                 isWorkspaceOpen = isWorkspaceOpen,
+                showAiComputer = showAiComputer,
+                showWorkspace = showWorkspace,
+                isWorkspacePreparing = isWorkspacePreparing,
+                onOpenAiComputer = onOpenAiComputer,
+                onOpenWorkspace = onOpenWorkspace,
                 enableThinkingMode = enableThinkingMode,
                 onToggleThinkingMode = actualViewModel::toggleThinkingMode,
                 thinkingOptionId = thinkingOptionId,
@@ -2044,6 +2003,7 @@ private fun ChatInputBottomBar(
                 onAttachLocation = actualViewModel::captureLocation,
                 onAttachMemory = onShowMemoryFolderDialog,
                 onAttachPackage = actualViewModel::attachPackage,
+                onOpenFavorites = onOpenFavorites,
                 onTakePhoto = actualViewModel::handleTakenPhoto,
                 hasBackgroundImage = hasBackgroundImage,
                 chatInputTransparent = chatInputTransparent,
