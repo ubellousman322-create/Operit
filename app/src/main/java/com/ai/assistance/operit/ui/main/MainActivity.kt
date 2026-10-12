@@ -331,6 +331,31 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /** 启动时把当前会话对齐到“最后一条消息最近的会话”。 */
+    private suspend fun restoreLatestChatIfNeeded() {
+        try {
+            val chatHistoryManager = ChatHistoryManager.getInstance(this@MainActivity)
+            val chats = chatHistoryManager.chatHistoriesFlow.first()
+            if (chats.isEmpty()) {
+                return
+            }
+            val latest =
+                chats.maxWithOrNull(
+                    compareBy<com.ai.assistance.operit.data.model.ChatHistory>(
+                        { it.lastMessageTimestamp ?: Long.MIN_VALUE },
+                        { it.updatedAt }
+                    )
+                ) ?: return
+            if (chatHistoryManager.currentChatIdFlow.first() == latest.id) {
+                return
+            }
+            chatHistoryManager.setCurrentChatId(latest.id)
+            AppLogger.d(TAG, "启动时已恢复最近的会话: ${latest.id}")
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "启动时恢复最近会话失败", e)
+        }
+    }
+
     private fun parseRouteArgsJson(raw: String?): Map<String, Any?> {
         val text = raw?.trim().orEmpty()
         if (text.isBlank()) {
@@ -364,6 +389,7 @@ class MainActivity : ComponentActivity() {
             checkPermissionLevelSet()
 
             prepareStartupChatIfNeeded()
+            restoreLatestChatIfNeeded()
 
             // 3. 在协议已接受且无需权限引导时，启动插件加载
             if (!showPermissionGuide) {
