@@ -118,7 +118,7 @@ private suspend fun resolveSidebarPermissionStatus(
         }
 }
 
-/** Content for the expanded navigation drawer */
+/** Content for the expanded navigation drawer. Chat stays the primary destination. */
 @Composable
 fun DrawerContent(
         navItems: List<NavItem>,
@@ -134,93 +134,19 @@ fun DrawerContent(
         onScreenSelected: (Screen) -> Unit,
         onNavigationEntrySelected: (NavigationEntrySpec) -> Unit
 ) {
-        val context = LocalContext.current
-        val userPreferencesManager = remember(context) { UserPreferencesManager.getInstance(context) }
-        val softwareIdentity by
-                userPreferencesManager.softwareIdentity.collectAsState(
-                        initial = UserPreferencesManager.SOFTWARE_IDENTITY_OPERIT
-                )
-        val preferredPermissionLevel by
-                androidPermissionPreferences.preferredPermissionLevelFlow.collectAsState(initial = null)
-        val drawerBrandName =
-                if (softwareIdentity == UserPreferencesManager.SOFTWARE_IDENTITY_LINGSHU) {
-                        context.getString(R.string.software_identity_option_lingshu)
-                } else {
-                        context.getString(R.string.software_identity_option_operit)
-                }
-        val bottomInset =
-                WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val resolvedTopContentPadding =
-                topContentPadding ?:
-                WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        val quickActionItems = remember {
-                setOf(NavItem.Packages, NavItem.Workflow)
-        }
-        val packageManager = remember(context) {
-                PackageManager.getInstance(context, AIToolHandler.getInstance(context))
-        }
-        val workflowRepository = remember(context) { WorkflowRepository(context) }
-        val activePackageCount by
-                produceState(initialValue = 0, selectedRouteId) {
-                        value =
-                                withContext(Dispatchers.IO) {
-                                        packageManager.getEnabledPackageNames().size
-                                }
-                }
-        val workflowCount by
-                produceState(initialValue = 0, selectedRouteId) {
-                        value =
-                                withContext(Dispatchers.IO) {
-                                        workflowRepository.getAllWorkflows().getOrDefault(emptyList()).size
-                                }
-                }
-        val permissionStatus by
-                produceState(
-                        initialValue =
-                                SidebarPermissionStatus(
-                                        badgeTextResId = R.string.sidebar_status_normal
-                                ),
-                        selectedRouteId,
-                        preferredPermissionLevel
-                ) {
-                        value =
-                                withContext(Dispatchers.IO) {
-                                        resolveSidebarPermissionStatus(
-                                                context = context,
-                                                preferredPermissionLevel = preferredPermissionLevel
-                                        )
-                                }
-                }
-        val primaryNavItems =
-                remember(navItems) {
-                        navItems.filterNot {
-                                it in quickActionItems || it == NavItem.ShizukuCommands
-                        }
-                }
+                topContentPadding
+                        ?: WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         val handleScreenSelection: (Screen) -> Unit = { screen ->
-                val shouldCloseBeforeNavigate =
-                        drawerState.currentValue == DrawerValue.Open ||
-                                drawerState.targetValue == DrawerValue.Open
-
                 scope.launch {
-                        if (shouldCloseBeforeNavigate) {
+                        if (
+                                drawerState.currentValue == DrawerValue.Open ||
+                                        drawerState.targetValue == DrawerValue.Open
+                        ) {
                                 drawerState.close()
                         }
                         onScreenSelected(screen)
-                }
-        }
-        val handleNavItemClick: (NavItem) -> Unit = { item ->
-                handleScreenSelection(ScreenRouteRegistry.defaultScreenForNavItem(item))
-        }
-        val handleNavigationEntryClick: (NavigationEntrySpec) -> Unit = { entry ->
-                val shouldCloseBeforeNavigate =
-                        drawerState.currentValue == DrawerValue.Open ||
-                                drawerState.targetValue == DrawerValue.Open
-                scope.launch {
-                        if (shouldCloseBeforeNavigate) {
-                                drawerState.close()
-                        }
-                        onNavigationEntrySelected(entry)
                 }
         }
 
@@ -233,31 +159,29 @@ fun DrawerContent(
                                         bottom = bottomInset
                                 )
         ) {
-                Column(
-                        modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
-                ) {
-                        NewSidebarTopContent(
-                                selectedItem = selectedItem,
-                                pluginEntries = pluginEntries,
-                                selectedRouteId = selectedRouteId,
-                                brandName = drawerBrandName,
-                                isNetworkAvailable = isNetworkAvailable,
-                                networkType = networkType,
+                Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                        CompactNavigationDrawerItem(
+                                icon = NavItem.AiChat.icon,
+                                label = stringResource(id = NavItem.AiChat.titleResId),
+                                selected = selectedItem == NavItem.AiChat,
                                 appearance = appearance,
-                                navItems = primaryNavItems,
-                                activePackageCount = activePackageCount,
-                                workflowCount = workflowCount,
-                                permissionStatus = permissionStatus,
-                                onNavItemClick = handleNavItemClick,
-                                onNavigationEntryClick = handleNavigationEntryClick
+                                onClick = { handleScreenSelection(Screen.AiChat) }
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.weight(1f))
+                        HorizontalDivider(color = appearance.dividerColor)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        CompactNavigationDrawerItem(
+                                icon = NavItem.Settings.icon,
+                                label = "工具与设置",
+                                selected = selectedRouteId == ScreenRouteRegistry.routeIdOf(Screen.ToolsAndSettings),
+                                appearance = appearance,
+                                onClick = { handleScreenSelection(Screen.ToolsAndSettings) }
+                        )
                 }
-
         }
 }
 
-/** Content for the collapsed navigation drawer (for tablet mode) */
+/** Compact tablet rail: chat on top, tools and settings anchored at the bottom. */
 @Composable
 fun CollapsedDrawerContent(
         navItems: List<NavItem>,
@@ -270,161 +194,55 @@ fun CollapsedDrawerContent(
         onNavigationEntrySelected: (NavigationEntrySpec) -> Unit
 ) {
         Column(
-                modifier =
-                        Modifier.fillMaxHeight()
-                                .fillMaxWidth()
-                                .verticalScroll(rememberScrollState())
-                                .padding(vertical = 16.dp),
+                modifier = Modifier.fillMaxHeight().fillMaxWidth().padding(vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
         ) {
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Surface(
-                        modifier =
-                                Modifier.size(44.dp)
-                                        .liquidGlass(
-                                                enabled = appearance.buttonLiquidGlassEnabled,
-                                                shape = CircleShape,
-                                                containerColor = appearance.buttonContainerColor,
-                                                shadowElevation = 5.dp,
-                                                borderWidth = 0.5.dp,
-                                                blurRadius = 14.dp,
-                                                overlayAlphaBoost = 0.05f,
-                                                enableLens = false
-                                        )
-                                        .clip(CircleShape),
-                        color = Color.Transparent,
-                        shape = CircleShape
-                ) {
-                        IconButton(onClick = { }) {
-                                Icon(
-                                        imageVector =
-                                                if (isNetworkAvailable) Icons.Default.Wifi
-                                                else Icons.Default.WifiOff,
-                                        contentDescription = stringResource(id = R.string.network_status_label),
-                                        tint = appearance.statusAvailableColor,
-                                        modifier = Modifier.size(24.dp)
-                                )
-                        }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
+                CollapsedSidebarButton(
+                        icon = NavItem.AiChat.icon,
+                        contentDescription = stringResource(id = NavItem.AiChat.titleResId),
+                        selected = selectedItem == NavItem.AiChat,
+                        appearance = appearance,
+                        onClick = { onScreenSelected(Screen.AiChat) }
+                )
+                Spacer(modifier = Modifier.weight(1f))
                 HorizontalDivider(
-                        modifier = Modifier.fillMaxWidth(0.6f),
+                        modifier = Modifier.fillMaxWidth(0.58f),
                         color = appearance.dividerColor
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(10.dp))
+                CollapsedSidebarButton(
+                        icon = NavItem.Settings.icon,
+                        contentDescription = "工具与设置",
+                        selected = selectedRouteId == ScreenRouteRegistry.routeIdOf(Screen.ToolsAndSettings),
+                        appearance = appearance,
+                        onClick = { onScreenSelected(Screen.ToolsAndSettings) }
+                )
+        }
+}
 
-                for (item in navItems) {
-                        val selectedGlassOverlayColor =
-                                if (selectedItem == item) {
-                                        appearance.selectedContainerColor.copy(alpha = 0.18f)
-                                } else {
-                                        Color.Transparent
-                                }
-                        Surface(
-                                modifier =
-                                        Modifier.padding(vertical = 8.dp)
-                                                .size(44.dp)
-                                                .liquidGlass(
-                                                        enabled = appearance.buttonLiquidGlassEnabled,
-                                                        shape = CircleShape,
-                                                        containerColor =
-                                                                appearance.buttonContainerColor,
-                                                        shadowElevation =
-                                                                if (selectedItem == item) 6.dp else 5.dp,
-                                                        borderWidth = 0.5.dp,
-                                                        blurRadius = 14.dp,
-                                                        overlayAlphaBoost = 0.05f,
-                                                        enableLens = false
-                                                )
-                                                .clip(CircleShape)
-                                                .background(selectedGlassOverlayColor),
-                                color = Color.Transparent,
-                                shape = CircleShape
-                        ) {
-                                IconButton(
-                                        onClick = {
-                                                onScreenSelected(
-                                                        ScreenRouteRegistry.defaultScreenForNavItem(item)
-                                                )
-                                        }
-                                ) {
-                                        Icon(
-                                                imageVector = item.icon,
-                                                contentDescription = stringResource(id = item.titleResId),
-                                                tint =
-                                                        if (selectedItem == item) {
-                                                                if (appearance.buttonLiquidGlassEnabled) {
-                                                                        appearance.selectedContentColor
-                                                                } else {
-                                                                        appearance.titleColor
-                                                                }
-                                                        } else {
-                                                                appearance.itemColor
-                                                        },
-                                                modifier = Modifier.size(24.dp)
-                                        )
-                                }
-                        }
-                }
-
-                if (pluginEntries.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        HorizontalDivider(
-                                modifier = Modifier.fillMaxWidth(0.45f),
-                                color = appearance.dividerColor
+@Composable
+private fun CollapsedSidebarButton(
+        icon: androidx.compose.ui.graphics.vector.ImageVector,
+        contentDescription: String,
+        selected: Boolean,
+        appearance: NavigationDrawerAppearance,
+        onClick: () -> Unit
+) {
+        Surface(
+                modifier = Modifier.size(44.dp).clip(CircleShape),
+                color =
+                        if (selected) appearance.selectedContainerColor.copy(alpha = 0.18f)
+                        else Color.Transparent,
+                shape = CircleShape
+        ) {
+                IconButton(onClick = onClick) {
+                        Icon(
+                                imageVector = icon,
+                                contentDescription = contentDescription,
+                                tint = if (selected) appearance.selectedContentColor else appearance.itemColor,
+                                modifier = Modifier.size(24.dp)
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        pluginEntries.forEach { entry ->
-                                val selectedGlassOverlayColor =
-                                        if (selectedRouteId == entry.routeId) {
-                                                appearance.selectedContainerColor.copy(alpha = 0.18f)
-                                        } else {
-                                                Color.Transparent
-                                        }
-                                Surface(
-                                        modifier =
-                                                Modifier.padding(vertical = 8.dp)
-                                                        .size(44.dp)
-                                                        .liquidGlass(
-                                                                enabled = appearance.buttonLiquidGlassEnabled,
-                                                                shape = CircleShape,
-                                                                containerColor = appearance.buttonContainerColor,
-                                                                shadowElevation =
-                                                                        if (selectedRouteId == entry.routeId) 6.dp else 5.dp,
-                                                                borderWidth = 0.5.dp,
-                                                                blurRadius = 14.dp,
-                                                                overlayAlphaBoost = 0.05f,
-                                                                enableLens = false
-                                                        )
-                                                        .clip(CircleShape)
-                                                        .background(selectedGlassOverlayColor),
-                                        color = Color.Transparent,
-                                        shape = CircleShape
-                                ) {
-                                        IconButton(onClick = { onNavigationEntrySelected(entry) }) {
-                                                Icon(
-                                                        imageVector = entry.icon,
-                                                        contentDescription = entry.title,
-                                                        tint =
-                                                                if (selectedRouteId == entry.routeId) {
-                                                                        if (appearance.buttonLiquidGlassEnabled) {
-                                                                                appearance.selectedContentColor
-                                                                        } else {
-                                                                                appearance.titleColor
-                                                                        }
-                                                                } else {
-                                                                        appearance.itemColor
-                                                                },
-                                                        modifier = Modifier.size(24.dp)
-                                                )
-                                        }
-                                }
-                        }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
         }
 }
 
