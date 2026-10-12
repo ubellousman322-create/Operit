@@ -2018,8 +2018,9 @@ fun ChatHistorySelector(
             LazyColumn(
                 state = actualLazyListState,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 10.dp, end = 22.dp)
+                    .fillMaxSize()
+                    .padding(start = 10.dp, end = 22.dp),
+                contentPadding = PaddingValues(bottom = 126.dp)
             ) {
                 item(key = "view-switch") {
                     Row(
@@ -2542,7 +2543,7 @@ fun ChatHistorySelector(
                                                         if (!activeStreamingChatIds.contains(item.history.id)) {
                                                             Spacer(modifier = Modifier.width(6.dp))
                                                             Text(
-                                                                text = formatHistoryTime(item.history.updatedAt),
+                                                                text = formatHistoryTime(item.history.lastMessageDateTime()),
                                                                 style = MaterialTheme.typography.labelSmall,
                                                                 color = contentColor.copy(alpha = 0.6f)
                                                             )
@@ -2586,51 +2587,22 @@ fun ChatHistorySelector(
             }
             }
 
-            Column(
-                    modifier =
-                            Modifier.align(Alignment.BottomCenter)
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 10.dp, vertical = 8.dp)
+            Surface(
+                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+                    tonalElevation = 6.dp,
+                    shadowElevation = 8.dp
             ) {
-                    Row(
-                            modifier =
-                                    Modifier.fillMaxWidth()
-                                            .clickable { showGroupsView = true }
-                                            .padding(horizontal = 10.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                    ) {
-                            Text(
-                                    text = "分组管理",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.weight(1f)
+                    Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+                            HistoryBottomAction(
+                                    label = "分组管理",
+                                    onClick = { showGroupsView = true }
                             )
-                            Text(
-                                    text = "›",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.primary
+                            Spacer(modifier = Modifier.height(6.dp))
+                            HistoryBottomAction(
+                                    label = "工具与设置",
+                                    onClick = { onOpenToolsAndSettings?.invoke("tools_settings") }
                             )
-                    }
-                    Row(
-                            modifier =
-                                    Modifier.fillMaxWidth()
-                                            .clickable { onOpenToolsAndSettings?.invoke("tools_settings") }
-                                            .padding(horizontal = 10.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                    ) {
-                            Text(
-                                    text = "工具与设置",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.weight(1f)
-
-                            )
-                            Text(
-                                    text = "\u203a",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary
-                            )
-
                     }
             }
             HistoryQuickScroller(
@@ -2696,6 +2668,42 @@ private fun LatestChatCard(history: ChatHistory, onClick: () -> Unit) {
                         )
                 }
         }
+}
+
+@Composable
+private fun HistoryBottomAction(label: String, onClick: () -> Unit) {
+        Surface(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = onClick,
+                shape = RoundedCornerShape(14.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),
+                tonalElevation = 2.dp
+        ) {
+                Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 11.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                ) {
+                        Text(
+                                text = label,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1
+                        )
+                        Text(
+                                text = "›",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary
+                        )
+                }
+        }
+}
+
+private fun ChatHistory.lastMessageDateTime(): java.time.LocalDateTime {
+        val lastTimestamp = messages.lastOrNull()?.timestamp ?: return updatedAt
+        return java.time.Instant.ofEpochMilli(lastTimestamp)
+                .atZone(java.time.ZoneId.systemDefault())
+                .toLocalDateTime()
 }
 
 private fun formatHistoryTime(updatedAt: java.time.LocalDateTime): String {
