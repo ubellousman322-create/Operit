@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.*
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
@@ -36,6 +37,7 @@ import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatViewModel
 import com.ai.assistance.operit.ui.floating.FloatingMode
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
+import com.ai.assistance.operit.ui.main.components.LocalOpenChatDrawer
 
 @Composable
 fun useFloatingWindowLauncher(
@@ -182,13 +184,14 @@ fun ChatScreenHeader(
                                     if (chatHeaderTransparent) Color.Transparent
                                     else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
                             )
-                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                            .statusBarsPadding(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         ChatHeader(
                 showChatHistorySelector = showChatHistorySelector,
-                onToggleChatHistorySelector = { actualViewModel.toggleChatHistorySelector() },
+                onToggleChatHistorySelector = { LocalOpenChatDrawer.current?.invoke() },
                 modifier = Modifier.weight(1f),
                 isFloatingMode = isFloatingMode,
                 onLaunchFloatingWindow = launchFloatingWindow,
