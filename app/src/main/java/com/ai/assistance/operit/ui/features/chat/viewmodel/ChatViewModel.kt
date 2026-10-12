@@ -807,7 +807,12 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                             .filter { history ->
                                 history.characterGroupId?.trim() == targetGroupId
                             }
-                            .maxByOrNull { it.updatedAt }
+                            .maxWithOrNull(
+                                compareBy<ChatHistory>(
+                                    { it.lastMessageTimestamp ?: Long.MIN_VALUE },
+                                    { it.updatedAt }
+                                )
+                            )
                     if (latestChat != null) {
                         switchChat(latestChat.id)
                     } else {
@@ -836,7 +841,12 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                     historyCardName == targetCardName
                 }
             }
-            .maxByOrNull { it.updatedAt }
+            .maxWithOrNull(
+                compareBy<ChatHistory>(
+                    { it.lastMessageTimestamp ?: Long.MIN_VALUE },
+                    { it.updatedAt }
+                )
+            )
     }
 
     /** 创建对话分支 */
