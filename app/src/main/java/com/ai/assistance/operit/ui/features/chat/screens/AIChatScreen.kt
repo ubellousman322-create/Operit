@@ -1291,13 +1291,13 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
         }
         BackHandler(enabled = fullscreenOverlayActive) { closeFullscreenOverlay() }
         if (fullscreenOverlayActive) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopStart) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopEnd) {
                 Surface(
                         onClick = closeFullscreenOverlay,
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
                         shadowElevation = 8.dp,
-                        modifier = Modifier.statusBarsPadding().padding(start = 12.dp, top = 10.dp)
+                        modifier = Modifier.padding(top = 56.dp, end = 12.dp)
                 ) {
                     Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
