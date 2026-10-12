@@ -11,6 +11,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -471,8 +472,10 @@ fun ChatHistorySelector(
     var matchedChatIdsByContent by remember { mutableStateOf<Set<String>>(emptySet()) }
     var isSearching by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
-    var showToolsAndSettings by remember { mutableStateOf(false) }
     var showGroupsView by remember { mutableStateOf(false) }
+    var expandedGroupName by remember { mutableStateOf<String?>(null) }
+    var groupOrder by rememberLocal("chat_history_group_order", emptyList<String>())
+    var draggingGroupName by remember { mutableStateOf<String?>(null) }
     var chatToMove by remember { mutableStateOf<ChatHistory?>(null) }
     var bulkGroupName by remember { mutableStateOf<String?>(null) }
     var bulkSelected by remember { mutableStateOf(emptySet<String>()) }
@@ -658,7 +661,9 @@ fun ChatHistorySelector(
                     groupPrefix,
                     historyDisplayMode,
                     activeCharacterCardName,
-                     showGroupsView
+                    showGroupsView,
+                    expandedGroupName,
+                    groupOrder
             ) {
                 fun characterKey(name: String) = "character::$name"
                 fun groupKey(characterName: String?, groupValue: String?): String {
@@ -669,33 +674,60 @@ fun ChatHistorySelector(
 
                 // 时间流：置顶优先，其余按最后一次聊天时间倒序；分组不再占主列表
                 if (showGroupsView) {
-                    filteredHistories
-                            .groupBy { it.group }
-                            .flatMap { (groupValue, histories) ->
-                                val header =
-                                        HistoryListItem.Header(
-                                                key = "group::" + (groupValue ?: "ungrouped"),
-                                                name = groupValue ?: ungroupedText,
-                                                groupValue = groupValue,
-                                                characterCardName = null
-                                        )
-                                listOf(header) +
-                                        histories
-                                                .sortedWith(
-                                                        compareByDescending<ChatHistory> { it.pinned }
-                                                                .thenByDescending { it.updatedAt }
-                                                )
-                                                .map { HistoryListItem.Item(it) }
-                            }
+                    val groupedHistories = filteredHistories.groupBy { it.group }
+                    val knownGroupNames = groupedHistories.keys.map { it ?: ungroupedText }
+                    val orderedGroupNames =
+                            (groupOrder.filter { it in knownGroupNames } +
+                                    knownGroupNames.filterNot { it in groupOrder })
+                                    .distinct()
+                    orderedGroupNames.flatMap { displayName ->
+                        val groupValue = displayName.takeUnless { it == ungroupedText }
+                        val histories = groupedHistories[groupValue].orEmpty()
+                        val header =
+                                HistoryListItem.Header(
+                                        key = "group::" + (groupValue ?: "ungrouped"),
+                                        name = displayName,
+                                        groupValue = groupValue,
+                                        characterCardName = null
+                                )
+                        val sortedHistories =
+                                histories.sortedWith(
+                                        compareByDescending<ChatHistory> { it.pinned }
+                                                .thenByDescending { it.updatedAt }
+                                )
+                        val visibleHistories =
+                                if (expandedGroupName == displayName) sortedHistories
+                                else sortedHistories.take(3)
+                        listOf(header) + visibleHistories.map { HistoryListItem.Item(it) }
+                    }
                 } else {
                     val latestIdForCard = filteredHistories.maxByOrNull { it.updatedAt }?.id
+                    val today = java.time.LocalDate.now()
                     filteredHistories
                             .filter { it.id != latestIdForCard }
                             .sortedWith(
                                     compareByDescending<ChatHistory> { it.pinned }
                                             .thenByDescending { it.updatedAt }
                             )
-                            .map { HistoryListItem.Item(it) }
+                            .groupBy { history ->
+                                val date = history.updatedAt.toLocalDate()
+                                when {
+                                    history.updatedAt.isAfter(java.time.LocalDateTime.now().minusHours(1)) -> "刚刚"
+                                    date == today -> "今天"
+                                    date == today.minusDays(1) -> "昨天"
+                                    else -> "更早"
+                                }
+                            }
+                            .flatMap { (label, histories) ->
+                                listOf(
+                                        HistoryListItem.Header(
+                                                key = "time::" + label,
+                                                name = label,
+                                                groupValue = null,
+                                                characterCardName = null
+                                        )
+                                ) + histories.map { HistoryListItem.Item(it) }
+                            }
                 }
             }
 
@@ -945,104 +977,6 @@ fun ChatHistorySelector(
                         }
                     }
                     
-                    // 上移选项
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
-                            .clip(MaterialTheme.shapes.medium)
-                            .semantics {
-                                contentDescription = context.getString(R.string.move_up)
-                            }
-                            .clickable {
-                                val targetChat = chatItemActionTarget!!
-                                val currentIndex = filteredHistories.indexOfFirst { it.id == targetChat.id }
-                                if (currentIndex > 0) {
-                                    val newHistories = filteredHistories.toMutableList()
-                                    newHistories.removeAt(currentIndex)
-                                    newHistories.add(currentIndex - 1, targetChat)
-                                    val reorderedHistories = newHistories.mapIndexed { index, history ->
-                                        history.copy(displayOrder = index.toLong())
-                                    }
-                                    onUpdateChatOrderAndGroup(reorderedHistories, targetChat, targetChat.group)
-                                }
-                                chatItemActionTarget = null
-                            },
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.KeyboardArrowUp,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clearAndSetSemantics {}
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text(
-                                stringResource(R.string.move_up), 
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.clearAndSetSemantics {}
-                            )
-                        }
-                    }
-                    
-                    // 下移选项
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
-                            .clip(MaterialTheme.shapes.medium)
-                            .semantics {
-                                contentDescription = context.getString(R.string.move_down)
-                            }
-                            .clickable {
-                                val targetChat = chatItemActionTarget!!
-                                val currentIndex = filteredHistories.indexOfFirst { it.id == targetChat.id }
-                                if (currentIndex >= 0 && currentIndex < filteredHistories.size - 1) {
-                                    val newHistories = filteredHistories.toMutableList()
-                                    newHistories.removeAt(currentIndex)
-                                    newHistories.add(currentIndex + 1, targetChat)
-                                    val reorderedHistories = newHistories.mapIndexed { index, history ->
-                                        history.copy(displayOrder = index.toLong())
-                                    }
-                                    onUpdateChatOrderAndGroup(reorderedHistories, targetChat, targetChat.group)
-                                }
-                                chatItemActionTarget = null
-                            },
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.KeyboardArrowDown,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clearAndSetSemantics {}
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text(
-                                stringResource(R.string.move_down), 
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.clearAndSetSemantics {}
-                            )
-                        }
-                    }
-
                     // 置顶/取消置顶选项
                     Surface(
                         modifier = Modifier
@@ -1467,52 +1401,12 @@ fun ChatHistorySelector(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = stringResource(R.string.choose_delete_method),
+                        text = "删除分组后，组内对话会回到未分组",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
-
-                    TextButton(
-                        onClick = {
-                            onDeleteGroup(
-                                groupToDelete!!.groupName, 
-                                true,
-                                groupToDelete!!.characterCardName
-                            )
-                            groupToDelete = null
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Delete,
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
-                                Text(
-                                    text = stringResource(R.string.delete_group_and_chats),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = stringResource(R.string.delete_operation_irreversible),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
-                                )
-                            }
-            }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
 
                     TextButton(
                         onClick = {
@@ -2338,6 +2232,43 @@ fun ChatHistorySelector(
                                     )
                                 }
                             }
+                            if (showGroupsView && item.name != ungroupedText) {
+                                Icon(
+                                    imageVector = Icons.Default.DragHandle,
+                                    contentDescription = "拖动排序",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    modifier =
+                                        Modifier
+                                            .padding(horizontal = 4.dp)
+                                            .size(22.dp)
+                                            .pointerInput(item.name, groupOrder) {
+                                                detectDragGesturesAfterLongPress(
+                                                    onDragStart = { draggingGroupName = item.name },
+                                                    onDragEnd = { draggingGroupName = null },
+                                                    onDragCancel = { draggingGroupName = null },
+                                                    onDrag = { change, dragAmount ->
+                                                        change.consume()
+                                                        val dragging = draggingGroupName ?: item.name
+                                                        val currentNames =
+                                                            (groupOrder + chatHistories.mapNotNull { it.group })
+                                                                .distinct()
+                                                                .toMutableList()
+                                                        val from = currentNames.indexOf(dragging)
+                                                        if (from >= 0 && kotlin.math.abs(dragAmount.y) > 10f) {
+                                                            val to =
+                                                                (from + if (dragAmount.y > 0f) 1 else -1)
+                                                                    .coerceIn(0, currentNames.lastIndex)
+                                                            if (to != from) {
+                                                                currentNames.add(to, currentNames.removeAt(from))
+                                                                groupOrder = currentNames
+                                                            }
+                                                        }
+                                                    }
+                                                )
+                                            }
+                                )
+                            }
+                            if (showGroupsView) {
                             Text(
                                 text = "＋",
                                 style = MaterialTheme.typography.titleMedium,
@@ -2346,9 +2277,10 @@ fun ChatHistorySelector(
                                     Modifier.clickable {
                                         bulkGroupName = item.name
                                         bulkSelected =
-                                            chatHistories.filter { it.group == item.name }.map { it.id }.toSet()
+                                            chatHistories.filter { it.group == item.groupValue }.map { it.id }.toSet()
                                     }.padding(horizontal = 8.dp, vertical = 6.dp)
                             )
+                            }
                             Surface(
                                 modifier = Modifier
                                     .weight(1f)
@@ -2359,14 +2291,16 @@ fun ChatHistorySelector(
                                     .pointerInput(Unit) {
                                         detectTapGestures(
                                             onTap = {
-                                                collapsedGroups = if (collapsedGroups.contains(item.key)) {
-                                                    collapsedGroups - item.key
-                                                } else {
-                                                    collapsedGroups + item.key
+                                                if (showGroupsView) {
+                                                    val groupSize = chatHistories.count { it.group == item.groupValue }
+                                                    if (groupSize > 3) {
+                                                        expandedGroupName =
+                                                                if (expandedGroupName == item.name) null else item.name
+                                                    }
                                                 }
                                             },
                                             onLongPress = {
-                                                if (item.name != ungroupedText) {
+                                                if (showGroupsView && item.name != ungroupedText) {
                                                     groupActionTarget = GroupTarget(
                                                         groupName = item.name,
                                                         characterCardName = item.characterCardName
@@ -2385,12 +2319,14 @@ fun ChatHistorySelector(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Folder,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.clearAndSetSemantics {}
-                                    )
+                                    if (showGroupsView) {
+                                        Icon(
+                                            imageVector = Icons.Default.Folder,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.clearAndSetSemantics {}
+                                        )
+                                    }
                                     Column(
                                         modifier = Modifier.weight(1f)
                                     ) {
@@ -2404,7 +2340,7 @@ fun ChatHistorySelector(
                                                 color = MaterialTheme.colorScheme.onSurface,
                                                 modifier = Modifier.clearAndSetSemantics {}
                                             )
-                                            if (item.name != ungroupedText && !hasLongPressedGroup) {
+                                            if (showGroupsView && item.name != ungroupedText && !hasLongPressedGroup) {
                                                 Text(
                                                     text = " (" + stringResource(R.string.long_press_manage) + ")",
                                                     style = MaterialTheme.typography.bodySmall,
@@ -2414,11 +2350,19 @@ fun ChatHistorySelector(
                                             }
                                         }
                                     }
-                                    Icon(
-                                        imageVector = if (collapsedGroups.contains(item.key)) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
-                                        contentDescription = null,
-                                        modifier = Modifier.clearAndSetSemantics {}
-                                    )
+                                    if (showGroupsView) {
+                                        val groupSize = chatHistories.count { it.group == item.groupValue }
+                                        Text(
+                                            text =
+                                                if (groupSize > 3) {
+                                                    if (expandedGroupName == item.name) "收起" else "查看全部"
+                                                } else {
+                                                    "$groupSize 个对话"
+                                                },
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -2511,10 +2455,13 @@ fun ChatHistorySelector(
                                         ) {
                                             Surface(
                                                 modifier = Modifier
-                                                    .fillMaxWidth(),
-                                                color = containerColor,
-                                                shape = MaterialTheme.shapes.medium,
-                                                shadowElevation = 0.dp
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 3.dp),
+                                                color =
+                                                    if (isSelected) containerColor
+                                                    else MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.82f),
+                                                shape = RoundedCornerShape(14.dp),
+                                                shadowElevation = 1.dp
                                             ) {
                                                 Box(
                                                     modifier = Modifier
@@ -2549,6 +2496,21 @@ fun ChatHistorySelector(
                                                                 maxLines = 1,
                                                                 overflow = TextOverflow.Ellipsis
                                                             )
+                                                            val messagePreview =
+                                                                item.history.messages.lastOrNull()?.content
+                                                                    ?.replace("\n", " ")
+                                                                    ?.trim()
+                                                                    .orEmpty()
+                                                            if (messagePreview.isNotBlank()) {
+                                                                Spacer(modifier = Modifier.height(3.dp))
+                                                                Text(
+                                                                    text = messagePreview,
+                                                                    style = MaterialTheme.typography.bodySmall,
+                                                                    color = contentColor.copy(alpha = 0.62f),
+                                                                    maxLines = 1,
+                                                                    overflow = TextOverflow.Ellipsis
+                                                                )
+                                                            }
 
                                                             // 如果是分支，在右侧显示分支图标和父对话标题
                                                             if (item.history.parentChatId != null) {
@@ -2684,79 +2646,55 @@ fun ChatHistorySelector(
 }
 
 @Composable
-private fun ToolEntryRows(entries: List<Pair<String, String>>, onOpen: ((String) -> Unit)?) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-                entries.forEach { pair ->
-                        if (pair.first == "__group__") {
-                                Text(
-                                        text = pair.second,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(start = 14.dp, top = 10.dp, bottom = 2.dp)
-                                )
-                        } else {
-                        Row(
-                                modifier =
-                                        Modifier.fillMaxWidth()
-                                                .clickable { onOpen?.invoke(pair.second) }
-                                                .padding(horizontal = 14.dp, vertical = 9.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                        ) {
-                                Text(
-                                        text = pair.first,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                )
-                        }
-                        }
-                }
-        }
-}
-
-@Composable
 private fun LatestChatCard(history: ChatHistory, onClick: () -> Unit) {
-        Column(
-                modifier =
-                        Modifier.fillMaxWidth()
-                                .clickable(onClick = onClick)
-                                .padding(horizontal = 6.dp, vertical = 10.dp)
+        Surface(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
+                onClick = onClick,
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.58f),
+                shadowElevation = 6.dp
         ) {
-                Text(
-                        text = "最近一次",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                        text = history.title,
-                        style = MaterialTheme.typography.titleSmall,
-                        maxLines = 1,
-                        color = MaterialTheme.colorScheme.onSurface
-                )
-                val preview =
-                        remember(history) {
-                                history.messages
-                                        .lastOrNull()
-                                        ?.content
-                                        ?.replace("\n", " ")
-                                        ?.take(42)
-                                        .orEmpty()
-                        }
-                if (preview.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(4.dp))
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                         Text(
-                                text = preview,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1
+                                text = history.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                                text = "上次说到哪",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        )
+                        val preview =
+                                remember(history) {
+                                        history.messages.lastOrNull()?.content
+                                                ?.replace("\n", " ")
+                                                ?.trim()
+                                                ?.take(72)
+                                                .orEmpty()
+                                }
+                        if (preview.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                        text = preview,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.82f),
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                                text = "继续 →",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.align(Alignment.End)
                         )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                        text = "继续 →",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
-                )
         }
 }
 
