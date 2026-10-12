@@ -693,7 +693,7 @@ fun ChatHistorySelector(
                         val sortedHistories =
                                 histories.sortedWith(
                                         compareByDescending<ChatHistory> { it.pinned }
-                                                .thenByDescending { it.updatedAt }
+                                                .thenByDescending { it.lastMessageDateTime() }
                                 )
                         val visibleHistories =
                                 if (expandedGroupName == displayName) sortedHistories
@@ -701,33 +701,14 @@ fun ChatHistorySelector(
                         listOf(header) + visibleHistories.map { HistoryListItem.Item(it) }
                     }
                 } else {
-                    val latestIdForCard = filteredHistories.maxByOrNull { it.updatedAt }?.id
-                    val today = java.time.LocalDate.now()
+                    val latestIdForCard = filteredHistories.maxByOrNull { it.lastMessageDateTime() }?.id
                     filteredHistories
                             .filter { it.id != latestIdForCard }
                             .sortedWith(
                                     compareByDescending<ChatHistory> { it.pinned }
-                                            .thenByDescending { it.updatedAt }
+                                            .thenByDescending { it.lastMessageDateTime() }
                             )
-                            .groupBy { history ->
-                                val date = history.updatedAt.toLocalDate()
-                                when {
-                                    history.updatedAt.isAfter(java.time.LocalDateTime.now().minusHours(1)) -> "刚刚"
-                                    date == today -> "今天"
-                                    date == today.minusDays(1) -> "昨天"
-                                    else -> "更早"
-                                }
-                            }
-                            .flatMap { (label, histories) ->
-                                listOf(
-                                        HistoryListItem.Header(
-                                                key = "time::" + label,
-                                                name = label,
-                                                groupValue = null,
-                                                characterCardName = null
-                                        )
-                                ) + histories.map { HistoryListItem.Item(it) }
-                            }
+                            .map<ChatHistory, HistoryListItem> { HistoryListItem.Item(it) }
                 }
             }
 
@@ -2044,7 +2025,7 @@ fun ChatHistorySelector(
                     }
                 }
                 item(key = "latest-chat-card") {
-                    val latest = filteredHistories.maxByOrNull { it.updatedAt }
+                    val latest = filteredHistories.maxByOrNull { it.lastMessageDateTime() }
                     if (latest != null) {
                         LatestChatCard(
                             history = latest,
@@ -2498,10 +2479,7 @@ fun ChatHistorySelector(
                                                                 overflow = TextOverflow.Ellipsis
                                                             )
                                                             val messagePreview =
-                                                                item.history.messages.lastOrNull()?.content
-                                                                    ?.replace("\n", " ")
-                                                                    ?.trim()
-                                                                    .orEmpty()
+                                                                item.history.lastMessagePreview?.take(72).orEmpty()
                                                             if (messagePreview.isNotBlank()) {
                                                                 Spacer(modifier = Modifier.height(3.dp))
                                                                 Text(
@@ -2595,11 +2573,6 @@ fun ChatHistorySelector(
             ) {
                     Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
                             HistoryBottomAction(
-                                    label = "分组管理",
-                                    onClick = { showGroupsView = true }
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
-                            HistoryBottomAction(
                                     label = "工具与设置",
                                     onClick = { onOpenToolsAndSettings?.invoke("tools_settings") }
                             )
@@ -2642,12 +2615,8 @@ private fun LatestChatCard(history: ChatHistory, onClick: () -> Unit) {
                                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                         )
                         val preview =
-                                remember(history) {
-                                        history.messages.lastOrNull()?.content
-                                                ?.replace("\n", " ")
-                                                ?.trim()
-                                                ?.take(72)
-                                                .orEmpty()
+                                remember(history.lastMessagePreview) {
+                                        history.lastMessagePreview?.take(72).orEmpty()
                                 }
                         if (preview.isNotBlank()) {
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -2700,7 +2669,7 @@ private fun HistoryBottomAction(label: String, onClick: () -> Unit) {
 }
 
 private fun ChatHistory.lastMessageDateTime(): java.time.LocalDateTime {
-        val lastTimestamp = messages.lastOrNull()?.timestamp ?: return updatedAt
+        val lastTimestamp = lastMessageTimestamp ?: return updatedAt
         return java.time.Instant.ofEpochMilli(lastTimestamp)
                 .atZone(java.time.ZoneId.systemDefault())
                 .toLocalDateTime()
