@@ -2478,18 +2478,6 @@ fun ChatHistorySelector(
                                                                 maxLines = 1,
                                                                 overflow = TextOverflow.Ellipsis
                                                             )
-                                                            val messagePreview =
-                                                                item.history.lastMessagePreview?.take(72).orEmpty()
-                                                            if (messagePreview.isNotBlank()) {
-                                                                Spacer(modifier = Modifier.height(3.dp))
-                                                                Text(
-                                                                    text = messagePreview,
-                                                                    style = MaterialTheme.typography.bodySmall,
-                                                                    color = contentColor.copy(alpha = 0.62f),
-                                                                    maxLines = 1,
-                                                                    overflow = TextOverflow.Ellipsis
-                                                                )
-                                                            }
 
                                                             // 如果是分支，在右侧显示分支图标和父对话标题
                                                             if (item.history.parentChatId != null) {
@@ -2608,26 +2596,6 @@ private fun LatestChatCard(history: ChatHistory, onClick: () -> Unit) {
                                 overflow = TextOverflow.Ellipsis,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                                text = "上次说到哪",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                        )
-                        val preview =
-                                remember(history.lastMessagePreview) {
-                                        history.lastMessagePreview?.take(72).orEmpty()
-                                }
-                        if (preview.isNotBlank()) {
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                        text = preview,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.82f),
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                )
-                        }
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
                                 text = "继续 →",
