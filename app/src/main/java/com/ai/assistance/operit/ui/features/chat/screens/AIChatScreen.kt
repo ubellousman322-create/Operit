@@ -1128,77 +1128,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                         onOpenCharacterSettings = onNavigateToModelPrompts
                     )
 
-                    AnimatedVisibility(
-                        visible = showChatHistorySelector,
-                        enter = fadeIn(animationSpec = tween(300)),
-                        exit = fadeOut(animationSpec = tween(300)),
-                        modifier = Modifier.matchParentSize()
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Black.copy(alpha = 0.3f))
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null
-                                ) {
-                                    actualViewModel.toggleChatHistorySelector()
-                                }
-                        )
-                    }
 
-                    AnimatedVisibility(
-                        visible = showChatHistorySelector,
-                        enter = androidx.compose.animation.slideInHorizontally(
-                            initialOffsetX = { -it },
-                            animationSpec = tween(300)
-                        ),
-                        exit = androidx.compose.animation.slideOutHorizontally(
-                            targetOffsetX = { -it },
-                            animationSpec = tween(300)
-                        ),
-                        modifier = Modifier.matchParentSize()
-                    ) {
-                        val chatHistorySearchQuery by actualViewModel.chatHistorySearchQuery.collectAsState()
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            Box(modifier = Modifier.align(Alignment.TopStart)) {
-                                ChatHistorySelectorPanel(
-                                    actualViewModel = actualViewModel,
-                                    chatHistories = displayedChatHistories,
-                                    currentChatId = currentChatId ?: "",
-                                    showChatHistorySelector = showChatHistorySelector,
-                                    historyListState = historyListState,
-                                    onChatScreenGestureConsumed = onChatScreenGestureConsumedChange,
-                                    searchQuery = chatHistorySearchQuery,
-                                    onSearchQueryChange = actualViewModel::onChatHistorySearchQueryChange,
-                                    activePrompt = activePrompt,
-                                    historyDisplayMode = historyDisplayMode,
-                                    onDisplayModeChange = { historyDisplayMode = it },
-                                    autoSwitchCharacterCard = autoSwitchCharacterCard,
-                                    onAutoSwitchCharacterCardChange = { autoSwitchCharacterCard = it },
-                                    autoSwitchChatOnCharacterSelect = autoSwitchChatOnCharacterSelect,
-                                    onAutoSwitchChatOnCharacterSelectChange = {
-                                        autoSwitchChatOnCharacterSelect = it
-                                    },
-                                    onLaunchFloatingWindow = launchFloatingWindow,
-                                    onOpenToolsAndSettings = { route ->
-                                        actualViewModel.showChatHistorySelector(false)
-                                        when (route) {
-                                            "packages" -> onNavigateToPackageManager()
-                                            "favorites" -> onNavigateToFavorites()
-                                            "tools_settings" -> onNavigateToToolsAndSettings()
-                                            "settings" -> onNavigateToSettings()
-                                            "token_config" -> onNavigateToTokenConfig()
-                                            "memory" -> onNavigateToMemoryBase()
-                                            "model_config" -> onNavigateToModelConfig()
-                                            "prompts" -> onNavigateToModelPrompts()
-                                            else -> {}
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    }
                 }
             }
         }
