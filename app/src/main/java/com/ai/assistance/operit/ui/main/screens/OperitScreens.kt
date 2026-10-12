@@ -214,6 +214,7 @@ sealed class Screen(
                         when (route) {
                             "workflow" -> navigateTo(Workflow)
                             "packages" -> navigateTo(Packages)
+                            "tool_permissions" -> navigateTo(ToolPermission)
                             "toolbox" -> navigateTo(Toolbox)
                             "plugins" -> navigateTo(Packages)
                             "favorites" -> navigateTo(MessageFavorites)
@@ -221,7 +222,6 @@ sealed class Screen(
                             "model_config" -> navigateTo(ModelConfig)
                             "prompts" -> navigateTo(ModelPromptsSettings)
                             "appearance" -> navigateTo(ThemeSettings)
-                            "tool_permissions" -> navigateTo(ToolPermission)
                             "backup" -> navigateTo(ChatBackupSettings)
                             "token_config" -> navigateTo(TokenConfig)
                             "settings" -> navigateTo(Settings)
