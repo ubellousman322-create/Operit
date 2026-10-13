@@ -1,1513 +1,2762 @@
-package com.ai.assistance.operit.ui.main.screens
+package com.ai.assistance.operit.ui.features.chat.components
 
+import android.net.Uri
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountTree
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircleOutline
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.DriveFileRenameOutline
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.Switch
+import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatHistoryDisplayMode
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+import androidx.compose.ui.window.Dialog
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.ui.common.NavItem
-import com.ai.assistance.operit.ui.features.assistant.screens.AssistantConfigScreen
-import com.ai.assistance.operit.ui.features.chat.screens.AIChatScreen
-import com.ai.assistance.operit.ui.features.chat.components.FavoriteMessagesScreen
-import com.ai.assistance.operit.ui.features.chat.components.ToolsAndSettingsScreen
-import com.ai.assistance.operit.ui.main.PendingMessageJumpHandler
-import com.ai.assistance.operit.ui.features.demo.screens.ShizukuDemoScreen
-import com.ai.assistance.operit.ui.features.packages.screens.MarketHomeTab
-import com.ai.assistance.operit.ui.features.packages.screens.PackageManagerScreen
-import com.ai.assistance.operit.ui.features.packages.screens.ArtifactPublishScreen
-import com.ai.assistance.operit.ui.features.packages.screens.RepoMarketPublishScreen
-import com.ai.assistance.operit.ui.features.packages.screens.UnifiedMarketManageScreen
-import com.ai.assistance.operit.ui.features.packages.screens.UnifiedMarketCategoryScreen
-import com.ai.assistance.operit.ui.features.packages.screens.UnifiedMarketAuthorScreen
-import com.ai.assistance.operit.ui.features.packages.screens.UnifiedMarketDetailEntryScreen
-import com.ai.assistance.operit.ui.features.packages.screens.UnifiedMarketNotificationsScreen
-import com.ai.assistance.operit.ui.features.packages.screens.UnifiedMarketScreen
-import com.ai.assistance.operit.ui.features.packages.screens.marketCategoryLabel
-import com.ai.assistance.operit.ui.features.packages.screens.toArtifactPublishClusterContext
-import com.ai.assistance.operit.ui.features.packages.market.ArtifactPublishClusterContext
-import com.ai.assistance.operit.ui.features.packages.market.MarketStatsType
-import com.ai.assistance.operit.ui.features.packages.market.PluginCreationIntent
-import com.ai.assistance.operit.ui.features.settings.screens.ChatBackupSettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.ChatHistorySettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.ContextSummarySettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.ExternalHttpChatSettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.FunctionalConfigScreen
-import com.ai.assistance.operit.ui.features.settings.screens.GlobalDisplaySettingsScreen
-import com.ai.assistance.operit.ui.features.performance.PerformanceMonitorScreen
-import com.ai.assistance.operit.ui.features.settings.screens.GitHubAccountScreen
-import com.ai.assistance.operit.ui.features.settings.screens.LanguageSettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.LayoutAdjustmentSettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.ModelConfigScreen
-import com.ai.assistance.operit.ui.features.settings.screens.ModelConfigEntryMode
-import com.ai.assistance.operit.ui.features.settings.screens.ModelPromptsSettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.TagMarketScreen
-import com.ai.assistance.operit.ui.features.settings.screens.SettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.SpeechServicesSettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.ThemeSettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.ToolPermissionSettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.MnnModelDownloadScreen
-import com.ai.assistance.operit.ui.features.settings.screens.UserPreferencesSettingsScreen
-import com.ai.assistance.operit.ui.features.tokenstats.TokenUsageStatisticsScreen
-import com.ai.assistance.operit.ui.features.token.TokenConfigWebViewScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.AppPermissionsToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.FileManagerToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.LogcatToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.ShellExecutorToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.StreamMarkdownDemoScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.TerminalAutoConfigToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.TerminalToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.ToolboxScreen
-import com.ai.assistance.operit.ui.common.composedsl.ToolPkgComposeDslToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.UIDebuggerToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.DefaultAssistantGuideToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.ProcessLimitRemoverToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.sqlviewer.SqlViewerToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.ffmpegtoolbox.FFmpegToolboxScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.htmlpackager.HtmlPackagerScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.speechtotext.SpeechToTextToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.texttospeech.TextToSpeechToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.tooltester.ToolTesterScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.autoglm.AutoGlmOneClickToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.autoglm.AutoGlmToolScreen
-import com.ai.assistance.operit.ui.features.workflow.screens.WorkflowListScreen
-import com.ai.assistance.operit.ui.features.workflow.screens.WorkflowDetailScreen
-import com.ai.assistance.operit.ui.main.PendingChatDraftHandler
-import com.ai.assistance.operit.ui.main.navigation.AppRouterGateway
+import com.ai.assistance.operit.data.model.ChatHistory
+import com.ai.assistance.operit.data.model.CharacterCard
+import com.ai.assistance.operit.data.model.CharacterGroupCard
+import com.ai.assistance.operit.data.model.ActivePrompt
+import com.ai.assistance.operit.data.repository.ChatHistoryManager
+import com.ai.assistance.operit.data.preferences.CharacterCardManager
+import com.ai.assistance.operit.data.preferences.CharacterGroupCardManager
+import com.ai.assistance.operit.ui.common.rememberLocal
+import me.saket.swipe.SwipeAction
+import me.saket.swipe.SwipeableActionsBox
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.graphics.Brush
+import com.ai.assistance.operit.ui.theme.liquidGlass
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.rememberAsyncImagePainter
+import com.ai.assistance.operit.data.preferences.UserPreferencesManager
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.flowOf
+import androidx.compose.material.icons.filled.PictureInPicture
 
-// 路由配置类
-typealias ScreenNavigationHandler = (Screen) -> Unit
+private data class GroupTarget(
+    val groupName: String,
+    val characterCardName: String?
+)
 
-// 重构的Screen类，添加了路由相关属性和内容渲染函数
-sealed class Screen(
-        // 对应的导航项，仅用于侧边栏高亮归属。
-        // 它不再承担“这个 nav item 默认打开哪个页面”的职责。
-        open val navItem: NavItem? = null,
-        // 屏幕标题资源ID
-        open val titleRes: Int? = null,
-        // 是否参与 AppContent 的跨页淡入淡出。
-        // 某些包含实时渲染视图的页面在转场中保留上一页会产生明显残影。
-        open val participatesInCrossfadeTransition: Boolean = true,
-        open val keepAlive: Boolean = false,
-        /**
-         * 是否使用路由级 ViewModelStore（AppContent 按 screenKey 通过
-         * [com.ai.assistance.operit.ui.main.navigation.ScreenRouteViewModelStoreOwnerManager]
-         * 管理）：配置变化保留实例，路由出栈/替换/清栈时 store.clear() 触发
-         * onCleared（viewModelScope 取消）。
-         * 默认 false 保持 Activity 级语义，防止影响其他页面。
-         */
-        open val usesRouteViewModelStore: Boolean = false
+private fun resolveBindingForCreate(
+    historyDisplayMode: ChatHistoryDisplayMode,
+    activePrompt: ActivePrompt,
+    activeCharacterCardName: String?
+): Pair<String?, String?> {
+    if (historyDisplayMode == ChatHistoryDisplayMode.BY_FOLDER) {
+        return Pair(null, null)
+    }
+    return when (val prompt = activePrompt) {
+        is ActivePrompt.CharacterGroup -> Pair(null, prompt.id)
+        is ActivePrompt.CharacterCard -> Pair(activeCharacterCardName, null)
+    }
+}
+
+private sealed interface HistoryListItem {
+    data class CharacterHeader(
+        val key: String,
+        val name: String,
+        val characterCardName: String? = null,
+        val characterGroupId: String? = null
+    ) : HistoryListItem
+    data class Header(
+        val key: String, 
+        val name: String, 
+        val groupValue: String?,
+        val characterCardName: String? = null
+    ) : HistoryListItem
+    data class Item(val history: ChatHistory) : HistoryListItem
+}
+
+@Composable
+private fun HistoryQuickScrollButton(
+    icon: ImageVector,
+    contentDescription: String,
+    enabled: Boolean,
+    onClick: () -> Unit
 ) {
-    open fun stableScreenKey(): String? = null
-
-    /**
-     * AppContent 使用的屏幕键：keepAlive 屏幕用 [stableScreenKey]（同路由
-     * 实例复用），否则用路由实例 id（每次进入独立）。
-     */
-    fun screenKey(routeInstanceId: String): String =
-        if (keepAlive) stableScreenKey() ?: routeInstanceId else routeInstanceId
-
-    // 屏幕内容渲染函数
-    @Composable
-    open fun Content(
-            navController: NavController,
-            navigateTo: ScreenNavigationHandler,
-            onGoBack: () -> Unit,
-            hasBackgroundImage: Boolean,
-            onLoading: (Boolean) -> Unit,
-            onError: (String) -> Unit,
-            onGestureConsumed: (Boolean) -> Unit
+    Surface(
+        shape = CircleShape,
+        color =
+            if (enabled) {
+                MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.62f)
+            } else {
+                Color.Transparent
+            },
+        shadowElevation = if (enabled) 1.dp else 0.dp
     ) {
-        // 子类实现具体内容
-    }
-
-    // Main screens (primary)
-    data object AiChat : Screen(navItem = NavItem.AiChat) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
+        IconButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = Modifier.size(22.dp)
         ) {
-            AIChatScreen(
-                    padding = PaddingValues(0.dp),
-                    viewModel = null,
-                    isFloatingMode = false,
-                    hasBackgroundImage = hasBackgroundImage,
-                    onNavigateToTokenConfig = { navigateTo(TokenConfig) },
-                    onNavigateToSettings = { navigateTo(Settings) },
-                    onNavigateToModelConfig = { navigateTo(ModelConfig) },
-                    onNavigateToOnboardingModelConfig = { navigateTo(ModelConfigOnboarding) },
-                    onNavigateToModelPrompts = { navigateTo(ModelPromptsSettings) },
-                    onNavigateToPackageManager = { navigateTo(Packages) },
-                    onNavigateToFavorites = { navigateTo(MessageFavorites) },
-                    onNavigateToToolsAndSettings = { navigateTo(ToolsAndSettings) },
-                    onLoading = onLoading,
-                    onError = onError,
-                    onGestureConsumed = onGestureConsumed
-            )
-        }
-    }
-
-
-    data object MessageFavorites :
-            Screen(
-                    navItem = NavItem.MessageFavorites,
-                    titleRes = R.string.message_favorites
-            ) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            FavoriteMessagesScreen(
-                    onGoBack = onGoBack,
-                    onJumpToFavorite = { chatId, timestamp ->
-                        PendingMessageJumpHandler.setPendingJump(chatId, timestamp)
-                        navigateTo(AiChat)
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(14.dp),
+                tint =
+                    if (enabled) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.22f)
                     }
             )
         }
     }
+}
 
-    data object ToolsAndSettings : Screen(navItem = NavItem.Settings) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ToolsAndSettingsScreen(
-                    onGoBack = onGoBack,
-                    onOpen = { route ->
-                        when (route) {
-                            "workflow" -> navigateTo(Workflow)
-                            "packages" -> navigateTo(Packages)
-                            "tool_permissions" -> navigateTo(ToolPermission)
-                            "toolbox" -> navigateTo(Toolbox)
-                            "plugins" -> navigateTo(Packages)
-                            "favorites" -> navigateTo(MessageFavorites)
-                            "assistant_config" -> navigateTo(AssistantConfig)
-                            "model_config" -> navigateTo(ModelConfig)
-                            "prompts" -> navigateTo(ModelPromptsSettings)
-                            "appearance" -> navigateTo(ThemeSettings)
-                            "backup" -> navigateTo(ChatBackupSettings)
-                            "token_config" -> navigateTo(TokenConfig)
-                            "settings" -> navigateTo(Settings)
-                            else -> {}
+@Composable
+private fun HistoryQuickScroller(
+    listState: LazyListState,
+    itemCount: Int,
+    onInteractionChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val layoutInfo = listState.layoutInfo
+    val visibleItems = layoutInfo.visibleItemsInfo
+    val visibleItemCount = visibleItems.size
+    val totalItemCount = layoutInfo.totalItemsCount.takeIf { it > 0 } ?: itemCount
+    val lastVisibleIndex = visibleItems.lastOrNull()?.index ?: 0
+    val viewportHeightPx =
+        (layoutInfo.viewportEndOffset - layoutInfo.viewportStartOffset).toFloat().coerceAtLeast(1f)
+    val averageVisibleItemHeightPx =
+        visibleItems
+            .map { it.size }
+            .average()
+            .toFloat()
+            .takeIf { it > 0f }
+            ?: viewportHeightPx
+    val estimatedContentHeightPx =
+        (averageVisibleItemHeightPx * totalItemCount).coerceAtLeast(viewportHeightPx)
+    val estimatedScrollOffsetPx =
+        (
+            listState.firstVisibleItemIndex * averageVisibleItemHeightPx +
+                listState.firstVisibleItemScrollOffset.toFloat()
+        ).coerceAtLeast(0f)
+    val maxScrollOffsetPx = (estimatedContentHeightPx - viewportHeightPx).coerceAtLeast(1f)
+    val canScrollBackward =
+        listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0
+    val canScrollForward = totalItemCount > 0 && lastVisibleIndex < totalItemCount - 1
+    val shouldShow = totalItemCount > 1 && visibleItemCount > 0 && totalItemCount > visibleItemCount
+
+    if (!shouldShow) {
+        return
+    }
+
+    val coroutineScope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    val minThumbHeight = with(density) { 36.dp.toPx() }
+    val trackWidth = 12.dp
+    var trackHeightPx by remember { mutableStateOf(0f) }
+    var isHandlingTouch by remember { mutableStateOf(false) }
+    val scrollProgress =
+        if (totalItemCount <= 1) {
+            0f
+        } else {
+            (estimatedScrollOffsetPx / maxScrollOffsetPx)
+                .coerceIn(0f, 1f)
+        }
+    val visibleFraction =
+        (viewportHeightPx / estimatedContentHeightPx).coerceIn(0.12f, 1f)
+    val thumbHeightPx =
+        when {
+            trackHeightPx <= 0f -> minThumbHeight
+            trackHeightPx <= minThumbHeight -> trackHeightPx
+            else -> (trackHeightPx * visibleFraction).coerceIn(minThumbHeight, trackHeightPx)
+        }
+    val maxThumbOffsetPx = (trackHeightPx - thumbHeightPx).coerceAtLeast(0f)
+    val thumbOffsetPx = maxThumbOffsetPx * scrollProgress
+    val thumbHeightDp = with(density) { thumbHeightPx.toDp() }
+    val thumbOffsetDp = with(density) { thumbOffsetPx.toDp() }
+    val fastScrollDescription = stringResource(R.string.history_fast_scroll)
+    val quickScrollerAlpha = if (listState.isScrollInProgress || isHandlingTouch) 0.9f else 0.5f
+    val hostView = LocalView.current
+    val currentTrackHeightPx by rememberUpdatedState(trackHeightPx)
+    val currentThumbHeightPx by rememberUpdatedState(thumbHeightPx)
+    val currentMaxScrollOffsetPx by rememberUpdatedState(maxScrollOffsetPx)
+    val currentEstimatedScrollOffsetPx by rememberUpdatedState(estimatedScrollOffsetPx)
+    val currentTotalItemCount by rememberUpdatedState(totalItemCount)
+    val currentOnInteractionChange by rememberUpdatedState(onInteractionChange)
+    DisposableEffect(Unit) {
+        onDispose {
+            onInteractionChange(false)
+        }
+    }
+
+    fun jumpToPointer(pointerY: Float) {
+        if (currentTrackHeightPx <= 0f || currentTotalItemCount <= 1) {
+            return
+        }
+        val trackableHeight = (currentTrackHeightPx - currentThumbHeightPx).coerceAtLeast(1f)
+        val normalizedOffset = (pointerY - currentThumbHeightPx / 2f).coerceIn(0f, trackableHeight)
+        val progress = (normalizedOffset / trackableHeight).coerceIn(0f, 1f)
+        val targetScrollOffsetPx = progress * currentMaxScrollOffsetPx
+        val scrollDeltaPx = targetScrollOffsetPx - currentEstimatedScrollOffsetPx
+        if (scrollDeltaPx != 0f) {
+            listState.dispatchRawDelta(scrollDeltaPx)
+        }
+    }
+
+    fun scrollByPointerDelta(pointerDeltaY: Float) {
+        if (currentTrackHeightPx <= 0f || currentTotalItemCount <= 1) {
+            return
+        }
+        val trackableHeight = (currentTrackHeightPx - currentThumbHeightPx).coerceAtLeast(1f)
+        val contentDeltaPx = pointerDeltaY * (currentMaxScrollOffsetPx / trackableHeight)
+        if (contentDeltaPx != 0f) {
+            listState.dispatchRawDelta(contentDeltaPx)
+        }
+    }
+
+    fun startHandlingTouch(pointerY: Float) {
+        isHandlingTouch = true
+        currentOnInteractionChange(true)
+        hostView.parent?.requestDisallowInterceptTouchEvent(true)
+        jumpToPointer(pointerY)
+    }
+
+    fun stopHandlingTouch() {
+        isHandlingTouch = false
+        currentOnInteractionChange(false)
+        hostView.parent?.requestDisallowInterceptTouchEvent(false)
+    }
+
+    Column(
+        modifier = modifier
+            .width(20.dp)
+            .alpha(quickScrollerAlpha)
+            .fillMaxHeight(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        HistoryQuickScrollButton(
+            icon = Icons.Default.KeyboardArrowUp,
+            contentDescription = stringResource(R.string.history_scroll_to_top),
+            enabled = canScrollBackward,
+            onClick = {
+                coroutineScope.launch {
+                    listState.animateScrollToItem(0)
+                }
+            }
+        )
+
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .width(28.dp)
+                .padding(vertical = 4.dp)
+                .onGloballyPositioned { coordinates ->
+                    trackHeightPx = coordinates.size.height.toFloat()
+                }
+                .pointerInput(Unit) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        startHandlingTouch(down.position.y)
+                        down.consume()
+                        try {
+                            var previousPointerY = down.position.y
+                            while (true) {
+                                val event = awaitPointerEvent(PointerEventPass.Initial)
+                                val change =
+                                    event.changes.firstOrNull { it.id == down.id } ?: break
+                                if (!change.pressed) {
+                                    change.consume()
+                                    break
+                                }
+                                val pointerDeltaY = change.position.y - previousPointerY
+                                previousPointerY = change.position.y
+                                if (pointerDeltaY != 0f) {
+                                    scrollByPointerDelta(pointerDeltaY)
+                                }
+                                change.consume()
+                            }
+                        } finally {
+                            stopHandlingTouch()
                         }
                     }
-            )
+                }
+                .semantics {
+                    contentDescription = fastScrollDescription
+                }
+        ) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .width(trackWidth)
+                    .fillMaxHeight()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .width(2.dp)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+                )
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = thumbOffsetDp)
+                        .width(8.dp)
+                        .height(thumbHeightDp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.55f))
+                )
+            }
+        }
+
+        HistoryQuickScrollButton(
+            icon = Icons.Default.KeyboardArrowDown,
+            contentDescription = stringResource(R.string.history_scroll_to_bottom),
+            enabled = canScrollForward,
+            onClick = {
+                coroutineScope.launch {
+                    listState.animateScrollToItem((totalItemCount - 1).coerceAtLeast(0))
+                }
+            }
+        )
+    }
+}
+
+@OptIn(
+    ExperimentalFoundationApi::class,
+    ExperimentalMaterial3Api::class
+)
+@Composable
+fun ChatHistorySelector(
+        modifier: Modifier = Modifier,
+        onNewChat: (characterCardName: String?, characterGroupId: String?) -> Unit,
+        onSelectChat: (String) -> Unit,
+        onDeleteChat: (String) -> Unit,
+        onUpdateChatTitle: (chatId: String, newTitle: String) -> Unit,
+        onUpdateChatBinding: (chatId: String, characterCardName: String?, characterGroupId: String?) -> Unit,
+        onCreateGroup: (groupName: String, characterCardName: String?, characterGroupId: String?) -> Unit,
+        onUpdateChatOrderAndGroup: (reorderedHistories: List<ChatHistory>, movedItem: ChatHistory, targetGroup: String?) -> Unit,
+        onUpdateGroupName: (oldName: String, newName: String, characterCardName: String?) -> Unit,
+        onDeleteGroup: (groupName: String, deleteChats: Boolean, characterCardName: String?) -> Unit,
+        chatHistories: List<ChatHistory>,
+        currentId: String?,
+        activeStreamingChatIds: Set<String> = emptySet(),
+        lazyListState: LazyListState? = null,
+        onBack: (() -> Unit)? = null,
+        searchQuery: String,
+        onSearchQueryChange: (String) -> Unit,
+        historyDisplayMode: ChatHistoryDisplayMode,
+        onDisplayModeChange: (ChatHistoryDisplayMode) -> Unit,
+        autoSwitchCharacterCard: Boolean,
+        onAutoSwitchCharacterCardChange: (Boolean) -> Unit,
+        autoSwitchChatOnCharacterSelect: Boolean,
+        onAutoSwitchChatOnCharacterSelectChange: (Boolean) -> Unit,
+        onQuickScrollInteractionChange: (Boolean) -> Unit = {},
+        onOpenToolsAndSettings: ((String) -> Unit)? = null,
+        onLaunchFloatingWindow: (() -> Unit)? = null,
+        activePrompt: ActivePrompt
+) {
+    val glassAppearance = com.ai.assistance.operit.ui.main.components.rememberNavigationDrawerAppearance()
+    var chatToEdit by remember { mutableStateOf<ChatHistory?>(null) }
+    var chatToDelete by remember { mutableStateOf<ChatHistory?>(null) }
+    var chatItemActionTarget by remember { mutableStateOf<ChatHistory?>(null) }
+    var showNewGroupDialog by remember { mutableStateOf(false) }
+    var newGroupName by remember { mutableStateOf("") }
+    var collapsedGroups by rememberLocal("chat_history_collapsed_groups", emptySet<String>())
+    var collapsedCharacters by rememberLocal("chat_history_collapsed_characters", emptySet<String>())
+
+    var groupActionTarget by remember { mutableStateOf<GroupTarget?>(null) }
+    var groupToRename by remember { mutableStateOf<GroupTarget?>(null) }
+    var groupToDelete by remember { mutableStateOf<GroupTarget?>(null) }
+    var hasLongPressedGroup by rememberLocal("has_long_pressed_group", defaultValue = false)
+    
+    // 搜索相关状态
+    var showSearchBox by remember { mutableStateOf(false) }
+    var matchedChatIdsByContent by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var isSearching by remember { mutableStateOf(false) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
+    var showGroupsView by remember { mutableStateOf(false) }
+    var expandedGroupName by remember { mutableStateOf<String?>(null) }
+    var groupOrder by rememberLocal("chat_history_group_order", emptyList<String>())
+    var draggingGroupName by remember { mutableStateOf<String?>(null) }
+    var chatToMove by remember { mutableStateOf<ChatHistory?>(null) }
+    var bulkGroupName by remember { mutableStateOf<String?>(null) }
+    var bulkSelected by remember { mutableStateOf(emptySet<String>()) }
+
+    val context = LocalContext.current
+    val chatHistoryManager = remember { ChatHistoryManager.getInstance(context) }
+    val characterCardManager = remember { CharacterCardManager.getInstance(context) }
+    val characterGroupCardManager = remember { CharacterGroupCardManager.getInstance(context) }
+    val coroutineScope = rememberCoroutineScope()
+    val deleteAnimationDurationMs = 220L
+    var deletingChatIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var availableCharacterCards by remember { mutableStateOf<List<CharacterCard>>(emptyList()) }
+    var availableCharacterGroups by remember { mutableStateOf<List<CharacterGroupCard>>(emptyList()) }
+    var resolvedGroupNameById by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+
+    fun promptDeleteChat(history: ChatHistory) {
+        if (history.locked) {
+            onDeleteChat(history.id)
+            return
+        }
+        if (deletingChatIds.contains(history.id)) {
+            return
+        }
+        chatToDelete = history
+    }
+
+    fun requestDeleteChat(history: ChatHistory) {
+        if (history.locked) {
+            onDeleteChat(history.id)
+            return
+        }
+        if (deletingChatIds.contains(history.id)) {
+            return
+        }
+        deletingChatIds = deletingChatIds + history.id
+        coroutineScope.launch {
+            delay(deleteAnimationDurationMs)
+            onDeleteChat(history.id)
         }
     }
 
-    data object Packages : Screen(navItem = NavItem.Packages) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            val context = LocalContext.current
-            PackageManagerScreen(
-                onNavigateToMCPMarket = { navigateTo(Market(MarketHomeTab.ALL)) },
-                onNavigateToSkillMarket = { navigateTo(Market(MarketHomeTab.ALL)) },
-                onNavigateToArtifactMarket = { navigateTo(Market(MarketHomeTab.ALL)) },
-                onStartPluginCreation = { intent ->
-                    PendingChatDraftHandler.setPendingDraft(intent.toPrompt(context))
-                    navigateTo(AiChat)
-                },
-                onOpenToolPkgPluginConfig = { containerPackageName, uiModuleId, title, keepAlive ->
-                    navigateTo(
-                        ToolPkgPluginConfig(
-                            containerPackageName = containerPackageName,
-                            uiModuleId = uiModuleId,
-                            title = title,
-                            keepAlive = keepAlive
-                        )
+    if (chatToDelete != null) {
+        val deletingChat = chatToDelete!!
+        AlertDialog(
+            onDismissRequest = { chatToDelete = null },
+            title = { Text(stringResource(R.string.confirm_delete_chat)) },
+            text = {
+                Text(
+                    text = stringResource(R.string.delete_chat_confirmation, deletingChat.title)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        requestDeleteChat(deletingChat)
+                        chatToDelete = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
                     )
+                ) {
+                    Text(stringResource(R.string.confirm_delete_action))
                 }
-            )
-        }
-    }
-
-    data class Market(val initialTab: MarketHomeTab = MarketHomeTab.ALL) :
-            Screen(navItem = NavItem.Packages, titleRes = R.string.screen_title_market) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            UnifiedMarketScreen(
-                initialTab = initialTab,
-                onNavigateToArtifactPublish = { navigateTo(ArtifactPublish) },
-                onNavigateToRepoPublish = { type -> navigateTo(RepoPublish(type)) },
-                onNavigateToMarketManage = { navigateTo(MarketManage) },
-                onNavigateToDetail = { issue ->
-                    navigateTo(MarketEntryDetail(issue))
-                },
-                onNavigateToCategory = { categoryId ->
-                    navigateTo(MarketCategory(categoryId))
-                },
-                onNavigateToNotifications = {
-                    navigateTo(MarketNotifications)
+            },
+            dismissButton = {
+                TextButton(onClick = { chatToDelete = null }) {
+                    Text(stringResource(R.string.cancel))
                 }
-            )
+            }
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        characterCardManager.characterCardListFlow.collectLatest { ids ->
+            val cards = ids.mapNotNull { id ->
+                runCatching { characterCardManager.getCharacterCard(id) }.getOrNull()
+            }
+            availableCharacterCards = cards
+        }
+    }
+    LaunchedEffect(Unit) {
+        characterGroupCardManager.allCharacterGroupCardsFlow.collectLatest { groups ->
+            availableCharacterGroups = groups
+        }
+    }
+    val groupNameById = remember(availableCharacterGroups, resolvedGroupNameById) {
+        val fromList = availableCharacterGroups.associate { it.id to it.name }
+        fromList + resolvedGroupNameById
+    }
+    val activeCharacterCardName = remember(activePrompt, availableCharacterCards) {
+        when (val prompt = activePrompt) {
+            is ActivePrompt.CharacterCard ->
+                availableCharacterCards.firstOrNull { it.id == prompt.id }?.name
+            is ActivePrompt.CharacterGroup -> null
+        }
+    }
+    val actualLazyListState = lazyListState ?: rememberLazyListState()
+    val ungroupedText = stringResource(R.string.ungrouped)
+
+    // 当搜索查询改变时，执行内容搜索（带防抖延迟）
+    LaunchedEffect(searchQuery, chatHistories) {
+        val trimmedQuery = searchQuery.trim()
+        if (trimmedQuery.isBlank()) {
+            matchedChatIdsByContent = emptySet()
+            isSearching = false
+            return@LaunchedEffect
+        }
+
+        val hasTitleOrGroupMatch =
+            chatHistories.any { history ->
+                history.title.contains(trimmedQuery, ignoreCase = true) ||
+                    (history.group?.contains(trimmedQuery, ignoreCase = true) == true)
+            }
+
+        val shouldSearchByContent = !hasTitleOrGroupMatch && trimmedQuery.length >= 2
+        if (!shouldSearchByContent) {
+            matchedChatIdsByContent = emptySet()
+            isSearching = false
+            return@LaunchedEffect
+        }
+
+        // 延迟400ms，如果用户继续输入则取消本次搜索（LaunchedEffect会自动取消）
+        delay(400)
+        // 注意：如果 searchQuery 在延迟期间改变，LaunchedEffect 会重新启动，这里检查的是当前值
+        isSearching = true
+        try {
+            matchedChatIdsByContent = chatHistoryManager.searchChatIdsByContent(trimmedQuery)
+        } catch (e: Exception) {
+            matchedChatIdsByContent = emptySet()
+        } finally {
+            isSearching = false
         }
     }
 
-    data class MarketCategory(val categoryId: String) :
-            Screen(navItem = NavItem.Packages) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            UnifiedMarketCategoryScreen(
-                categoryId = categoryId,
-                onNavigateToArtifactDetail = { issue ->
-                    navigateTo(MarketEntryDetail(issue))
-                },
-                onNavigateToSkillDetail = { issue ->
-                    navigateTo(MarketEntryDetail(issue))
-                },
-                onNavigateToMcpDetail = { issue ->
-                    navigateTo(MarketEntryDetail(issue))
+    val filteredHistories = remember(chatHistories, searchQuery, matchedChatIdsByContent) {
+        val trimmedQuery = searchQuery.trim()
+        if (trimmedQuery.isNotBlank()) {
+            chatHistories.filter { history ->
+                val matchesTitleOrGroup = history.title.contains(trimmedQuery, ignoreCase = true) ||
+                        (history.group?.contains(trimmedQuery, ignoreCase = true) == true)
+                val matchesContent = matchedChatIdsByContent.contains(history.id)
+                matchesTitleOrGroup || matchesContent
+            }
+        } else {
+            chatHistories
+        }
+    }
+    val groupIdsInFilteredHistories = remember(filteredHistories) {
+        filteredHistories
+            .mapNotNull { it.characterGroupId?.trim()?.takeIf { id -> id.isNotBlank() } }
+            .toSet()
+    }
+    LaunchedEffect(groupIdsInFilteredHistories, groupNameById) {
+        val missingIds = groupIdsInFilteredHistories.filter { groupNameById[it].isNullOrBlank() }
+        if (missingIds.isEmpty()) {
+            return@LaunchedEffect
+        }
+        val fetched = mutableMapOf<String, String>()
+        missingIds.forEach { groupId ->
+            val groupName = runCatching {
+                characterGroupCardManager.getCharacterGroupCard(groupId)?.name
+            }.getOrNull()?.takeIf { it.isNotBlank() }
+            if (!groupName.isNullOrBlank()) {
+                fetched[groupId] = groupName
+            }
+        }
+        if (fetched.isNotEmpty()) {
+            resolvedGroupNameById = resolvedGroupNameById + fetched
+        }
+    }
+
+    val unboundCharacterText = stringResource(R.string.unbound_character_card)
+    val groupPrefix = stringResource(R.string.character_group_binding_prefix)
+    val flatItems =
+            remember(
+                    filteredHistories,
+                    collapsedGroups,
+                    collapsedCharacters,
+                    ungroupedText,
+                    unboundCharacterText,
+                    availableCharacterGroups,
+                    groupNameById,
+                    groupPrefix,
+                    historyDisplayMode,
+                    activeCharacterCardName,
+                    showGroupsView,
+                    expandedGroupName,
+                    groupOrder
+            ) {
+                fun characterKey(name: String) = "character::$name"
+                fun groupKey(characterName: String?, groupValue: String?): String {
+                    val characterPart = characterName ?: "all"
+                    val groupPart = groupValue ?: "ungrouped"
+                    return "group::$characterPart::$groupPart"
                 }
-            )
-        }
 
-        @Composable
-        override fun getTitle(): String = marketCategoryLabel(categoryId)
-    }
-
-    data object MarketNotifications :
-            Screen(navItem = NavItem.Packages, titleRes = R.string.market_notifications_title) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            UnifiedMarketNotificationsScreen()
-        }
-    }
-
-    data class MarketEntryDetail(
-        val entry: com.ai.assistance.operit.data.api.MarketV2Entry,
-        val fromManage: Boolean = false
-    ) : Screen(navItem = NavItem.Packages) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            UnifiedMarketDetailEntryScreen(
-                initialEntry = entry,
-                fromManage = fromManage,
-                onNavigateBack = onGoBack,
-                onPublishNewVersion = { target ->
-                    when (target.type.lowercase()) {
-                        "script", "package" -> navigateTo(ArtifactContinuePublish(target.toArtifactPublishClusterContext()))
-                        "skill" -> navigateTo(RepoPublishVersion(MarketStatsType.SKILL, target))
-                        "mcp" -> navigateTo(RepoPublishVersion(MarketStatsType.MCP, target))
+                // 时间流：置顶优先，其余按最后一次聊天时间倒序；分组不再占主列表
+                if (showGroupsView) {
+                    val groupedHistories = filteredHistories.groupBy { it.group }
+                    val knownGroupNames = groupedHistories.keys.map { it ?: ungroupedText }
+                    val orderedGroupNames =
+                            (groupOrder.filter { it in knownGroupNames } +
+                                    knownGroupNames.filterNot { it in groupOrder })
+                                    .distinct()
+                    orderedGroupNames.flatMap { displayName ->
+                        val groupValue = displayName.takeUnless { it == ungroupedText }
+                        val histories = groupedHistories[groupValue].orEmpty()
+                        val header =
+                                HistoryListItem.Header(
+                                        key = "group::" + (groupValue ?: "ungrouped"),
+                                        name = displayName,
+                                        groupValue = groupValue,
+                                        characterCardName = null
+                                )
+                        val sortedHistories =
+                                histories.sortedWith(
+                                        compareByDescending<ChatHistory> { it.pinned }
+                                                .thenByDescending { it.lastMessageDateTime() }
+                                )
+                        val visibleHistories =
+                                if (expandedGroupName == displayName) sortedHistories
+                                else sortedHistories.take(3)
+                        listOf(header) + visibleHistories.map { HistoryListItem.Item(it) }
                     }
-                },
-                onNavigateToAuthor = { authorId, authorLogin, authorAvatarUrl ->
-                    navigateTo(
-                        MarketAuthor(
-                            authorId = authorId,
-                            authorLogin = authorLogin,
-                            authorAvatarUrl = authorAvatarUrl
-                        )
-                    )
-                }
-            )
-        }
-    }
-
-    data class MarketAuthor(
-        val authorId: String,
-        val authorLogin: String,
-        val authorAvatarUrl: String
-    ) : Screen(navItem = NavItem.Packages) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            UnifiedMarketAuthorScreen(
-                authorId = authorId,
-                authorLogin = authorLogin,
-                authorAvatarUrl = authorAvatarUrl,
-                onNavigateToDetail = { issue ->
-                    navigateTo(MarketEntryDetail(issue))
-                }
-            )
-        }
-
-        @Composable
-        override fun getTitle(): String =
-            authorLogin.ifBlank { authorId.removePrefix("gh_") }
-    }
-
-    data object MarketManage : Screen(navItem = NavItem.Packages, titleRes = R.string.market_section_manage) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            UnifiedMarketManageScreen(
-                onNavigateToEditArtifact = { issue ->
-                    navigateTo(ArtifactEdit(issue))
-                },
-                onNavigateToEditRepo = { type, issue ->
-                    navigateTo(RepoEdit(type, issue))
-                },
-                onNavigateToPublishArtifactVersion = { issue, canEditEntry ->
-                    navigateTo(ArtifactContinuePublish(issue.toArtifactPublishClusterContext(canEditEntry)))
-                },
-                onNavigateToPublishRepoVersion = { type, issue, canEditEntry ->
-                    navigateTo(RepoPublishVersion(type, issue, canEditEntry))
-                },
-                onNavigateToPublishArtifact = { navigateTo(ArtifactPublish) },
-                onNavigateToPublishRepo = { type -> navigateTo(RepoPublish(type)) },
-                onNavigateToDetail = { issue ->
-                    navigateTo(MarketEntryDetail(issue, fromManage = true))
-                }
-            )
-        }
-    }
-
-    data object ArtifactPublish : Screen(navItem = NavItem.Packages, titleRes = R.string.screen_title_artifact_publish) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ArtifactPublishScreen(onNavigateBack = onGoBack)
-        }
-    }
-
-    data class ArtifactContinuePublish(
-        val publishContext: ArtifactPublishClusterContext
-    ) : Screen(navItem = NavItem.Packages, titleRes = R.string.screen_title_artifact_publish) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ArtifactPublishScreen(
-                onNavigateBack = onGoBack,
-                publishContext = publishContext
-            )
-        }
-    }
-
-    data class ArtifactEdit(val editingEntry: com.ai.assistance.operit.data.api.MarketV2Entry) :
-            Screen(navItem = NavItem.Packages, titleRes = R.string.screen_title_artifact_publish) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ArtifactPublishScreen(
-                onNavigateBack = onGoBack,
-                editingEntry = editingEntry
-            )
-        }
-    }
-
-    data class RepoPublish(val type: MarketStatsType) : Screen(navItem = NavItem.Packages) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            RepoMarketPublishScreen(
-                type = type,
-                onNavigateBack = onGoBack
-            )
-        }
-
-        @Composable
-        override fun getTitle(): String {
-            return stringResource(
-                if (type == MarketStatsType.SKILL) {
-                    R.string.screen_title_skill_publish
                 } else {
-                    R.string.screen_title_mcp_publish
+                    val latestIdForCard = filteredHistories.maxByOrNull { it.lastMessageDateTime() }?.id
+                    filteredHistories
+                            .filter { it.id != latestIdForCard }
+                            .sortedWith(
+                                    compareByDescending<ChatHistory> { it.pinned }
+                                            .thenByDescending { it.lastMessageDateTime() }
+                            )
+                            .map<ChatHistory, HistoryListItem> { HistoryListItem.Item(it) }
                 }
+            }
+
+    val reorderableState = rememberReorderableLazyListState(actualLazyListState) { from, to ->
+        val movedItem = flatItems.getOrNull(from.index) as? HistoryListItem.Item
+                ?: return@rememberReorderableLazyListState
+
+        val reorderedFlatList = flatItems.toMutableList().apply {
+            add(to.index, removeAt(from.index))
+        }
+
+        var newGroup: String? = null
+        var newCharacterCardName: String? = null
+        var newCharacterGroupId: String? = null
+        val newOrderedHistories =
+                reorderedFlatList
+                    .mapNotNull {
+                        when (it) {
+                            is HistoryListItem.CharacterHeader -> {
+                                // 在绑定分类模式下，更新当前绑定（角色卡/群组）
+                                newCharacterCardName = it.characterCardName
+                                newCharacterGroupId = it.characterGroupId
+                                newGroup = null
+                                null
+                            }
+                            is HistoryListItem.Header -> {
+                                newGroup = it.groupValue
+                                null
+                            }
+                            is HistoryListItem.Item -> {
+                                // 根据当前显示模式决定是否更新 characterCardName
+                                val updatedHistory = if (historyDisplayMode == ChatHistoryDisplayMode.BY_CHARACTER_CARD) {
+                                    it.history.copy(
+                                        group = newGroup,
+                                        characterCardName = newCharacterCardName,
+                                        characterGroupId = newCharacterGroupId
+                                    )
+                                } else {
+                                    it.history.copy(group = newGroup)
+                                }
+                                updatedHistory
+                            }
+                        }
+                    }
+                    .mapIndexed { index, history -> history.copy(displayOrder = index.toLong()) }
+
+        val finalMovedItem =
+                newOrderedHistories.find { it.id == movedItem.history.id }
+                        ?: return@rememberReorderableLazyListState
+
+        // 如果角色卡绑定发生了变化，需要额外通知
+        if (historyDisplayMode == ChatHistoryDisplayMode.BY_CHARACTER_CARD &&
+            (
+                finalMovedItem.characterCardName != movedItem.history.characterCardName ||
+                    finalMovedItem.characterGroupId != movedItem.history.characterGroupId
+            )
+        ) {
+            onUpdateChatBinding(
+                finalMovedItem.id,
+                finalMovedItem.characterCardName,
+                finalMovedItem.characterGroupId
             )
         }
+
+        onUpdateChatOrderAndGroup(newOrderedHistories, finalMovedItem, finalMovedItem.group)
     }
 
-    data class RepoEdit(
-        val type: MarketStatsType,
-        val editingEntry: com.ai.assistance.operit.data.api.MarketV2Entry
-    ) : Screen(navItem = NavItem.Packages) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            RepoMarketPublishScreen(
-                type = type,
-                onNavigateBack = onGoBack,
-                editingEntry = editingEntry
-            )
-        }
-
-        @Composable
-        override fun getTitle(): String {
-            return stringResource(
-                if (type == MarketStatsType.SKILL) {
-                    R.string.screen_title_skill_publish
-                } else {
-                    R.string.screen_title_mcp_publish
-                }
-            )
-        }
-    }
-
-    data class RepoPublishVersion(
-        val type: MarketStatsType,
-        val editingEntry: com.ai.assistance.operit.data.api.MarketV2Entry,
-        val canEditEntry: Boolean = false
-    ) : Screen(navItem = NavItem.Packages) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            RepoMarketPublishScreen(
-                type = type,
-                onNavigateBack = onGoBack,
-                editingEntry = editingEntry,
-                publishVersionOnly = true,
-                canEditEntry = canEditEntry
-            )
-        }
-
-        @Composable
-        override fun getTitle(): String {
-            return stringResource(R.string.market_publish_new_version)
-        }
-    }
-
-    data object Toolbox : Screen(navItem = NavItem.Toolbox) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ToolboxScreen(
-                    navController = navController,
-                    onNavigationEntrySelected = { entry ->
-                        val nativeScreen = ScreenRouteRegistry.buildScreen(entry.routeId, entry.routeArgs)
-                        if (nativeScreen != null) {
-                            navigateTo(nativeScreen)
-                        } else {
-                            AppRouterGateway.navigate(
-                                routeId = entry.routeId,
-                                args = entry.routeArgs,
-                                source = com.ai.assistance.operit.ui.main.navigation.RouteEntrySource.DEFAULT
+    if (bulkGroupName != null) {
+        val targetGroup = bulkGroupName!!
+        AlertDialog(
+            onDismissRequest = { bulkGroupName = null },
+            title = { Text(text = "管理分组：" + targetGroup) },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    chatHistories.forEach { historyItem ->
+                        val checked = bulkSelected.contains(historyItem.id)
+                        Row(
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .clickable {
+                                        bulkSelected =
+                                            if (checked) bulkSelected - historyItem.id
+                                            else bulkSelected + historyItem.id
+                                    }
+                                    .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (checked) "✓" else "○",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = historyItem.title,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1,
+                                modifier = Modifier.weight(1f)
                             )
                         }
                     }
-            )
-        }
-    }
-
-
-    data object ShizukuCommands : Screen(navItem = NavItem.ShizukuCommands) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ShizukuDemoScreen(navigateTo = navigateTo)
-        }
-    }
-
-    data object Settings : Screen(navItem = NavItem.Settings) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            SettingsScreen(
-                    navigateToUserPreferences = { navigateTo(UserPreferencesSettings) },
-                    navigateToToolPermissions = { navigateTo(ToolPermission) },
-                    navigateToGitHubAccount = { navigateTo(GitHubAccount) },
-                    navigateToModelConfig = { navigateTo(ModelConfig) },
-                    navigateToThemeSettings = { navigateTo(ThemeSettings) },
-                    navigateToGlobalDisplaySettings = { navigateTo(GlobalDisplaySettings) },
-                    navigateToModelPrompts = { navigateTo(ModelPromptsSettings) },
-                    navigateToFunctionalConfig = { navigateTo(FunctionalConfig) },
-                    navigateToChatHistorySettings = { navigateTo(ChatHistorySettings) },
-                    navigateToChatBackupSettings = { navigateTo(ChatBackupSettings) },
-                    navigateToLanguageSettings = { navigateTo(LanguageSettings) },
-                    navigateToSpeechServicesSettings = { navigateTo(SpeechServicesSettings) },
-                    navigateToExternalHttpChatSettings = { navigateTo(ExternalHttpChatSettings) },
-                    navigateToWaifuModeSettings = { navigateTo(WaifuModeSettings) },
-                    navigateToTokenUsageStatistics = { navigateTo(TokenUsageStatistics) },
-                    navigateToPerformanceMonitor = { navigateTo(PerformanceMonitor) },
-                    navigateToContextSummarySettings = { navigateTo(ContextSummarySettings) },
-                    navigateToLayoutAdjustmentSettings = { navigateTo(LayoutAdjustmentSettings) }
-            )
-        }
-    }
-
-    data object GitHubAccount : Screen(navItem = NavItem.Settings, titleRes = R.string.github_account) {
-        @Composable
-        override fun Content(
-            navController: NavController,
-            navigateTo: ScreenNavigationHandler,
-            onGoBack: () -> Unit,
-            hasBackgroundImage: Boolean,
-            onLoading: (Boolean) -> Unit,
-            onError: (String) -> Unit,
-            onGestureConsumed: (Boolean) -> Unit
-        ) {
-            GitHubAccountScreen()
-        }
-    }
-
-    data object AssistantConfig :
-            Screen(
-                    navItem = NavItem.AssistantConfig,
-                    participatesInCrossfadeTransition = false
-            ) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            AssistantConfigScreen()
-        }
-    }
-
-    data object Workflow : Screen(navItem = NavItem.Workflow) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            WorkflowListScreen(
-                onNavigateToDetail = { workflowId ->
-                    navigateTo(WorkflowDetail(workflowId))
                 }
-            )
-        }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        chatHistories.forEach { each ->
+                            val shouldBeIn = bulkSelected.contains(each.id)
+                            val isIn = each.group == targetGroup
+                            if (shouldBeIn && !isIn) {
+                                onUpdateChatOrderAndGroup(chatHistories, each, targetGroup)
+                            } else if (!shouldBeIn && isIn) {
+                                onUpdateChatOrderAndGroup(chatHistories, each, null)
+                            }
+                        }
+                        bulkGroupName = null
+                    }
+                ) { Text(text = "加入") }
+            },
+            dismissButton = {
+                TextButton(onClick = { bulkGroupName = null }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
     }
-
-    data class WorkflowDetail(val workflowId: String) : Screen(navItem = NavItem.Workflow, titleRes = R.string.nav_workflow) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            WorkflowDetailScreen(
-                workflowId = workflowId,
-                onNavigateBack = onGoBack
-            )
-        }
+    if (chatToMove != null) {
+        val moveTarget = chatToMove!!
+        val knownGroups = remember(chatHistories) { chatHistories.mapNotNull { it.group }.distinct().sorted() }
+        AlertDialog(
+            onDismissRequest = { chatToMove = null },
+            title = { Text(text = "移入分组") },
+            text = {
+                Column {
+                    knownGroups.forEach { groupName ->
+                        Text(
+                            text = groupName,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .clickable {
+                                        onUpdateChatOrderAndGroup(chatHistories, moveTarget, groupName)
+                                        chatToMove = null
+                                    }
+                                    .padding(vertical = 12.dp)
+                        )
+                    }
+                    Text(
+                        text = ungroupedText,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .clickable {
+                                    onUpdateChatOrderAndGroup(chatHistories, moveTarget, null)
+                                    chatToMove = null
+                                }
+                                .padding(vertical = 12.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { chatToMove = null }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
     }
-
-    data object TokenConfig : Screen(navItem = NavItem.TokenConfig) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            TokenConfigWebViewScreen(onNavigateBack = onGoBack)
+    if (chatItemActionTarget != null) {
+        val resolvedTargetChat = remember(chatItemActionTarget, chatHistories) {
+            val target = chatItemActionTarget
+            if (target == null) {
+                null
+            } else {
+                chatHistories.firstOrNull { it.id == target.id } ?: target
+            }
         }
-    }
-
-    // Secondary screens - Settings
-    data object UserPreferencesSettings :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.settings_user_preferences) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            UserPreferencesSettingsScreen(
-                onNavigateBack = onGoBack,
-            )
-        }
-    }
-
-    data object ToolPermission :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_tool_permissions) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ToolPermissionSettingsScreen(navigateBack = onGoBack)
-        }
-    }
-
-    data object ModelConfig :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_model_config) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ModelConfigScreen(
-                navigateToMnnModelDownload = { navigateTo(MnnModelDownload) }
-            )
-        }
-    }
-
-    data object ModelConfigOnboarding :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_model_config) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ModelConfigScreen(
-                navigateToMnnModelDownload = { navigateTo(MnnModelDownload) },
-                entryMode = ModelConfigEntryMode.CHAT_ONBOARDING
-            )
-        }
-    }
-    // 添加SpeechServicesSettings屏幕定义
-    data object SpeechServicesSettings :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_speech_services_settings) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            SpeechServicesSettingsScreen(
-                onBackPressed = onGoBack,
-                onNavigateToTextToSpeech = { navigateTo(TextToSpeech) }
-            )
-        }
-    }
-    
-    data object ExternalHttpChatSettings :
-        Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_external_http_chat_settings) {
-        @Composable
-        override fun Content(
-            navController: NavController,
-            navigateTo: ScreenNavigationHandler,
-            onGoBack: () -> Unit,
-            hasBackgroundImage: Boolean,
-            onLoading: (Boolean) -> Unit,
-            onError: (String) -> Unit,
-            onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ExternalHttpChatSettingsScreen(onBackPressed = onGoBack)
-        }
-    }
-    
-    // MNN模型下载屏幕
-    data object MnnModelDownload :
-        Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_mnn_model_download) {
-        @Composable
-        override fun Content(
-            navController: NavController,
-            navigateTo: ScreenNavigationHandler,
-            onGoBack: () -> Unit,
-            hasBackgroundImage: Boolean,
-            onLoading: (Boolean) -> Unit,
-            onError: (String) -> Unit,
-            onGestureConsumed: (Boolean) -> Unit
-        ) {
-            MnnModelDownloadScreen(onBackPressed = onGoBack)
-        }
-    }
-    
-
-    // 新增：Waifu模式设置页面
-    data object WaifuModeSettings :
-        Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_waifu_mode_settings) {
-        @Composable
-        override fun Content(
-            navController: NavController,
-            navigateTo: ScreenNavigationHandler,
-            onGoBack: () -> Unit,
-            hasBackgroundImage: Boolean,
-            onLoading: (Boolean) -> Unit,
-            onError: (String) -> Unit,
-            onGestureConsumed: (Boolean) -> Unit
-        ) {
-            com.ai.assistance.operit.ui.features.settings.screens.WaifuModeSettingsScreen(
-                onNavigateBack = onGoBack,
-                onNavigateToCustomEmoji = { navigateTo(CustomEmojiManagement) }
-            )
-        }
-    }
-    
-    // 自定义表情管理页面
-    data object CustomEmojiManagement :
-        Screen(navItem = NavItem.Settings, titleRes = R.string.manage_custom_emoji) {
-        @Composable
-        override fun Content(
-            navController: NavController,
-            navigateTo: ScreenNavigationHandler,
-            onGoBack: () -> Unit,
-            hasBackgroundImage: Boolean,
-            onLoading: (Boolean) -> Unit,
-            onError: (String) -> Unit,
-            onGestureConsumed: (Boolean) -> Unit
-        ) {
-            com.ai.assistance.operit.ui.features.settings.screens.CustomEmojiManagementScreen(
-                onNavigateBack = onGoBack
-            )
-        }
-    }
-    
-    data object TagMarket :
-        Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_tag_market) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            TagMarketScreen(onBackPressed = onGoBack)
-        }
-    }
-
-    data object ModelPromptsSettings :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_model_prompts_settings) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ModelPromptsSettingsScreen(
-                onBackPressed = onGoBack,
-                onNavigateToMarket = { navigateTo(TagMarket) },
-                onNavigateToChatManagement = { navigateTo(ChatHistorySettings) }
-            )
-        }
-    }
-
-    data object FunctionalConfig :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_functional_config) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            FunctionalConfigScreen(
-                    onBackPressed = onGoBack,
-                    onNavigateToModelConfig = { navigateTo(ModelConfig) }
-            )
-        }
-    }
-
-    data object ThemeSettings :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_theme_settings) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ThemeSettingsScreen()
-        }
-    }
-
-    data object GlobalDisplaySettings :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_global_display_settings) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            GlobalDisplaySettingsScreen(onBackPressed = onGoBack)
-        }
-    }
-
-    data object LayoutAdjustmentSettings :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_layout_adjustment) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            LayoutAdjustmentSettingsScreen(onNavigateBack = onGoBack)
-        }
-    }
-
-    data object ChatHistorySettings :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_chat_history_settings) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ChatHistorySettingsScreen()
-        }
-    }
-
-    data object ChatBackupSettings :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_chat_backup_settings) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ChatBackupSettingsScreen()
-        }
-    }
-
-    data object LanguageSettings :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_language_settings) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            LanguageSettingsScreen(onBackPressed = onGoBack)
-        }
-    }
-
-    data object TokenUsageStatistics :
-            Screen(
-                    navItem = NavItem.Settings,
-                    titleRes = R.string.settings_token_usage_stats,
-                    usesRouteViewModelStore = true
+        Dialog(onDismissRequest = { chatItemActionTarget = null }) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 560.dp)
+                    .padding(16.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 6.dp
+                )
             ) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            TokenUsageStatisticsScreen(
-                    onBackPressed = onGoBack,
-            )
+                Column(
+                    modifier = Modifier
+                        .padding(vertical = 16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = stringResource(R.string.chat_history),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+
+                    Text(
+                        text = resolvedTargetChat?.title ?: chatItemActionTarget!!.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // 编辑选项
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                            .semantics {
+                                contentDescription = context.getString(R.string.edit_title)
+                            }
+                            .clickable {
+                                chatToEdit = chatItemActionTarget
+                                chatItemActionTarget = null
+                            },
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clearAndSetSemantics {}
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                stringResource(R.string.edit_title), 
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.clearAndSetSemantics {}
+                            )
+                        }
+                    }
+                    
+                    // 置顶/取消置顶选项
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                            .semantics {
+                                contentDescription =
+                                    if (resolvedTargetChat?.pinned == true) {
+                                        context.getString(R.string.unpin_chat)
+                                    } else {
+                                        context.getString(R.string.pin_chat)
+                                    }
+                            }
+                            .clickable {
+                                val targetChat = resolvedTargetChat!!
+                                val newPinned = !targetChat.pinned
+                                coroutineScope.launch {
+                                    chatHistoryManager.updateChatPinned(targetChat.id, newPinned)
+                                }
+                                chatItemActionTarget = null
+                            },
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PushPin,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clearAndSetSemantics {}
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = if (resolvedTargetChat?.pinned == true) stringResource(R.string.unpin_chat) else stringResource(R.string.pin_chat),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.clearAndSetSemantics {}
+                            )
+                        }
+                    }
+
+                    // 移入分组
+                    Surface(
+                        modifier =
+                            Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable {
+                                chatToMove = resolvedTargetChat
+                                chatItemActionTarget = null
+                            },
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccountTree,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clearAndSetSemantics {}
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = "移入分组",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.clearAndSetSemantics {}
+                            )
+                        }
+                    }
+                    // 锁定/解锁选项
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                            .semantics {
+                                contentDescription =
+                                    if (resolvedTargetChat?.locked == true) {
+                                        context.getString(R.string.unlock_chat)
+                                    } else {
+                                        context.getString(R.string.lock_chat)
+                                    }
+                            }
+                            .clickable {
+                                val targetChat = resolvedTargetChat ?: chatItemActionTarget!!
+                                val newLocked = !targetChat.locked
+                                coroutineScope.launch {
+                                    chatHistoryManager.updateChatLocked(targetChat.id, newLocked)
+                                }
+                                chatItemActionTarget = null
+                            },
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = if (resolvedTargetChat?.locked == true) Icons.Default.LockOpen else Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clearAndSetSemantics {}
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = if (resolvedTargetChat?.locked == true) stringResource(R.string.unlock_chat) else stringResource(R.string.lock_chat),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.clearAndSetSemantics {}
+                            )
+                        }
+                    }
+                    
+                    // 删除选项
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                            .semantics {
+                                contentDescription = context.getString(R.string.delete)
+                            }
+                            .clickable {
+                                promptDeleteChat(chatItemActionTarget!!)
+                                chatItemActionTarget = null
+                            },
+                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Delete,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clearAndSetSemantics {}
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                stringResource(R.string.delete), 
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.clearAndSetSemantics {}
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    TextButton(
+                        onClick = { chatItemActionTarget = null },
+                        modifier = Modifier.align(Alignment.End).padding(horizontal = 16.dp)
+                    ) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            }
         }
     }
 
-    data object PerformanceMonitor :
-            Screen(
-                    navItem = NavItem.Settings,
-                    titleRes = R.string.screen_title_performance_monitor
+    if (groupActionTarget != null) {
+        Dialog(onDismissRequest = { groupActionTarget = null }) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 6.dp
+                )
             ) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            PerformanceMonitorScreen()
+                Column(
+                    modifier = Modifier.padding(vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = stringResource(R.string.manage_group),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+
+                    Text(
+                        text = groupActionTarget!!.groupName,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // 把对话加进这个组
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable {
+                                val target = groupActionTarget
+                                groupActionTarget = null
+                                bulkGroupName = target?.groupName
+                                bulkSelected =
+                                    chatHistories.filter { it.group == target?.groupName }.map { it.id }.toSet()
+                            },
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccountTree,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clearAndSetSemantics {}
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = "把对话加进这个组",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.clearAndSetSemantics {}
+                            )
+                        }
+                    }
+                    // 重命名选项
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                            .semantics {
+                                contentDescription = context.getString(R.string.rename_group)
+                            }
+                            .clickable {
+                                groupToRename = groupActionTarget
+                                groupActionTarget = null
+                            },
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.DriveFileRenameOutline,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clearAndSetSemantics {}
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                stringResource(R.string.rename_group), 
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.clearAndSetSemantics {}
+                            )
+                        }
+                    }
+                    
+                    // 删除选项
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                            .semantics {
+                                contentDescription = context.getString(R.string.delete_group)
+                            }
+                            .clickable {
+                                groupToDelete = groupActionTarget
+                                groupActionTarget = null
+                            },
+                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Delete,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clearAndSetSemantics {}
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                stringResource(R.string.delete_group), 
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.clearAndSetSemantics {}
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    TextButton(
+                        onClick = { groupActionTarget = null },
+                        modifier = Modifier.align(Alignment.End).padding(horizontal = 16.dp)
+                    ) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            }
         }
     }
 
-    data object ContextSummarySettings :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_context_summary_settings) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ContextSummarySettingsScreen(onBackPressed = onGoBack)
+    if (groupToRename != null) {
+        var newGroupNameText by remember(groupToRename) { mutableStateOf(groupToRename!!.groupName) }
+        AlertDialog(
+            onDismissRequest = { groupToRename = null },
+            title = { Text(stringResource(R.string.rename_group)) },
+            text = {
+                OutlinedTextField(
+                    value = newGroupNameText,
+                    onValueChange = { newGroupNameText = it },
+                    label = { Text(stringResource(R.string.new_group_name)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (newGroupNameText.isNotBlank() && newGroupNameText != groupToRename!!.groupName) {
+                            onUpdateGroupName(
+                                groupToRename!!.groupName, 
+                                newGroupNameText,
+                                groupToRename!!.characterCardName
+                            )
+                        }
+                        groupToRename = null
+                    }
+                ) { Text(stringResource(R.string.save)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { groupToRename = null }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
+
+    if (groupToDelete != null) {
+        Dialog(onDismissRequest = { groupToDelete = null }) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 6.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Delete,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(48.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = stringResource(R.string.confirm_delete_group),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        text = groupToDelete!!.groupName,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "删除分组后，组内对话会回到未分组",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    TextButton(
+                        onClick = {
+                            onDeleteGroup(
+                                groupToDelete!!.groupName, 
+                                false,
+                                groupToDelete!!.characterCardName
+                            )
+                            groupToDelete = null
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Folder,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.delete_group_only),
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Text(
+                                    text = stringResource(R.string.chats_move_to_ungrouped),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    TextButton(
+                        onClick = { groupToDelete = null },
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            }
         }
     }
 
-    data class ToolPkgComposeDsl(
-        val containerPackageName: String,
-        val uiModuleId: String,
-        val title: String,
-        override val keepAlive: Boolean = false
-    ) : Screen() {
-        override fun stableScreenKey(): String? =
-            "toolpkg_keepalive:$containerPackageName:$uiModuleId"
-
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
+    if (chatToEdit != null) {
+        val editingChat = chatToEdit!!
+        var newTitle by remember(editingChat) { mutableStateOf(editingChat.title) }
+        var selectedCharacterCardName by remember(editingChat) {
+            mutableStateOf(editingChat.characterCardName)
+        }
+        var selectedCharacterGroupId by remember(editingChat) {
+            mutableStateOf(editingChat.characterGroupId)
+        }
+        var bindingMenuExpanded by remember { mutableStateOf(false) }
+        data class ChatBindingOption(
+            val label: String,
+            val characterCardName: String?,
+            val characterGroupId: String?
+        )
+        val unboundLabel = stringResource(R.string.unbound_character_card)
+        val bindingLabel = stringResource(R.string.bind_character_card)
+        val bindingHint = stringResource(R.string.chat_binding_scope_hint)
+        val groupPrefix = stringResource(R.string.character_group_binding_prefix)
+        val bindingOptions = remember(availableCharacterCards, availableCharacterGroups, unboundLabel, groupPrefix) {
+            buildList {
+                add(ChatBindingOption(unboundLabel, null, null))
+                availableCharacterCards.forEach { card ->
+                    add(ChatBindingOption(card.name, card.name, null))
+                }
+                availableCharacterGroups.forEach { group ->
+                    add(ChatBindingOption("$groupPrefix: ${group.name}", null, group.id))
+                }
+            }
+        }
+        val selectedBindingLabel = remember(
+            selectedCharacterCardName,
+            selectedCharacterGroupId,
+            groupNameById,
+            unboundLabel,
+            groupPrefix
         ) {
-            ToolPkgComposeDslToolScreen(
-                navController = navController,
-                routeInstanceId = "screen:$containerPackageName:$uiModuleId",
-                containerPackageName = containerPackageName,
-                uiModuleId = uiModuleId,
-                fallbackTitle = title
+            when {
+                !selectedCharacterGroupId.isNullOrBlank() -> {
+                    val normalizedGroupId = selectedCharacterGroupId?.trim()?.takeIf { it.isNotBlank() }
+                    val groupName = normalizedGroupId?.let { groupNameById[it] }?.takeIf { it.isNotBlank() }
+                    if (!groupName.isNullOrBlank()) {
+                        "$groupPrefix: $groupName"
+                    } else {
+                        context.getString(R.string.missing_character_group_id, normalizedGroupId ?: "")
+                    }
+                }
+                !selectedCharacterCardName.isNullOrBlank() -> selectedCharacterCardName!!
+                else -> unboundLabel
+            }
+        }
+        val density = LocalDensity.current
+        var bindingMenuWidth by remember { mutableStateOf(0.dp) }
+        val dropdownClickSource = remember { MutableInteractionSource() }
+
+        AlertDialog(
+                onDismissRequest = { chatToEdit = null },
+                title = { Text(stringResource(R.string.edit_title)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedTextField(
+                                value = newTitle,
+                                onValueChange = { newTitle = it },
+                                label = { Text(stringResource(R.string.new_title)) },
+                                modifier = Modifier.fillMaxWidth()
+                        )
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            OutlinedTextField(
+                                    value = selectedBindingLabel,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text(bindingLabel) },
+                                    trailingIcon = {
+                                        Icon(
+                                                imageVector = if (bindingMenuExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                                contentDescription = null
+                                        )
+                                    },
+                                    modifier = Modifier
+                                            .fillMaxWidth()
+                                            .onGloballyPositioned { coordinates ->
+                                                bindingMenuWidth = with(density) { coordinates.size.width.toDp() }
+                                            }
+                            )
+                            Box(
+                                    modifier = Modifier
+                                            .matchParentSize()
+                                            .clickable(
+                                                    interactionSource = dropdownClickSource,
+                                                    indication = null
+                                            ) { bindingMenuExpanded = !bindingMenuExpanded }
+                            )
+                            DropdownMenu(
+                                    expanded = bindingMenuExpanded,
+                                    onDismissRequest = { bindingMenuExpanded = false },
+                                    modifier = if (bindingMenuWidth > 0.dp) Modifier.width(bindingMenuWidth) else Modifier
+                            ) {
+                                bindingOptions.forEach { option ->
+                                    DropdownMenuItem(
+                                            text = { Text(option.label) },
+                                            onClick = {
+                                                selectedCharacterCardName = option.characterCardName
+                                                selectedCharacterGroupId = option.characterGroupId
+                                                bindingMenuExpanded = false
+                                            }
+                                    )
+                                }
+                            }
+                        }
+                        Text(
+                                text = bindingHint,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                            onClick = {
+                                if (newTitle != editingChat.title) {
+                                    onUpdateChatTitle(editingChat.id, newTitle)
+                                }
+                                if (
+                                    selectedCharacterCardName != editingChat.characterCardName ||
+                                    selectedCharacterGroupId != editingChat.characterGroupId
+                                ) {
+                                    onUpdateChatBinding(
+                                        editingChat.id,
+                                        selectedCharacterCardName,
+                                        selectedCharacterGroupId
+                                    )
+                                }
+                                chatToEdit = null
+                            }
+                    ) {
+                        Text(stringResource(R.string.save))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { chatToEdit = null }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+        )
+    }
+
+    if (showSettingsDialog) {
+        val dialogMetrics = rememberCompactDialogMetrics()
+        val outerPadding = if (dialogMetrics.isCompact) 8.dp else 16.dp
+        val contentPadding = if (dialogMetrics.isCompact) 12.dp else 16.dp
+        val scrollState = rememberCompactDialogScrollState()
+        val cardModifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(outerPadding)
+                .let { base ->
+                    if (dialogMetrics.isCompact) {
+                        base.heightIn(max = dialogMetrics.maxHeight - outerPadding * 2)
+                    } else {
+                        base
+                    }
+                }
+        val contentModifier =
+            Modifier
+                .padding(contentPadding)
+                .verticalScrollWhenCompact(dialogMetrics, scrollState)
+
+        Dialog(onDismissRequest = { showSettingsDialog = false }) {
+            Card(
+                modifier = cardModifier,
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 6.dp
+                )
+            ) {
+                Column(modifier = contentModifier) {
+                    Text(
+                        text = stringResource(R.string.chat_history_settings),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    Text(
+                        text = stringResource(R.string.chat_display_mode),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    
+                    listOf(
+                        Triple(
+                            ChatHistoryDisplayMode.BY_CHARACTER_CARD,
+                            stringResource(R.string.history_filter_role_card),
+                            stringResource(R.string.history_filter_role_card_desc)
+                        ),
+                        Triple(
+                            ChatHistoryDisplayMode.BY_FOLDER,
+                            stringResource(R.string.history_filter_folder),
+                            stringResource(R.string.history_filter_folder_desc)
+                        ),
+                        Triple(
+                            ChatHistoryDisplayMode.CURRENT_CHARACTER_ONLY,
+                            stringResource(R.string.history_filter_current_card),
+                            stringResource(R.string.history_filter_current_card_desc)
+                        )
+                    ).forEach { (mode, title, description) ->
+                        val selected = historyDisplayMode == mode
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .clip(MaterialTheme.shapes.medium)
+                                .clickable {
+                                    onDisplayModeChange(mode)
+                                },
+                            color = if (selected) {
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                            },
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text(
+                                        text = title,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = description,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                if (selected) {
+                                    Icon(
+                                        Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable {
+                                onAutoSwitchCharacterCardChange(!autoSwitchCharacterCard)
+                            },
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.history_auto_switch_character),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = stringResource(R.string.history_auto_switch_character_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = autoSwitchCharacterCard,
+                                onCheckedChange = onAutoSwitchCharacterCardChange,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable {
+                                onAutoSwitchChatOnCharacterSelectChange(!autoSwitchChatOnCharacterSelect)
+                            },
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.history_auto_switch_chat),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = stringResource(R.string.history_auto_switch_chat_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = autoSwitchChatOnCharacterSelect,
+                                onCheckedChange = onAutoSwitchChatOnCharacterSelectChange,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    TextButton(
+                        onClick = { showSettingsDialog = false },
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            }
+        }
+    }
+
+    if (showNewGroupDialog) {
+        AlertDialog(
+                onDismissRequest = { showNewGroupDialog = false },
+                title = { Text(stringResource(R.string.new_group)) },
+                text = {
+                    OutlinedTextField(
+                            value = newGroupName,
+                            onValueChange = { newGroupName = it },
+                            label = { Text(stringResource(R.string.group_name)) },
+                            modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    Button(
+                            onClick = {
+                                if (newGroupName.isNotBlank()) {
+                                    val normalizedGroupName = newGroupName.trim()
+                                    if (normalizedGroupName.isBlank()) {
+                                        return@Button
+                                    }
+                                    val (characterCardName, characterGroupId) = resolveBindingForCreate(
+                                        historyDisplayMode = historyDisplayMode,
+                                        activePrompt = activePrompt,
+                                        activeCharacterCardName = activeCharacterCardName
+                                    )
+                                    onCreateGroup(normalizedGroupName, characterCardName, characterGroupId)
+                                    newGroupName = ""
+                                    showNewGroupDialog = false
+                                }
+                            }
+                    ) {
+                        Text(stringResource(R.string.create))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showNewGroupDialog = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+        )
+    }
+
+    Column(modifier = modifier) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 2.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.chat_history),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { showSearchBox = !showSearchBox },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            if (showSearchBox) Icons.Default.SearchOff else Icons.Default.Search,
+                            contentDescription = stringResource(R.string.search),
+                            tint = if (showSearchBox) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = { showSettingsDialog = true },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Tune,
+                            contentDescription = stringResource(R.string.settings),
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    if (onBack != null) {
+                        IconButton(
+                            onClick = onBack,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // 新建对话按钮
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(
+                onClick = { 
+                    val (characterCardName, characterGroupId) = resolveBindingForCreate(
+                        historyDisplayMode = historyDisplayMode,
+                        activePrompt = activePrompt,
+                        activeCharacterCardName = activeCharacterCardName
+                    )
+                    onNewChat(characterCardName, characterGroupId)
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .liquidGlass(
+                        enabled = glassAppearance.buttonLiquidGlassEnabled,
+                        shape = RoundedCornerShape(16.dp),
+                        containerColor = glassAppearance.buttonContainerColor,
+                        shadowElevation = 2.dp,
+                        borderWidth = 0.5.dp,
+                        blurRadius = 16.dp,
+                        overlayAlphaBoost = 0.04f,
+                        enableLens = false
+                    ),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor =
+                        if (glassAppearance.buttonLiquidGlassEnabled) Color.Transparent
+                        else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
+                    contentColor =
+                        if (glassAppearance.buttonLiquidGlassEnabled) glassAppearance.selectedContentColor
+                        else MaterialTheme.colorScheme.onPrimaryContainer
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.new_chat))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.new_chat))
+            }
+            IconButton(
+                onClick = { showNewGroupDialog = true },
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    Icons.Default.AddCircleOutline,
+                    contentDescription = stringResource(R.string.new_group),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+
+        // 搜索框
+        if (showSearchBox) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                label = { Text(stringResource(R.string.search)) },
+                placeholder = { Text(stringResource(R.string.search_chat_history_hint)) },
+                leadingIcon = {
+                    if (isSearching) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(Icons.Default.Search, contentDescription = null)
+                    }
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotBlank() && !isSearching) {
+                        IconButton(onClick = { onSearchQueryChange("") }) {
+                            Icon(Icons.Default.SearchOff, contentDescription = stringResource(R.string.clear_search))
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                singleLine = true
             )
         }
 
-        @Composable
-        override fun getTitle(): String = title
-    }
+        Spacer(modifier = Modifier.height(8.dp))
+        var showSwipeHint by rememberLocal(key = "show_swipe_hint", defaultValue = true)
 
-    data class ToolPkgPluginConfig(
-        val containerPackageName: String,
-        val uiModuleId: String,
-        val title: String,
-        override val keepAlive: Boolean = false
-    ) : Screen(navItem = NavItem.Packages) {
-        override fun stableScreenKey(): String? =
-            "toolpkg_keepalive:$containerPackageName:$uiModuleId"
+        if (showSwipeHint) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                    .clickable { showSwipeHint = false },
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.SwapHoriz,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.swipe_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+            }
+        }
+        HorizontalDivider()
+        Spacer(modifier = Modifier.height(8.dp))
 
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(end = 2.dp)
         ) {
-            ToolPkgComposeDslToolScreen(
-                navController = navController,
-                routeInstanceId = "legacy:$containerPackageName:$uiModuleId",
-                containerPackageName = containerPackageName,
-                uiModuleId = uiModuleId,
-                fallbackTitle = title
+            LazyColumn(
+                state = actualLazyListState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 10.dp, end = 22.dp),
+                contentPadding = PaddingValues(bottom = 126.dp)
+            ) {
+                item(key = "view-switch") {
+                    Surface(
+                            onClick = { showGroupsView = !showGroupsView },
+                            shape = RoundedCornerShape(100.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.padding(start = 6.dp, top = 8.dp, bottom = 2.dp)
+                    ) {
+                            Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                    Text(
+                                            text = if (showGroupsView) "按分组" else "按时间",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                            text = "⇄",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.primary
+                                    )
+                            }
+                    }
+                }
+                item(key = "latest-chat-card") {
+                    val latest = filteredHistories.maxByOrNull { it.lastMessageDateTime() }
+                    if (latest != null) {
+                        LatestChatCard(
+                            history = latest,
+                            onClick = { onSelectChat(latest.id) }
+                        )
+                    }
+                }
+                items(
+                    items = flatItems,
+                    key = {
+                        when (it) {
+                            is HistoryListItem.CharacterHeader -> it.key
+                            is HistoryListItem.Header -> it.key
+                            is HistoryListItem.Item -> it.history.id
+                        }
+                    }
+                ) { item ->
+                    when (item) {
+                        is HistoryListItem.CharacterHeader -> {
+                        val userPreferencesManager = remember { UserPreferencesManager.getInstance(context) }
+                        val groupId = item.characterGroupId?.trim()?.takeIf { it.isNotBlank() }
+                        val groupAvatarUri by remember(groupId) {
+                            groupId?.let { userPreferencesManager.getAiAvatarForCharacterGroupFlow(it) }
+                                ?: flowOf(null)
+                        }.collectAsState(initial = null)
+                        val groupFallbackMemberCardId = remember(groupId, availableCharacterGroups) {
+                            val group = if (groupId.isNullOrBlank()) null else {
+                                availableCharacterGroups.firstOrNull { it.id == groupId }
+                            }
+                            val sortedMembers = group?.members?.sortedBy { it.orderIndex }.orEmpty()
+                            sortedMembers.firstOrNull()?.characterCardId
+                        }
+                        val groupFallbackMemberAvatarUri by remember(groupFallbackMemberCardId) {
+                            groupFallbackMemberCardId?.let {
+                                userPreferencesManager.getAiAvatarForCharacterCardFlow(it)
+                            } ?: flowOf(null)
+                        }.collectAsState(initial = null)
+                        val characterCardId = remember(item.characterCardName, availableCharacterCards) {
+                            val cardName = item.characterCardName?.takeIf { it.isNotBlank() } ?: return@remember null
+                            availableCharacterCards.firstOrNull { it.name == cardName }?.id
+                        }
+                        val characterCardAvatarUri by remember(characterCardId) {
+                            characterCardId?.let { userPreferencesManager.getAiAvatarForCharacterCardFlow(it) }
+                                ?: flowOf(null)
+                        }.collectAsState(initial = null)
+                        val avatarUri =
+                            if (!groupId.isNullOrBlank()) {
+                                groupAvatarUri ?: groupFallbackMemberAvatarUri
+                            } else {
+                                characterCardAvatarUri
+                            }
+                        
+                        val isExpanded = !collapsedCharacters.contains(item.key)
+                        val stateDescription = if (isExpanded) {
+                            stringResource(R.string.expanded)
+                        } else {
+                            stringResource(R.string.collapsed)
+                        }
+                        
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp, bottom = 8.dp)
+                                .semantics {
+                                    contentDescription = "${item.name}, $stateDescription"
+                                }
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onTap = {
+                                            collapsedCharacters =
+                                                if (collapsedCharacters.contains(item.key)) {
+                                                    collapsedCharacters - item.key
+                                                } else {
+                                                    collapsedCharacters + item.key
+                                                }
+                                        }
+                                    )
+                                },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .padding(start = 8.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                        shape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp, topStart = 4.dp, bottomStart = 4.dp)
+                                    )
+                                    .padding(start = 8.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            if (avatarUri != null) Color.Transparent 
+                                            else MaterialTheme.colorScheme.primaryContainer
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (avatarUri != null) {
+                                        Image(
+                                            painter = rememberAsyncImagePainter(model = Uri.parse(avatarUri)),
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .clearAndSetSemantics {},
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = if (!groupId.isNullOrBlank()) Icons.Default.Groups else Icons.Default.Person,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier
+                                                .size(16.dp)
+                                                .clearAndSetSemantics {}
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = item.name,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.clearAndSetSemantics {}
+                                )
+                            }
+                            
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(2.dp)
+                                    .padding(horizontal = 8.dp)
+                                    .background(
+                                        brush = Brush.horizontalGradient(
+                                            colors = listOf(
+                                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                                                Color.Transparent
+                                            )
+                                        )
+                                    )
+                            )
+
+                            Icon(
+                                imageVector = if (collapsedCharacters.contains(item.key)) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .padding(end = 16.dp)
+                                    .size(24.dp)
+                                    .clearAndSetSemantics {}
+                            )
+                        }
+                    }
+                    is HistoryListItem.Header -> {
+                        val isExpanded = !collapsedGroups.contains(item.key)
+                        val stateDescription = if (isExpanded) {
+                            stringResource(R.string.expanded)
+                        } else {
+                            stringResource(R.string.collapsed)
+                        }
+                        
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (historyDisplayMode == ChatHistoryDisplayMode.BY_CHARACTER_CARD) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(32.dp)
+                                        .padding(start = 16.dp, end = 8.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .width(2.dp)
+                                            .height(40.dp)
+                                            .align(Alignment.Center)
+                                            .background(
+                                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                                                shape = RoundedCornerShape(1.dp)
+                                            )
+                                    )
+                                }
+                            }
+                            if (showGroupsView && item.name != ungroupedText) {
+                                Icon(
+                                    imageVector = Icons.Default.DragHandle,
+                                    contentDescription = "拖动排序",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    modifier =
+                                        Modifier
+                                            .padding(horizontal = 4.dp)
+                                            .size(22.dp)
+                                            .pointerInput(item.name, groupOrder) {
+                                                detectDragGesturesAfterLongPress(
+                                                    onDragStart = { draggingGroupName = item.name },
+                                                    onDragEnd = { draggingGroupName = null },
+                                                    onDragCancel = { draggingGroupName = null },
+                                                    onDrag = { change, dragAmount ->
+                                                        change.consume()
+                                                        val dragging = draggingGroupName ?: item.name
+                                                        val currentNames =
+                                                            (groupOrder + chatHistories.mapNotNull { it.group })
+                                                                .distinct()
+                                                                .toMutableList()
+                                                        val from = currentNames.indexOf(dragging)
+                                                        if (from >= 0 && kotlin.math.abs(dragAmount.y) > 10f) {
+                                                            val to =
+                                                                (from + if (dragAmount.y > 0f) 1 else -1)
+                                                                    .coerceIn(0, currentNames.lastIndex)
+                                                            if (to != from) {
+                                                                currentNames.add(to, currentNames.removeAt(from))
+                                                                groupOrder = currentNames
+                                                            }
+                                                        }
+                                                    }
+                                                )
+                                            }
+                                )
+                            }
+                            if (showGroupsView) {
+                            Text(
+                                text = "＋",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier =
+                                    Modifier.clickable {
+                                        bulkGroupName = item.name
+                                        bulkSelected =
+                                            chatHistories.filter { it.group == item.groupValue }.map { it.id }.toSet()
+                                    }.padding(horizontal = 8.dp, vertical = 6.dp)
+                            )
+                            }
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(MaterialTheme.shapes.medium)
+                                    .semantics {
+                                        contentDescription = "${item.name}, $stateDescription"
+                                    }
+                                    .pointerInput(Unit) {
+                                        detectTapGestures(
+                                            onTap = {
+                                                if (showGroupsView) {
+                                                    val groupSize = chatHistories.count { it.group == item.groupValue }
+                                                    if (groupSize > 3) {
+                                                        expandedGroupName =
+                                                                if (expandedGroupName == item.name) null else item.name
+                                                    }
+                                                }
+                                            },
+                                            onLongPress = {
+                                                if (showGroupsView && item.name != ungroupedText) {
+                                                    groupActionTarget = GroupTarget(
+                                                        groupName = item.name,
+                                                        characterCardName = item.characterCardName
+                                                    )
+                                                    hasLongPressedGroup = true
+                                                }
+                                            }
+                                        )
+                                    },
+                                color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.70f),
+                                shadowElevation = 2.dp,
+                                shape = MaterialTheme.shapes.medium
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    if (showGroupsView) {
+                                        Icon(
+                                            imageVector = Icons.Default.Folder,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.clearAndSetSemantics {}
+                                        )
+                                    }
+                                    Column(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = item.name,
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                modifier = Modifier.clearAndSetSemantics {}
+                                            )
+                                            if (showGroupsView && item.name != ungroupedText && !hasLongPressedGroup) {
+                                                Text(
+                                                    text = " (" + stringResource(R.string.long_press_manage) + ")",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                                    modifier = Modifier.clearAndSetSemantics {}
+                                                )
+                                            }
+                                        }
+                                    }
+                                    if (showGroupsView) {
+                                        val groupSize = chatHistories.count { it.group == item.groupValue }
+                                        Text(
+                                            text =
+                                                if (groupSize > 3) {
+                                                    if (expandedGroupName == item.name) "收起" else "查看全部"
+                                                } else {
+                                                    "$groupSize 个对话"
+                                                },
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    is HistoryListItem.Item -> {
+                        val deleteAction = SwipeAction(
+                            onSwipe = { promptDeleteChat(item.history) },
+                            icon = {
+                                Icon(
+                                    modifier = Modifier.padding(16.dp),
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = stringResource(R.string.delete),
+                                    tint = Color.White
+                                )
+                            },
+                            background = MaterialTheme.colorScheme.error
+                        )
+
+                        val editAction = SwipeAction(
+                            onSwipe = { chatToEdit = item.history },
+                            icon = {
+                                Icon(
+                                    modifier = Modifier.padding(16.dp),
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = stringResource(R.string.edit_title),
+                                    tint = Color.White
+                                )
+                            },
+                            background = MaterialTheme.colorScheme.primary
+                        )
+
+                        ReorderableItem(
+                            reorderableState,
+                            key = item.history.id,
+                            animateItemModifier = Modifier.animateItem(placementSpec = null)
+                        ) { isDragging ->
+                            val isDeleting = deletingChatIds.contains(item.history.id)
+                            val isSelected = item.history.id == currentId
+                            val containerColor = if (isSelected) {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            } else {
+                                Color.Transparent
+                            }
+                            val contentColor = if (isSelected) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            }
+
+                            androidx.compose.animation.AnimatedVisibility(
+                                visible = !isDeleting,
+                                exit =
+                                    shrinkVertically(
+                                        animationSpec = tween(deleteAnimationDurationMs.toInt()),
+                                        shrinkTowards = Alignment.Top
+                                    ) + fadeOut(animationSpec = tween(deleteAnimationDurationMs.toInt()))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    if (historyDisplayMode == ChatHistoryDisplayMode.BY_CHARACTER_CARD) {
+                                        Box(
+                                            modifier = Modifier
+                                                .width(32.dp)
+                                                .padding(start = 16.dp, end = 8.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .width(2.dp)
+                                                    .height(50.dp)
+                                                    .align(Alignment.Center)
+                                                    .background(
+                                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                                                        shape = RoundedCornerShape(1.dp)
+                                                    )
+                                            )
+                                        }
+                                    }
+                                    Box(modifier = Modifier.weight(1f)) {
+                                        SwipeableActionsBox(
+                                            startActions = listOf(editAction),
+                                            endActions = listOf(deleteAction),
+                                            swipeThreshold = 100.dp,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clip(MaterialTheme.shapes.medium)
+                                        ) {
+                                            Surface(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 3.dp)
+                                                    .liquidGlass(
+                                                        enabled = glassAppearance.buttonLiquidGlassEnabled,
+                                                        shape = RoundedCornerShape(18.dp),
+                                                        containerColor = glassAppearance.buttonContainerColor,
+                                                        shadowElevation = 2.dp,
+                                                        borderWidth = 0.5.dp,
+                                                        blurRadius = 16.dp,
+                                                        overlayAlphaBoost = 0.04f,
+                                                        enableLens = false
+                                                    )
+                                                    .clip(RoundedCornerShape(18.dp))
+                                                    .background(
+                                                        if (glassAppearance.buttonLiquidGlassEnabled) {
+                                                            if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else Color.Transparent
+                                                        } else if (isSelected) {
+                                                            containerColor
+                                                        } else {
+                                                            MaterialTheme.colorScheme.surface.copy(alpha = 0.78f)
+                                                        }
+                                                    ),
+                                                color = Color.Transparent,
+                                                shape = RoundedCornerShape(18.dp)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                ) {
+                                                    val titlePreview = item.history.title.take(20)
+                                                    val groupName = item.history.group ?: ungroupedText
+                                                    Row(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(horizontal = 14.dp, vertical = 10.dp)
+                                                            .semantics(mergeDescendants = false) {
+                                                                contentDescription = "$titlePreview, $groupName"
+                                                            }
+                                                            .pointerInput(Unit) {
+                                                                detectTapGestures(
+                                                                    onTap = { onSelectChat(item.history.id) },
+                                                                    onLongPress = { chatItemActionTarget = item.history }
+                                                                )
+                                                            },
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Column(
+                                                            modifier = Modifier
+                                                                .weight(1f)
+                                                                .semantics { contentDescription = "" }
+                                                        ) {
+                                                            Text(
+                                                                text = item.history.title,
+                                                                style = MaterialTheme.typography.bodyMedium,
+                                                                color = contentColor,
+                                                                maxLines = 1,
+                                                                overflow = TextOverflow.Ellipsis
+                                                            )
+
+                                                            // 如果是分支，在右侧显示分支图标和父对话标题
+                                                            if (item.history.parentChatId != null) {
+                                                                val parentChat = chatHistories.find { it.id == item.history.parentChatId }
+                                                                if (parentChat != null) {
+                                                                    Spacer(modifier = Modifier.height(2.dp))
+                                                                    Row(
+                                                                        verticalAlignment = Alignment.CenterVertically,
+                                                                        modifier = Modifier.semantics { contentDescription = "" }
+                                                                    ) {
+                                                                        Icon(
+                                                                            imageVector = Icons.Default.AccountTree,
+                                                                            contentDescription = null,
+                                                                            tint = contentColor.copy(alpha = 0.6f),
+                                                                            modifier = Modifier.size(14.dp)
+                                                                        )
+                                                                        Spacer(modifier = Modifier.width(4.dp))
+                                                                        Text(
+                                                                            text = parentChat.title,
+                                                                            style = MaterialTheme.typography.bodySmall,
+                                                                            color = contentColor.copy(alpha = 0.6f),
+                                                                            maxLines = 1,
+                                                                            overflow = TextOverflow.Ellipsis
+                                                                        )
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        if (!activeStreamingChatIds.contains(item.history.id)) {
+                                                            Spacer(modifier = Modifier.width(6.dp))
+                                                            Text(
+                                                                text = formatHistoryTime(item.history.lastMessageDateTime()),
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                color = contentColor.copy(alpha = 0.6f)
+                                                            )
+                                                        }
+                                                        if (activeStreamingChatIds.contains(item.history.id)) {
+                                                            Spacer(modifier = Modifier.width(4.dp))
+                                                            CircularProgressIndicator(
+                                                                modifier = Modifier.size(12.dp),
+                                                                strokeWidth = 1.5.dp,
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                                            )
+                                                        }
+                                                        if (item.history.pinned) {
+                                                            Spacer(modifier = Modifier.width(8.dp))
+                                                            Icon(
+                                                                imageVector = Icons.Default.PushPin,
+                                                                contentDescription = null,
+                                                                tint = contentColor.copy(alpha = 0.42f),
+                                                                modifier = Modifier.size(15.dp)
+                                                            )
+                                                        }
+                                                        if (item.history.locked) {
+                                                            Spacer(modifier = Modifier.width(8.dp))
+                                                            Icon(
+                                                                imageVector = Icons.Default.Lock,
+                                                                contentDescription = null,
+                                                                tint = contentColor.copy(alpha = 0.42f),
+                                                                modifier = Modifier.size(15.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            }
+
+            Surface(
+                    modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .liquidGlass(
+                                    enabled = glassAppearance.buttonLiquidGlassEnabled,
+                                    shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
+                                    containerColor = glassAppearance.buttonContainerColor,
+                                    shadowElevation = 2.dp,
+                                    borderWidth = 0.5.dp,
+                                    blurRadius = 16.dp,
+                                    overlayAlphaBoost = 0.04f,
+                                    enableLens = false
+                            ),
+                    color =
+                            if (glassAppearance.buttonLiquidGlassEnabled) Color.Transparent
+                            else MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
+            ) {
+                    Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+                            HistoryBottomAction(
+                                    label = "工具与设置",
+                                    onClick = { onOpenToolsAndSettings?.invoke("tools_settings") }
+                            )
+                    }
+            }
+            HistoryQuickScroller(
+                listState = actualLazyListState,
+                itemCount = flatItems.size,
+                onInteractionChange = onQuickScrollInteractionChange,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 2.dp, top = 12.dp, bottom = 12.dp)
             )
         }
-
-        @Composable
-        override fun getTitle(): String = title
     }
-
-    // Toolbox secondary screens
-
-    data object FileManager :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_file_manager) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            FileManagerToolScreen(navController = navController)
-        }
-    }
-
-    data object Terminal :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_terminal) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            TerminalToolScreen(navController = navController)
-        }
-    }
-
-    data object TerminalSetup :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_terminal) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            TerminalToolScreen(navController = navController, forceShowSetup = true)
-        }
-    }
-
-    data object TerminalAutoConfig :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_terminal_auto_config) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            TerminalAutoConfigToolScreen(navController = navController)
-        }
-    }
-
-    data object AppPermissions :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_app_permissions) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            AppPermissionsToolScreen(navController = navController)
-        }
-    }
-
-    data object UIDebugger :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_ui_debugger) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            UIDebuggerToolScreen(navController = navController)
-        }
-    }
-
-    data object ShellExecutor :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_shell_executor) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ShellExecutorToolScreen(navController = navController)
-        }
-    }
-
-    data object Logcat :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_logcat) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            LogcatToolScreen(navController = navController)
-        }
-    }
-
-    data object SqlViewer :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_sql_viewer) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            SqlViewerToolScreen(navController = navController)
-        }
-    }
-
-    // FFmpeg Toolbox screen
-    data object FFmpegToolbox :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_ffmpeg_toolbox) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            FFmpegToolboxScreen(navController = navController)
-        }
-    }
-
-    // 流式Markdown演示屏幕
-    data object MarkdownDemo :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_markdown_demo) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            StreamMarkdownDemoScreen(onBackClick = onGoBack)
-        }
-    }
-
-    // 工具测试屏幕
-    data object ToolTester :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_tool_tester) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ToolTesterScreen(navController = navController)
-        }
-    }
-
-    // 在MarkdownDemo对象后添加TextToSpeech对象
-    data object TextToSpeech :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_text_to_speech) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            TextToSpeechToolScreen(navController = navController)
-        }
-    }
-
-    // Tools screens
-    data object SpeechToText :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_speech_to_text) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            SpeechToTextToolScreen(navController = navController)
-        }
-    }
-
-    data object DefaultAssistantGuide :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_default_assistant_guide) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            DefaultAssistantGuideToolScreen(navController = navController)
-        }
-    }
-
-
-    data object ProcessLimitRemover : Screen(navItem = NavItem.Toolbox, titleRes = R.string.tool_process_limit_remover) {
-        @Composable
-        override fun Content(
-            navController: NavController,
-            navigateTo: ScreenNavigationHandler,
-            onGoBack: () -> Unit,
-            hasBackgroundImage: Boolean,
-            onLoading: (Boolean) -> Unit,
-            onError: (String) -> Unit,
-            onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ProcessLimitRemoverToolScreen(navController = navController)
-        }
-    }
-
-    data object HtmlPackager : Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_html_packager) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            HtmlPackagerScreen(onGoBack = onGoBack)
-        }
-    }
-
-    data object AutoGlmOneClick : Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_autoglm_one_click) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            AutoGlmOneClickToolScreen(
-                navController = navController,
-                onNavigateToModelConfig = { navigateTo(ModelConfig) }
-            )
-        }
-    }
-    
-    data object AutoGlmTool : Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_autoglm_tool) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            AutoGlmToolScreen()
-        }
-    }
-
-    // 获取屏幕标题
-    @Composable
-    open fun getTitle(): String = titleRes?.let { stringResource(it) } ?: ""
 }
 
-// 全局的手势状态持有者，用于在不同组件间共享手势状态
-object GestureStateHolder {
-    // 聊天界面手势是否被消费的状态
-    var isChatScreenGestureConsumed: Boolean = false
+@Composable
+private fun LatestChatCard(history: ChatHistory, onClick: () -> Unit) {
+        val glassAppearance = com.ai.assistance.operit.ui.main.components.rememberNavigationDrawerAppearance()
+        Surface(
+                modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 8.dp)
+                        .liquidGlass(
+                                enabled = glassAppearance.buttonLiquidGlassEnabled,
+                                shape = RoundedCornerShape(20.dp),
+                                containerColor = glassAppearance.buttonContainerColor,
+                                shadowElevation = 2.dp,
+                                borderWidth = 0.5.dp,
+                                blurRadius = 16.dp,
+                                overlayAlphaBoost = 0.04f,
+                                enableLens = false
+                        )
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(
+                                if (glassAppearance.buttonLiquidGlassEnabled) Color.Transparent
+                                else MaterialTheme.colorScheme.surface.copy(alpha = 0.86f)
+                        ),
+                onClick = onClick,
+                shape = RoundedCornerShape(20.dp),
+                color = Color.Transparent
+        ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                        modifier = Modifier
+                                                .size(7.dp)
+                                                .background(MaterialTheme.colorScheme.primary, CircleShape)
+                                )
+                                Spacer(modifier = Modifier.width(7.dp))
+                                Text(
+                                        text = "最近",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                                text = history.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                                text = "继续 →",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.align(Alignment.End)
+                        )
+                }
+        }
 }
+
+@Composable
+private fun HistoryBottomAction(label: String, onClick: () -> Unit) {
+        val glassAppearance = com.ai.assistance.operit.ui.main.components.rememberNavigationDrawerAppearance()
+        Surface(
+                modifier = Modifier
+                        .fillMaxWidth()
+                        .liquidGlass(
+                                enabled = glassAppearance.buttonLiquidGlassEnabled,
+                                shape = RoundedCornerShape(18.dp),
+                                containerColor = glassAppearance.buttonContainerColor,
+                                shadowElevation = 0.dp,
+                                borderWidth = 0.5.dp,
+                                blurRadius = 16.dp,
+                                overlayAlphaBoost = 0.04f,
+                                enableLens = false
+                        ),
+                onClick = onClick,
+                shape = RoundedCornerShape(18.dp),
+                color =
+                        if (glassAppearance.buttonLiquidGlassEnabled) Color.Transparent
+                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.70f),
+                tonalElevation = 0.dp
+        ) {
+                Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 11.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                ) {
+                        Text(
+                                text = label,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1
+                        )
+                        Text(
+                                text = "›",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary
+                        )
+                }
+        }
+}
+
+private fun ChatHistory.lastMessageDateTime(): java.time.LocalDateTime {
+        val lastTimestamp = lastMessageTimestamp ?: return updatedAt
+        return java.time.Instant.ofEpochMilli(lastTimestamp)
+                .atZone(java.time.ZoneId.systemDefault())
+                .toLocalDateTime()
+}
+
+private fun formatHistoryTime(updatedAt: java.time.LocalDateTime): String {
+        val today = java.time.LocalDate.now()
+        val date = updatedAt.toLocalDate()
+        return when {
+                date == today -> "%02d:%02d".format(updatedAt.hour, updatedAt.minute)
+                date == today.minusDays(1) -> "昨天"
+                date.isAfter(today.minusDays(7)) -> {
+                        val names = listOf("周一", "周二", "周三", "周四", "周五", "周六", "周日")
+                        names[(date.dayOfWeek.value - 1).coerceIn(0, 6)]
+                }
+                else -> "%d-%d".format(updatedAt.monthValue, updatedAt.dayOfMonth)
+        }
+}
+
