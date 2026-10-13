@@ -916,7 +916,7 @@ fun AgentChatInputSection(
                             modifier =
                                 Modifier
                                     .padding(start = 0.dp)
-                                    .size(28.dp)
+                                    .size(26.dp)
                                     .clickable(
                                         enabled = true,
                                         onClick = {
@@ -943,7 +943,7 @@ fun AgentChatInputSection(
                             modifier =
                                 Modifier
                                     .padding(start = 0.dp)
-                                    .size(28.dp)
+                                    .size(26.dp)
                                     .clickable(
                                         enabled = true,
                                         onClick = {
@@ -1007,7 +1007,10 @@ fun AgentChatInputSection(
                                 ),
                             shape = RoundedCornerShape(14.dp),
                             trailingIcon = {
-                                IconButton(onClick = { showFullscreenInput.value = true }) {
+                                IconButton(
+                                    onClick = { showFullscreenInput.value = true },
+                                    modifier = Modifier.size(32.dp),
+                                ) {
                                     Icon(
                                         imageVector = Icons.Default.Fullscreen,
                                         contentDescription = stringResource(R.string.chat_fullscreen_input),
@@ -1236,7 +1239,7 @@ fun AgentChatInputSection(
                                     modifier =
                                         Modifier
                                             .padding(start = 0.dp)
-                                            .size(28.dp)
+                                            .size(26.dp)
                                             .clickable(
                                                 enabled = true,
                                                 onClick = {
@@ -1263,7 +1266,7 @@ fun AgentChatInputSection(
                                     modifier =
                                         Modifier
                                             .padding(start = 0.dp)
-                                            .size(28.dp)
+                                            .size(26.dp)
                                             .clickable(
                                                 enabled = true,
                                                 onClick = {
@@ -1327,7 +1330,10 @@ fun AgentChatInputSection(
                                     ),
                                 shape = RoundedCornerShape(14.dp),
                                 trailingIcon = {
-                                    IconButton(onClick = { showFullscreenInput.value = true }) {
+                                    IconButton(
+                                        onClick = { showFullscreenInput.value = true },
+                                        modifier = Modifier.size(32.dp),
+                                    ) {
                                         Icon(
                                             imageVector = Icons.Default.Fullscreen,
                                             contentDescription = stringResource(R.string.chat_fullscreen_input),
