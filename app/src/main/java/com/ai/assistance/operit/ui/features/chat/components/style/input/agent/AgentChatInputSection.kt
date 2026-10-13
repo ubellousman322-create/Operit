@@ -981,7 +981,7 @@ fun AgentChatInputSection(
                                     style = inputTextStyle,
                                 )
                             },
-                            modifier = Modifier.weight(1f).heightIn(min = 44.dp).onPreviewKeyEvent(onEnterToSendKeyEvent),
+                            modifier = Modifier.weight(1f).heightIn(min = 64.dp).onPreviewKeyEvent(onEnterToSendKeyEvent),
                             textStyle = inputTextStyle,
                             maxLines = 6,
                             minLines = 1,
@@ -1310,7 +1310,7 @@ fun AgentChatInputSection(
                                         style = inputTextStyle,
                                     )
                                 },
-                                modifier = Modifier.weight(1f).heightIn(min = 44.dp).onPreviewKeyEvent(onEnterToSendKeyEvent),
+                                modifier = Modifier.weight(1f).heightIn(min = 64.dp).onPreviewKeyEvent(onEnterToSendKeyEvent),
                                 textStyle = inputTextStyle,
                                 maxLines = 6,
                                 minLines = 1,
