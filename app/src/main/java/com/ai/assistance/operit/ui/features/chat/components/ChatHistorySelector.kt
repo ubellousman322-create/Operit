@@ -123,6 +123,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.graphics.Brush
+import com.ai.assistance.operit.ui.theme.liquidGlass
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.material3.CircularProgressIndicator
@@ -454,6 +455,7 @@ fun ChatHistorySelector(
         onLaunchFloatingWindow: (() -> Unit)? = null,
         activePrompt: ActivePrompt
 ) {
+    val glassAppearance = com.ai.assistance.operit.ui.main.components.rememberNavigationDrawerAppearance()
     var chatToEdit by remember { mutableStateOf<ChatHistory?>(null) }
     var chatToDelete by remember { mutableStateOf<ChatHistory?>(null) }
     var chatItemActionTarget by remember { mutableStateOf<ChatHistory?>(null) }
@@ -1912,11 +1914,26 @@ fun ChatHistorySelector(
                     )
                     onNewChat(characterCardName, characterGroupId)
                 },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .liquidGlass(
+                        enabled = glassAppearance.buttonLiquidGlassEnabled,
+                        shape = RoundedCornerShape(16.dp),
+                        containerColor = glassAppearance.buttonContainerColor,
+                        shadowElevation = 2.dp,
+                        borderWidth = 0.5.dp,
+                        blurRadius = 16.dp,
+                        overlayAlphaBoost = 0.04f,
+                        enableLens = false
+                    ),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    containerColor =
+                        if (glassAppearance.buttonLiquidGlassEnabled) Color.Transparent
+                        else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
+                    contentColor =
+                        if (glassAppearance.buttonLiquidGlassEnabled) glassAppearance.selectedContentColor
+                        else MaterialTheme.colorScheme.onPrimaryContainer
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
             ) {
@@ -2448,12 +2465,29 @@ fun ChatHistorySelector(
                                             Surface(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .padding(vertical = 3.dp),
-                                                color =
-                                                    if (isSelected) containerColor
-                                                    else MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.70f),
-                                                shape = RoundedCornerShape(18.dp),
-                                                shadowElevation = 1.dp
+                                                    .padding(vertical = 3.dp)
+                                                    .liquidGlass(
+                                                        enabled = glassAppearance.buttonLiquidGlassEnabled,
+                                                        shape = RoundedCornerShape(18.dp),
+                                                        containerColor = glassAppearance.buttonContainerColor,
+                                                        shadowElevation = 2.dp,
+                                                        borderWidth = 0.5.dp,
+                                                        blurRadius = 16.dp,
+                                                        overlayAlphaBoost = 0.04f,
+                                                        enableLens = false
+                                                    )
+                                                    .clip(RoundedCornerShape(18.dp))
+                                                    .background(
+                                                        if (glassAppearance.buttonLiquidGlassEnabled) {
+                                                            if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else Color.Transparent
+                                                        } else if (isSelected) {
+                                                            containerColor
+                                                        } else {
+                                                            MaterialTheme.colorScheme.surface.copy(alpha = 0.78f)
+                                                        }
+                                                    ),
+                                                color = Color.Transparent,
+                                                shape = RoundedCornerShape(18.dp)
                                             ) {
                                                 Box(
                                                     modifier = Modifier
@@ -2564,10 +2598,24 @@ fun ChatHistorySelector(
             }
 
             Surface(
-                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
+                    modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .liquidGlass(
+                                    enabled = glassAppearance.buttonLiquidGlassEnabled,
+                                    shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
+                                    containerColor = glassAppearance.buttonContainerColor,
+                                    shadowElevation = 2.dp,
+                                    borderWidth = 0.5.dp,
+                                    blurRadius = 16.dp,
+                                    overlayAlphaBoost = 0.04f,
+                                    enableLens = false
+                            ),
+                    color =
+                            if (glassAppearance.buttonLiquidGlassEnabled) Color.Transparent
+                            else MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
                     tonalElevation = 0.dp,
-                    shadowElevation = 2.dp
+                    shadowElevation = 0.dp
             ) {
                     Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
                             HistoryBottomAction(
@@ -2590,12 +2638,29 @@ fun ChatHistorySelector(
 
 @Composable
 private fun LatestChatCard(history: ChatHistory, onClick: () -> Unit) {
+        val glassAppearance = com.ai.assistance.operit.ui.main.components.rememberNavigationDrawerAppearance()
         Surface(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
+                modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 8.dp)
+                        .liquidGlass(
+                                enabled = glassAppearance.buttonLiquidGlassEnabled,
+                                shape = RoundedCornerShape(20.dp),
+                                containerColor = glassAppearance.buttonContainerColor,
+                                shadowElevation = 2.dp,
+                                borderWidth = 0.5.dp,
+                                blurRadius = 16.dp,
+                                overlayAlphaBoost = 0.04f,
+                                enableLens = false
+                        )
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(
+                                if (glassAppearance.buttonLiquidGlassEnabled) Color.Transparent
+                                else MaterialTheme.colorScheme.surface.copy(alpha = 0.86f)
+                        ),
                 onClick = onClick,
                 shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.74f),
-                shadowElevation = 2.dp
+                color = Color.Transparent
         ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -2633,11 +2698,25 @@ private fun LatestChatCard(history: ChatHistory, onClick: () -> Unit) {
 
 @Composable
 private fun HistoryBottomAction(label: String, onClick: () -> Unit) {
+        val glassAppearance = com.ai.assistance.operit.ui.main.components.rememberNavigationDrawerAppearance()
         Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                        .fillMaxWidth()
+                        .liquidGlass(
+                                enabled = glassAppearance.buttonLiquidGlassEnabled,
+                                shape = RoundedCornerShape(18.dp),
+                                containerColor = glassAppearance.buttonContainerColor,
+                                shadowElevation = 0.dp,
+                                borderWidth = 0.5.dp,
+                                blurRadius = 16.dp,
+                                overlayAlphaBoost = 0.04f,
+                                enableLens = false
+                        ),
                 onClick = onClick,
                 shape = RoundedCornerShape(18.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.70f),
+                color =
+                        if (glassAppearance.buttonLiquidGlassEnabled) Color.Transparent
+                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.70f),
                 tonalElevation = 0.dp
         ) {
                 Row(
