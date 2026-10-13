@@ -1006,18 +1006,6 @@ fun AgentChatInputSection(
                                     disabledContainerColor = Color.Transparent,
                                 ),
                             shape = RoundedCornerShape(14.dp),
-                            trailingIcon = {
-                                IconButton(
-                                    onClick = { showFullscreenInput.value = true },
-                                    modifier = Modifier.size(32.dp),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Fullscreen,
-                                        contentDescription = stringResource(R.string.chat_fullscreen_input),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            },
                             enabled = !isProcessing || allowTextInputWhileProcessing,
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -1048,6 +1036,23 @@ fun AgentChatInputSection(
                                 else -> MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
                             }
 
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Box(
+                                modifier =
+                                    Modifier.size(30.dp)
+                                        .clip(CircleShape)
+                                        .clickable { showFullscreenInput.value = true },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Fullscreen,
+                                    contentDescription = stringResource(R.string.chat_fullscreen_input),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(17.dp),
+                                )
+                            }
                         Box(
                             modifier = Modifier.size(40.dp),
                             contentAlignment = Alignment.Center,
@@ -1132,6 +1137,7 @@ fun AgentChatInputSection(
                                     modifier = Modifier.size(18.dp),
                                 )
                             }
+                        }
                         }
                     }
 
@@ -1329,18 +1335,6 @@ fun AgentChatInputSection(
                                         disabledContainerColor = Color.Transparent,
                                     ),
                                 shape = RoundedCornerShape(14.dp),
-                                trailingIcon = {
-                                    IconButton(
-                                        onClick = { showFullscreenInput.value = true },
-                                        modifier = Modifier.size(32.dp),
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Fullscreen,
-                                            contentDescription = stringResource(R.string.chat_fullscreen_input),
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
-                                },
                                 enabled = !isProcessing || allowTextInputWhileProcessing,
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -1371,6 +1365,23 @@ fun AgentChatInputSection(
                                     else -> MaterialTheme.colorScheme.onPrimary
                                 }
 
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Box(
+                                    modifier =
+                                        Modifier.size(30.dp)
+                                            .clip(CircleShape)
+                                            .clickable { showFullscreenInput.value = true },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Fullscreen,
+                                        contentDescription = stringResource(R.string.chat_fullscreen_input),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(17.dp),
+                                    )
+                                }
                             Box(
                                 modifier = Modifier.size(40.dp),
                                 contentAlignment = Alignment.Center,
@@ -1455,6 +1466,7 @@ fun AgentChatInputSection(
                                         modifier = Modifier.size(18.dp),
                                     )
                                 }
+                            }
                             }
                         }
 
