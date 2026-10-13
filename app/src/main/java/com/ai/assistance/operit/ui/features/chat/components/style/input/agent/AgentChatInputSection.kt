@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
@@ -85,6 +86,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
@@ -967,21 +969,14 @@ fun AgentChatInputSection(
                                 modifier = Modifier.size(21.dp),
                             )
                         }
-                        OutlinedTextField(
+                        BasicTextField(
                             value = userMessage,
                             onValueChange = onUserMessageChange,
                             visualTransformation = mentionVisualTransformation,
-                            placeholder = {
-                                Text(
-                                    if (isWorkspaceOpen) {
-                                        context.getString(R.string.input_question_with_workspace)
-                                    } else {
-                                        context.getString(R.string.input_question_hint)
-                                    },
-                                    style = inputTextStyle,
-                                )
-                            },
-                            modifier = Modifier.weight(1f).heightIn(min = 64.dp).onPreviewKeyEvent(onEnterToSendKeyEvent),
+                            modifier =
+                                Modifier.weight(1f)
+                                    .heightIn(min = 44.dp)
+                                    .onPreviewKeyEvent(onEnterToSendKeyEvent),
                             textStyle = inputTextStyle,
                             maxLines = 6,
                             minLines = 1,
@@ -996,17 +991,26 @@ fun AgentChatInputSection(
                                 } else {
                                     KeyboardActions()
                                 },
-                            colors =
-                                OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color.Transparent,
-                                    unfocusedBorderColor = Color.Transparent,
-                                    disabledBorderColor = Color.Transparent,
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent,
-                                    disabledContainerColor = Color.Transparent,
-                                ),
-                            shape = RoundedCornerShape(14.dp),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                             enabled = !isProcessing || allowTextInputWhileProcessing,
+                            decorationBox = { innerTextField ->
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 6.dp),
+                                ) {
+                                    if (userMessage.text.isEmpty()) {
+                                        Text(
+                                            if (isWorkspaceOpen) {
+                                                context.getString(R.string.input_question_with_workspace)
+                                            } else {
+                                                context.getString(R.string.input_question_hint)
+                                            },
+                                            style = inputTextStyle,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                        )
+                                    }
+                                    innerTextField()
+                                }
+                            },
                         )
                         Spacer(modifier = Modifier.width(6.dp))
 
@@ -1296,21 +1300,14 @@ fun AgentChatInputSection(
                                         modifier = Modifier.size(21.dp),
                                     )
                                 }
-                            OutlinedTextField(
+                            BasicTextField(
                                 value = userMessage,
                                 onValueChange = onUserMessageChange,
                                 visualTransformation = mentionVisualTransformation,
-                                placeholder = {
-                                    Text(
-                                        if (isWorkspaceOpen) {
-                                            context.getString(R.string.input_question_with_workspace)
-                                        } else {
-                                            context.getString(R.string.input_question_hint)
-                                        },
-                                        style = inputTextStyle,
-                                    )
-                                },
-                                modifier = Modifier.weight(1f).heightIn(min = 64.dp).onPreviewKeyEvent(onEnterToSendKeyEvent),
+                                modifier =
+                                    Modifier.weight(1f)
+                                        .heightIn(min = 44.dp)
+                                        .onPreviewKeyEvent(onEnterToSendKeyEvent),
                                 textStyle = inputTextStyle,
                                 maxLines = 6,
                                 minLines = 1,
@@ -1325,17 +1322,26 @@ fun AgentChatInputSection(
                                     } else {
                                         KeyboardActions()
                                     },
-                                colors =
-                                    OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = Color.Transparent,
-                                        unfocusedBorderColor = Color.Transparent,
-                                        disabledBorderColor = Color.Transparent,
-                                        focusedContainerColor = Color.Transparent,
-                                        unfocusedContainerColor = Color.Transparent,
-                                        disabledContainerColor = Color.Transparent,
-                                    ),
-                                shape = RoundedCornerShape(14.dp),
+                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                                 enabled = !isProcessing || allowTextInputWhileProcessing,
+                                decorationBox = { innerTextField ->
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 6.dp),
+                                    ) {
+                                        if (userMessage.text.isEmpty()) {
+                                            Text(
+                                                if (isWorkspaceOpen) {
+                                                    context.getString(R.string.input_question_with_workspace)
+                                                } else {
+                                                    context.getString(R.string.input_question_hint)
+                                                },
+                                                style = inputTextStyle,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                            )
+                                        }
+                                        innerTextField()
+                                    }
+                                },
                             )
                             Spacer(modifier = Modifier.width(6.dp))
 
