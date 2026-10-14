@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.RowScope
@@ -30,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
@@ -44,6 +46,7 @@ import com.ai.assistance.operit.ui.main.navigation.NavigationEntrySpec
 import com.ai.assistance.operit.ui.main.navigation.RouteEntry
 import com.ai.assistance.operit.ui.main.components.AppContent
 import com.ai.assistance.operit.ui.main.components.DrawerContent
+import com.ai.assistance.operit.ui.main.components.RightSidebarContent
 import com.ai.assistance.operit.ui.main.components.rememberNavigationDrawerAppearance
 import com.ai.assistance.operit.ui.main.screens.GestureStateHolder
 import com.ai.assistance.operit.ui.main.screens.Screen
@@ -73,6 +76,7 @@ fun PhoneLayout(
         onScreenChange: (Screen) -> Unit,
         onDrawerItemSelected: (Screen) -> Unit,
         onNavigationEntrySelected: (NavigationEntrySpec) -> Unit,
+        onRightSidebarEntrySelected: (String) -> Unit,
         navigateToTokenConfig: () -> Unit,
         canGoBack: Boolean,
         onGoBack: () -> Unit,
@@ -104,29 +108,55 @@ fun PhoneLayout(
                         }
                 ) { state -> if (state == DrawerValue.Open) 1f else 0f }
 
+        val rightDrawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+        val rightTransition = updateTransition(rightDrawerState.targetValue, label = "right_drawer_transition")
+        val rightDrawerProgress by
+                rightTransition.animateFloat(
+                        label = "rightDrawerProgress",
+                        transitionSpec = {
+                                if (targetState == DrawerValue.Open) {
+                                        spring(
+                                                dampingRatio = Spring.DampingRatioLowBouncy,
+                                                stiffness = 1000f
+                                        )
+                                } else {
+                                        spring(
+                                                dampingRatio = Spring.DampingRatioNoBouncy,
+                                                stiffness = 1000f
+                                        )
+                                }
+                        }
+                ) { state -> if (state == DrawerValue.Open) 1f else 0f }
+
         // 抽屉动画状态
         val isDrawerOpen =
                 drawerState.currentValue == DrawerValue.Open ||
                         drawerState.targetValue == DrawerValue.Open
+        val isRightDrawerOpen =
+                rightDrawerState.currentValue == DrawerValue.Open ||
+                        rightDrawerState.targetValue == DrawerValue.Open
+        val totalDrawerProgress = drawerProgress + rightDrawerProgress
+        val netShiftProgress = drawerProgress - rightDrawerProgress
 
         val contentTranslationX =
                 if (enableNavigationAnimation) {
-                        drawerWidth * (0.82f * drawerProgress)
+                        drawerWidth * (0.82f * netShiftProgress)
                 } else {
-                        drawerWidth * drawerProgress
+                        drawerWidth * netShiftProgress
                 }
         val contentTranslationY =
-                if (enableNavigationAnimation) 12.dp * drawerProgress else 0.dp
+                if (enableNavigationAnimation) 12.dp * totalDrawerProgress else 0.dp
         val contentScale =
-                if (enableNavigationAnimation) 1f - (0.08f * drawerProgress) else 1f
+                if (enableNavigationAnimation) 1f - (0.08f * totalDrawerProgress) else 1f
         val contentRotationY =
-                if (enableNavigationAnimation) -7f * drawerProgress else 0f
+                if (enableNavigationAnimation) (-7f * drawerProgress) + (7f * rightDrawerProgress) else 0f
         val contentCornerRadius =
-                if (enableNavigationAnimation) 24.dp * drawerProgress else 0.dp
+                if (enableNavigationAnimation) 24.dp * totalDrawerProgress else 0.dp
         val contentShadowElevation =
-                if (enableNavigationAnimation) 18.dp * drawerProgress else 0.dp
+                if (enableNavigationAnimation) 18.dp * totalDrawerProgress else 0.dp
 
         val drawerOffset = -drawerWidth * (1f - drawerProgress)
+        val rightDrawerOffset = drawerWidth * (1f - rightDrawerProgress)
         val sidebarElevation =
                 if (enableNavigationAnimation) 16.dp * drawerProgress
                 else 3.dp * drawerProgress
@@ -136,6 +166,15 @@ fun PhoneLayout(
         val drawerContentAlpha =
                 if (enableNavigationAnimation) 0.72f + (0.28f * drawerProgress)
                 else 0.8f + (0.2f * drawerProgress)
+        val rightSidebarElevation =
+                if (enableNavigationAnimation) 16.dp * rightDrawerProgress
+                else 3.dp * rightDrawerProgress
+        val rightDrawerScale =
+                if (enableNavigationAnimation) 0.92f + (0.08f * rightDrawerProgress)
+                else 1f
+        val rightDrawerContentAlpha =
+                if (enableNavigationAnimation) 0.72f + (0.28f * rightDrawerProgress)
+                else 0.8f + (0.2f * rightDrawerProgress)
         val scrimColor = Color.Transparent
 
         // 侧边栏相关拖拽状态
@@ -151,16 +190,30 @@ fun PhoneLayout(
                         topStart = CornerSize(0.dp),
                         bottomStart = CornerSize(0.dp)
                 )
+        val rightDrawerShape =
+                MaterialTheme.shapes.medium.copy(
+                        topStart = CornerSize(16.dp),
+                        bottomStart = CornerSize(16.dp),
+                        topEnd = CornerSize(0.dp),
+                        bottomEnd = CornerSize(0.dp)
+                )
 
         // 拖拽状态 - 用于控制抽屉拉出和关闭
         val draggableState = rememberDraggableState { delta ->
                 // 如果内部手势已被消费，则不处理全局拖拽
                 if (!GestureStateHolder.isChatScreenGestureConsumed) {
                         currentDrag += delta
+                        val horizontalDominant = Math.abs(currentDrag) > Math.abs(verticalDrag)
+                        val leftDrawerOpenNow =
+                                drawerState.currentValue == DrawerValue.Open ||
+                                        drawerState.targetValue == DrawerValue.Open
+                        val rightDrawerOpenNow =
+                                rightDrawerState.currentValue == DrawerValue.Open ||
+                                        rightDrawerState.targetValue == DrawerValue.Open
 
-                        if (!isDrawerOpen &&
+                        if (!leftDrawerOpenNow && !rightDrawerOpenNow &&
                                         currentDrag > dragThreshold &&
-                                        Math.abs(currentDrag) > Math.abs(verticalDrag)
+                                        horizontalDominant
                         ) {
                                 scope.launch {
                                         drawerState.open()
@@ -169,9 +222,28 @@ fun PhoneLayout(
                                 }
                         }
 
-                        if (isDrawerOpen && currentDrag < -dragThreshold) {
+                        if (!leftDrawerOpenNow && !rightDrawerOpenNow &&
+                                        currentDrag < -dragThreshold &&
+                                        horizontalDominant
+                        ) {
+                                scope.launch {
+                                        rightDrawerState.open()
+                                        currentDrag = 0f
+                                        verticalDrag = 0f
+                                }
+                        }
+
+                        if (leftDrawerOpenNow && currentDrag < -dragThreshold) {
                                 scope.launch {
                                         drawerState.close()
+                                        currentDrag = 0f
+                                        verticalDrag = 0f
+                                }
+                        }
+
+                        if (rightDrawerOpenNow && currentDrag > dragThreshold) {
+                                scope.launch {
+                                        rightDrawerState.close()
                                         currentDrag = 0f
                                         verticalDrag = 0f
                                 }
@@ -216,7 +288,12 @@ fun PhoneLayout(
                                             scaleX = contentScale
                                             scaleY = contentScale
                                             rotationY = contentRotationY
-                                            transformOrigin = TransformOrigin(0f, 0.5f)
+                                            transformOrigin =
+                                                    if (rightDrawerProgress > drawerProgress) {
+                                                            TransformOrigin(1f, 0.5f)
+                                                    } else {
+                                                            TransformOrigin(0f, 0.5f)
+                                                    }
                                     }
                                     .zIndex(1f),
                     shape = RoundedCornerShape(contentCornerRadius),
@@ -305,6 +382,47 @@ fun PhoneLayout(
                         )
                 }
 
+                // 右侧「工具与设置」抽屉：从右边缘滑出（镜像左侧抽屉）
+                Surface(
+                        modifier =
+                                Modifier.width(drawerWidth)
+                                        .padding(top = drawerTopInset)
+                                        .fillMaxHeight()
+                                        .align(Alignment.CenterEnd)
+                                        .graphicsLayer {
+                                                translationX = rightDrawerOffset.toPx()
+                                                scaleX = rightDrawerScale
+                                                scaleY = rightDrawerScale
+                                                alpha = rightDrawerContentAlpha
+                                                transformOrigin = TransformOrigin(1f, 0.5f)
+                                        }
+                                        .waterGlass(
+                                                enabled = drawerAppearance.waterGlassEnabled,
+                                                shape = rightDrawerShape,
+                                                containerColor = drawerAppearance.containerColor,
+                                                shadowElevation = rightSidebarElevation,
+                                                borderWidth = 0.7.dp,
+                                                overlayAlphaBoost =
+                                                        if (enableNavigationAnimation) 0.07f
+                                                        else 0.04f
+                                        )
+                                        .zIndex(2f),
+                        shape = rightDrawerShape,
+                        color =
+                                if (drawerAppearance.waterGlassEnabled) Color.Transparent
+                                else drawerAppearance.containerColor,
+                        shadowElevation = if (drawerAppearance.waterGlassEnabled) 0.dp else rightSidebarElevation
+                ) {
+                        RightSidebarContent(
+                                onEntrySelected = { key ->
+                                        scope.launch {
+                                                rightDrawerState.close()
+                                        }
+                                        onRightSidebarEntrySelected(key)
+                                }
+                        )
+                }
+
                 // 在主内容上方放置遮罩层，阻止右侧内容继续响应点击
                 if (isDrawerOpen) {
                         Box(
@@ -324,6 +442,32 @@ fun PhoneLayout(
                                                                 onClick = {
                                                                         scope.launch {
                                                                                 drawerState.close()
+                                                                        }
+                                                                }
+                                                        )
+                                )
+                        }
+                }
+
+                // 右侧抽屉遮罩：点击内容区域收起抽屉
+                if (isRightDrawerOpen) {
+                        Box(
+                                modifier = Modifier.fillMaxSize().zIndex(1.5f)
+                        ) {
+                                Box(
+                                        modifier =
+                                                Modifier.fillMaxSize()
+                                                        .padding(end = drawerWidth)
+                                                        .background(scrimColor)
+                                                        .clickable(
+                                                                interactionSource =
+                                                                        remember {
+                                                                                MutableInteractionSource()
+                                                                        },
+                                                                indication = null,
+                                                                onClick = {
+                                                                        scope.launch {
+                                                                                rightDrawerState.close()
                                                                         }
                                                                 }
                                                         )
