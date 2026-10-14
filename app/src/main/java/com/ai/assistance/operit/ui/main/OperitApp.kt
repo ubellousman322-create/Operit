@@ -542,6 +542,49 @@ fun OperitApp(
                         navigateTo(screen, fromDrawer = true)
                     },
                     onNavigationEntrySelected = ::navigateToNavigationEntry,
+                    onRightSidebarEntrySelected = { key ->
+                        when (key) {
+                            "account" -> navigateTo(Screen.GitHubAccount, fromDrawer = true)
+                            "ob_memory" -> {
+                                val obEntry =
+                                    pluginSidebarEntries.firstOrNull { entry ->
+                                        entry.routeId.contains("com.moshu.ob_dashboard", ignoreCase = true)
+                                    } ?: pluginSidebarEntries.firstOrNull { entry ->
+                                        entry.title.contains("OB", ignoreCase = true)
+                                    }
+                                if (obEntry != null) {
+                                    navigateToNavigationEntry(obEntry)
+                                } else {
+                                    navigateTo(
+                                        Screen.ToolPkgComposeDsl(
+                                            containerPackageName = "com.moshu.ob_dashboard",
+                                            uiModuleId = "ob_dashboard_screen",
+                                            title = "OB 记忆"
+                                        ),
+                                        fromDrawer = true
+                                    )
+                                }
+                            }
+                            "personalization" ->
+                                navigateTo(Screen.SettingsGroupPage("personalization"), fromDrawer = true)
+                            "packages" -> navigateTo(Screen.Packages, fromDrawer = true)
+                            "workflow" -> navigateTo(Screen.Workflow, fromDrawer = true)
+                            "toolbox" -> navigateTo(Screen.Toolbox, fromDrawer = true)
+                            "model_config" -> navigateTo(Screen.ModelConfig, fromDrawer = true)
+                            "prompts" -> navigateTo(Screen.ModelPromptsSettings, fromDrawer = true)
+                            "context_summary" ->
+                                navigateTo(Screen.ContextSummarySettings, fromDrawer = true)
+                            "assistant_config" ->
+                                navigateTo(Screen.AssistantConfig, fromDrawer = true)
+                            "data_permissions" ->
+                                navigateTo(Screen.SettingsGroupPage("data_permissions"), fromDrawer = true)
+                            "privacy_cleanup" ->
+                                navigateTo(Screen.SettingsGroupPage("privacy_cleanup"), fromDrawer = true)
+                            "external_calls" ->
+                                navigateTo(Screen.ExternalHttpChatSettings, fromDrawer = true)
+                            else -> {}
+                        }
+                    },
                     navigateToTokenConfig = ::navigateToTokenConfig,
                     canGoBack = canGoBack,
                     onGoBack = ::requestGoBack,
