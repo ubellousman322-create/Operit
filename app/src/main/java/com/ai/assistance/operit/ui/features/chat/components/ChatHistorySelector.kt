@@ -451,7 +451,6 @@ fun ChatHistorySelector(
         autoSwitchChatOnCharacterSelect: Boolean,
         onAutoSwitchChatOnCharacterSelectChange: (Boolean) -> Unit,
         onQuickScrollInteractionChange: (Boolean) -> Unit = {},
-        onOpenToolsAndSettings: ((String) -> Unit)? = null,
         onLaunchFloatingWindow: (() -> Unit)? = null,
         activePrompt: ActivePrompt
 ) {
@@ -2024,7 +2023,7 @@ fun ChatHistorySelector(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(start = 10.dp, end = 22.dp),
-                contentPadding = PaddingValues(bottom = 126.dp)
+                contentPadding = PaddingValues(bottom = 24.dp)
             ) {
                 item(key = "view-switch") {
                     Surface(
@@ -2597,33 +2596,6 @@ fun ChatHistorySelector(
             }
             }
 
-            Surface(
-                    modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .fillMaxWidth()
-                            .liquidGlass(
-                                    enabled = glassAppearance.buttonLiquidGlassEnabled,
-                                    shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
-                                    containerColor = glassAppearance.buttonContainerColor,
-                                    shadowElevation = 2.dp,
-                                    borderWidth = 0.5.dp,
-                                    blurRadius = 16.dp,
-                                    overlayAlphaBoost = 0.04f,
-                                    enableLens = false
-                            ),
-                    color =
-                            if (glassAppearance.buttonLiquidGlassEnabled) Color.Transparent
-                            else MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-                    tonalElevation = 0.dp,
-                    shadowElevation = 0.dp
-            ) {
-                    Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
-                            HistoryBottomAction(
-                                    label = "工具与设置",
-                                    onClick = { onOpenToolsAndSettings?.invoke("tools_settings") }
-                            )
-                    }
-            }
             HistoryQuickScroller(
                 listState = actualLazyListState,
                 itemCount = flatItems.size,
@@ -2691,49 +2663,6 @@ private fun LatestChatCard(history: ChatHistory, onClick: () -> Unit) {
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.align(Alignment.End)
-                        )
-                }
-        }
-}
-
-@Composable
-private fun HistoryBottomAction(label: String, onClick: () -> Unit) {
-        val glassAppearance = com.ai.assistance.operit.ui.main.components.rememberNavigationDrawerAppearance()
-        Surface(
-                modifier = Modifier
-                        .fillMaxWidth()
-                        .liquidGlass(
-                                enabled = glassAppearance.buttonLiquidGlassEnabled,
-                                shape = RoundedCornerShape(18.dp),
-                                containerColor = glassAppearance.buttonContainerColor,
-                                shadowElevation = 0.dp,
-                                borderWidth = 0.5.dp,
-                                blurRadius = 16.dp,
-                                overlayAlphaBoost = 0.04f,
-                                enableLens = false
-                        ),
-                onClick = onClick,
-                shape = RoundedCornerShape(18.dp),
-                color =
-                        if (glassAppearance.buttonLiquidGlassEnabled) Color.Transparent
-                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.70f),
-                tonalElevation = 0.dp
-        ) {
-                Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 11.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                ) {
-                        Text(
-                                text = label,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f),
-                                maxLines = 1
-                        )
-                        Text(
-                                text = "›",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary
                         )
                 }
         }
