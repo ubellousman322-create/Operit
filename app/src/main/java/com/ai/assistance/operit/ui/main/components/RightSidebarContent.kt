@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Api
 import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Message
@@ -65,6 +66,7 @@ fun RightSidebarContent(
                         RightSidebarEntry("packages", "包管理", Icons.Default.Extension),
                         RightSidebarEntry("workflow", "工作流", Icons.Default.AccountTree),
                         RightSidebarEntry("toolbox", "工具箱", Icons.Default.Apps),
+                        RightSidebarEntry("permissions", "权限", Icons.Default.Build),
                         RightSidebarEntry("model_config", "AI 模型配置", Icons.Default.Api),
                         RightSidebarEntry("prompts", "提示词配置", Icons.Default.Message),
                         RightSidebarEntry("context_summary", "上下文与总结", Icons.Default.Analytics),
