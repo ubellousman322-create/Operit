@@ -214,12 +214,6 @@ fun DrawerContent(
                 onAutoSwitchCharacterCardChange = { autoSwitchCharacterCard = it },
                 autoSwitchChatOnCharacterSelect = autoSwitchChatOnCharacterSelect,
                 onAutoSwitchChatOnCharacterSelectChange = { autoSwitchChatOnCharacterSelect = it },
-                onOpenToolsAndSettings = { route ->
-                        if (route == "tools_settings") {
-                                closeDrawer()
-                                onScreenSelected(Screen.ToolsAndSettings)
-                        }
-                },
                 activePrompt = activePrompt
         )
 }
