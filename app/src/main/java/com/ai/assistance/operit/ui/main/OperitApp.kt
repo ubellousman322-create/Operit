@@ -330,7 +330,9 @@ fun OperitApp(
 
     BackHandler(enabled = currentScreen !is Screen.AiChat, onBack = { requestGoBack() })
 
-    val canGoBack = routerState.canPop
+    val canGoBack =
+        routerState.canPop ||
+            currentScreen !is Screen.AiChat
 
     var isLoading by remember { mutableStateOf(false) }
 
@@ -570,6 +572,7 @@ fun OperitApp(
                             "packages" -> navigateTo(Screen.Packages, fromDrawer = true)
                             "workflow" -> navigateTo(Screen.Workflow, fromDrawer = true)
                             "toolbox" -> navigateTo(Screen.Toolbox, fromDrawer = true)
+                            "permissions" -> navigateTo(Screen.ShizukuCommands, fromDrawer = true)
                             "model_config" -> navigateTo(Screen.ModelConfig, fromDrawer = true)
                             "prompts" -> navigateTo(Screen.ModelPromptsSettings, fromDrawer = true)
                             "context_summary" ->
