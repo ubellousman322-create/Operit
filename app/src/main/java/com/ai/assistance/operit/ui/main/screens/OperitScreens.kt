@@ -61,6 +61,7 @@ import com.ai.assistance.operit.ui.features.settings.screens.ModelConfigEntryMod
 import com.ai.assistance.operit.ui.features.settings.screens.ModelPromptsSettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.TagMarketScreen
 import com.ai.assistance.operit.ui.features.settings.screens.SettingsScreen
+import com.ai.assistance.operit.ui.features.settings.screens.SettingsGroupPageScreen
 import com.ai.assistance.operit.ui.features.settings.screens.SpeechServicesSettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.ThemeSettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.ToolPermissionSettingsScreen
@@ -1501,6 +1502,45 @@ sealed class Screen(
         }
     }
 
+    data class SettingsGroupPage(val groupId: String) : Screen(navItem = NavItem.Settings) {
+        @Composable
+        override fun Content(
+                navController: NavController,
+                navigateTo: ScreenNavigationHandler,
+                onGoBack: () -> Unit,
+                hasBackgroundImage: Boolean,
+                onLoading: (Boolean) -> Unit,
+                onError: (String) -> Unit,
+                onGestureConsumed: (Boolean) -> Unit
+        ) {
+            SettingsGroupPageScreen(
+                    groupId = groupId,
+                    onOpen = { key ->
+                        when (key) {
+                            "user_preferences" -> navigateTo(UserPreferencesSettings)
+                            "language" -> navigateTo(LanguageSettings)
+                            "theme" -> navigateTo(ThemeSettings)
+                            "global_display" -> navigateTo(GlobalDisplaySettings)
+                            "layout" -> navigateTo(LayoutAdjustmentSettings)
+                            "tool_permissions" -> navigateTo(ToolPermission)
+                            "backup" -> navigateTo(ChatBackupSettings)
+                            "chat_history" -> navigateTo(ChatHistorySettings)
+                            "token_stats" -> navigateTo(TokenUsageStatistics)
+                            else -> {}
+                        }
+                    },
+                    onGoBack = onGoBack
+            )
+        }
+        @Composable
+        override fun getTitle(): String =
+                when (groupId) {
+                    "personalization" -> "个性化"
+                    "data_permissions" -> "数据和权限"
+                    "privacy_cleanup" -> "隐私与数据清理"
+                    else -> "工具与设置"
+                }
+    }
     // 获取屏幕标题
     @Composable
     open fun getTitle(): String = titleRes?.let { stringResource(it) } ?: ""
