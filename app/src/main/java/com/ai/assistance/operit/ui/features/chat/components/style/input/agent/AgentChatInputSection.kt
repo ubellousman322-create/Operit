@@ -1012,7 +1012,7 @@ fun AgentChatInputSection(
                                 }
                             },
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(0.dp))
 
                         val actionButtonBackground =
                             when {
@@ -1343,7 +1343,7 @@ fun AgentChatInputSection(
                                     }
                                 },
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(0.dp))
 
                             val actionButtonBackground =
                                 when {
