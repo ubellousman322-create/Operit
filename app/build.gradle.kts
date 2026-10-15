@@ -448,6 +448,8 @@ android {
         }
         debug {
             applicationIdSuffix = ".debug"
+            // 性能优化：关闭调试标记（包名与签名保持不变）
+            isDebuggable = false
             ndk {
                 abiFilters.clear()
                 abiFilters += "arm64-v8a"
