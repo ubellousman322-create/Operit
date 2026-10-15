@@ -19,8 +19,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.AspectRatio
+import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.EmojiEmotions
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.ManageHistory
@@ -132,6 +134,19 @@ fun SettingsGroupPageScreen(
                                                 Icons.Default.DeleteSweep
                                         )
                                 )
+                        "prompts" ->
+                                listOf(
+                                        SettingsGroupEntry(
+                                                "model_prompts",
+                                                stringResource(R.string.settings_prompt_title),
+                                                Icons.Default.ChatBubble
+                                        ),
+                                        SettingsGroupEntry(
+                                                "waifu_mode",
+                                                stringResource(R.string.waifu_mode_settings),
+                                                Icons.Default.EmojiEmotions
+                                        )
+                                )
                         else -> emptyList()
                 }
         val title =
@@ -139,6 +154,7 @@ fun SettingsGroupPageScreen(
                         "personalization" -> "个性化"
                         "data_permissions" -> "数据和权限"
                         "privacy_cleanup" -> "隐私与数据清理"
+                        "prompts" -> "提示词配置"
                         else -> "工具与设置"
                 }
         Column(modifier = Modifier.fillMaxSize()) {
