@@ -1526,6 +1526,8 @@ sealed class Screen(
                             "backup" -> navigateTo(ChatBackupSettings)
                             "chat_history" -> navigateTo(ChatHistorySettings)
                             "token_stats" -> navigateTo(TokenUsageStatistics)
+                            "model_prompts" -> navigateTo(ModelPromptsSettings)
+                            "waifu_mode" -> navigateTo(WaifuModeSettings)
                             else -> {}
                         }
                     },
@@ -1538,6 +1540,7 @@ sealed class Screen(
                     "personalization" -> "个性化"
                     "data_permissions" -> "数据和权限"
                     "privacy_cleanup" -> "隐私与数据清理"
+                    "prompts" -> "提示词配置"
                     else -> "工具与设置"
                 }
     }
