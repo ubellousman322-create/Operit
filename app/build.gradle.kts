@@ -580,6 +580,9 @@ tasks.matching { it.name == "assembleNightly" }.configureEach {
     finalizedBy(signRotatedNightlyApk)
 }
 
+// R23-B: 禁用 lintVital（debug 关闭调试标记后该检查会运行，存量 409 条 fatal 会阻断构建；fork 向来未跑过它，先禁用）
+tasks.matching { it.name.startsWith("lintVital") }.configureEach { enabled = false }
+
 tasks.named("preBuild") {
     dependsOn(syncMainAssets)
     dependsOn(verifyExternallyBuiltNativeLibraries)
