@@ -28,9 +28,7 @@ class SkillManager private constructor(private val context: Context) {
     private val skillLoadErrors = mutableMapOf<String, String>()
 
     private fun getSkillsRootDir(): File {
-        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        val operitDir = File(downloadsDir, "Operit")
-        val skillsDir = File(operitDir, "skills")
+        val skillsDir = File(com.ai.assistance.operit.util.OperitPaths.operitRootDir(), "skills")
         if (!skillsDir.exists()) {
             skillsDir.mkdirs()
         }
