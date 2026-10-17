@@ -89,9 +89,7 @@ class FreeUsagePreferences(private val context: Context) {
 
     /** 获取外部验证文件 */
     private fun getExternalVerificationFile(): File {
-        val downloadsDir =
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        val operitDir = File(downloadsDir, EXTERNAL_DIRECTORY)
+        val operitDir = com.ai.assistance.operit.util.OperitPaths.operitRootDir()
         if (!operitDir.exists()) {
             operitDir.mkdirs()
         }
