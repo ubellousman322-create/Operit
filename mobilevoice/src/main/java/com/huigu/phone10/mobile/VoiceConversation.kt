@@ -258,9 +258,24 @@ class VoiceConversation(
             try {
                 if (streamSpeak != null) {
                     stage("语音合成或播放失败，请检查合成服务配置与网络。") { streamSpeak.invoke(queue) }
-                } else for (segment in queue) {
-                    report("正在播放 Operit 的回复…")
-                    stage("语音合成或播放失败，请检查合成服务配置与网络。") { speak(segment) }
+                } else {
+                    var consecutiveFailures = 0
+                    for (segment in queue) {
+                        report("正在播放 Operit 的回复…")
+                        try {
+                            stage("语音合成或播放失败，请检查合成服务配置与网络。") { speak(segment) }
+                            consecutiveFailures = 0
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (failure: TurnFailure) {
+                            currentCoroutineContext().ensureActive()
+                            consecutiveFailures++
+                            diagnose("tts_segment_failed_" + consecutiveFailures)
+                            // One bad sentence used to stop the whole reply after the
+                            // first word or two. Keep reading; give up after three in a row.
+                            if (consecutiveFailures >= 3) throw failure
+                        }
+                    }
                 }
             } catch (cancelled: CancellationException) {
                 // A provider's own deadline/closed player can throw CancellationException
