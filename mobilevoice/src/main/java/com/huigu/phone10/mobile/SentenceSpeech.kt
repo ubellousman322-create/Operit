@@ -26,6 +26,7 @@ internal class SentenceSpeech(
         val clips = Channel<Channel<Packet>>(Channel.RENDEZVOUS)
         val producer = launch {
             try {
+                var failures = 0
                 for (text in texts) {
                     val packets = Channel<Packet>(32)
                     try {
@@ -52,7 +53,12 @@ internal class SentenceSpeech(
                             failure
                         }
                         clips.send(packets)
-                        if (synthesis.await() != null) break
+                        if (synthesis.await() != null) {
+                            failures++
+                            if (failures >= 2) break
+                        } else {
+                            failures = 0
+                        }
                     } catch (error: Throwable) {
                         packets.cancel()
                         throw error
