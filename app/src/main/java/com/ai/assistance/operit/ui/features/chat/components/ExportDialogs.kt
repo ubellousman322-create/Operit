@@ -810,10 +810,8 @@ suspend fun exportAndroidApp(
             // 使用下载目录下的Operit/exports子目录
             val outputDir =
                     File(
-                            android.os.Environment.getExternalStoragePublicDirectory(
-                                    android.os.Environment.DIRECTORY_DOWNLOADS
-                            ),
-                            "Operit/exports"
+                            com.ai.assistance.operit.util.OperitPaths.operitRootDir(),
+                            "exports"
                     )
             if (!outputDir.exists()) {
                 outputDir.mkdirs()
@@ -870,10 +868,8 @@ suspend fun exportWindowsApp(
             // 创建输出目录 - 使用下载目录下的Operit/exports子目录
             val outputDir =
                     File(
-                            android.os.Environment.getExternalStoragePublicDirectory(
-                                    android.os.Environment.DIRECTORY_DOWNLOADS
-                            ),
-                            "Operit/exports"
+                            com.ai.assistance.operit.util.OperitPaths.operitRootDir(),
+                            "exports"
                     )
             if (!outputDir.exists()) {
                 outputDir.mkdirs()
