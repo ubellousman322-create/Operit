@@ -1,12 +1,14 @@
 package com.ai.assistance.operit.util
 
 import android.content.Context
+import com.ai.assistance.operit.BuildConfig
 import android.os.Environment
 import java.io.File
 
 object OperitPaths {
 
     private const val OPERIT_DIR_NAME = "Operit"
+    private const val AVE_OPERIT_DIR_NAME = "Operit-ave"
     private const val CLEAN_ON_EXIT_DIR_NAME = "cleanOnExit"
     private const val PLUGINS_DIR_NAME = "plugins"
     private const val MCP_PLUGINS_DIR_NAME = "mcp_plugins"
@@ -29,7 +31,71 @@ object OperitPaths {
     }
 
     fun operitRootDir(): File {
-        return ensureDir(File(downloadsDir(), OPERIT_DIR_NAME))
+        val root = File(downloadsDir(), operitDirName())
+        if (!isOfficialPackage()) {
+            ensureAveMigrated(root)
+        }
+        return ensureDir(root)
+    }
+
+    /** 当前构建使用的 Operit 数据目录名：官方包沿用 "Operit"，自构建版本（ave 等）使用独立目录。 */
+    fun operitDirName(): String {
+        return if (isOfficialPackage()) OPERIT_DIR_NAME else AVE_OPERIT_DIR_NAME
+    }
+
+    private fun isOfficialPackage(): Boolean {
+        return BuildConfig.APPLICATION_ID == "com.ai.assistance.operit"
+    }
+
+    /** R23-D: 首次使用独立目录时，从旧的公共目录复制一份运行时数据（只补缺，不覆盖）。 */
+    @Synchronized
+    private fun ensureAveMigrated(aveRoot: File) {
+        try {
+            val marker = File(aveRoot, ".migrated_from_legacy")
+            if (marker.exists()) return
+            val legacyRoot = File(downloadsDir(), OPERIT_DIR_NAME)
+            if (legacyRoot.exists() && legacyRoot.isDirectory) {
+                listOf(
+                    "plugins",
+                    "mcp_plugins",
+                    "skills",
+                    "workflow",
+                    "bridge",
+                    "workspace",
+                    "websession",
+                    "pluginConfigs"
+                ).forEach { name ->
+                    try {
+                        copyDirIfMissing(File(legacyRoot, name), File(aveRoot, name))
+                    } catch (ignored: Exception) {
+                    }
+                }
+            }
+            ensureDir(aveRoot)
+            try {
+                marker.writeText("migrated")
+            } catch (ignored: Exception) {
+            }
+        } catch (ignored: Exception) {
+        }
+    }
+
+    private fun copyDirIfMissing(src: File, dst: File) {
+        if (!src.exists() || !src.isDirectory) return
+        if (!dst.exists()) dst.mkdirs()
+        val children = src.listFiles() ?: return
+        for (child in children) {
+            val target = File(dst, child.name)
+            if (target.exists()) continue
+            if (child.isDirectory) {
+                copyDirIfMissing(child, target)
+            } else {
+                try {
+                    child.copyTo(target, overwrite = false)
+                } catch (ignored: Exception) {
+                }
+            }
+        }
     }
 
     fun cleanOnExitDir(): File {
@@ -119,7 +185,7 @@ object OperitPaths {
     }
 
     fun operitRootPathSdcard(): String {
-        return "/sdcard/Download/$OPERIT_DIR_NAME"
+        return "/sdcard/Download/${operitDirName()}"
     }
 
     fun cleanOnExitPathSdcard(): String {
