@@ -51,7 +51,7 @@ object OperitPaths {
     @Synchronized
     private fun ensureAveMigrated(aveRoot: File) {
         try {
-            val marker = File(aveRoot, ".migrated_from_legacy")
+            val marker = File(aveRoot, ".migrated_from_legacy_v2")
             if (marker.exists()) return
             val legacyRoot = File(downloadsDir(), OPERIT_DIR_NAME)
             if (legacyRoot.exists() && legacyRoot.isDirectory) {
@@ -63,13 +63,32 @@ object OperitPaths {
                     "bridge",
                     "workspace",
                     "websession",
-                    "pluginConfigs"
+                    "pluginConfigs",
+                    "output images"
                 ).forEach { name ->
                     try {
                         copyDirIfMissing(File(legacyRoot, name), File(aveRoot, name))
                     } catch (ignored: Exception) {
                     }
                 }
+            }
+            // models 通常很大：优先整体移动（同盘 rename 近乎瞬时），失败则跳过，避免复制大文件
+            try {
+                val legacyModels = File(legacyRoot, "models")
+                val aveModels = File(aveRoot, "models")
+                if (legacyModels.exists() && !aveModels.exists()) {
+                    legacyModels.renameTo(aveModels)
+                }
+            } catch (ignored: Exception) {
+            }
+            // 外部使用验证文件（免费额度计数）
+            try {
+                val legacyUsage = File(legacyRoot, "usage_verification.dat")
+                val aveUsage = File(aveRoot, "usage_verification.dat")
+                if (legacyUsage.exists() && !aveUsage.exists()) {
+                    legacyUsage.copyTo(aveUsage, overwrite = false)
+                }
+            } catch (ignored: Exception) {
             }
             ensureDir(aveRoot)
             try {
