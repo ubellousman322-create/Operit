@@ -593,8 +593,8 @@ object ModelListFetcher {
         return withContext(Dispatchers.IO) {
             try {
                 val modelsDir = File(
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                    "Operit/models/mnn"
+                    com.ai.assistance.operit.util.OperitPaths.operitRootDir(),
+                    "models/mnn"
                 )
                 
                 AppLogger.d(TAG, "读取MNN模型目录: ${modelsDir.absolutePath}")
@@ -641,8 +641,8 @@ object ModelListFetcher {
         return withContext(Dispatchers.IO) {
             try {
                 val modelsDir = File(
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                    "Operit/models/llama"
+                    com.ai.assistance.operit.util.OperitPaths.operitRootDir(),
+                    "models/llama"
                 )
 
                 AppLogger.d(TAG, "读取llama.cpp模型目录: ${modelsDir.absolutePath}")
