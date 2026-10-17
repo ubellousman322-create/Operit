@@ -44,6 +44,7 @@ class VoiceService : Service() {
     private var overlay: Phone10MicOverlay? = null
     private var captionOverlay: FloatingCaptions? = null
     private val captionBuffer = CaptionBuffer()
+    private var captionFilter = SpeechText(preserveSpacing = true)
     private val spokenCaptions = SpokenCaptions()
     @Volatile private var captionGeneration = 0L
     private var captionAligned = false
@@ -319,11 +320,14 @@ class VoiceService : Service() {
             }, onReplyStart = {
                 captionGeneration++
                 captionBuffer.clear(); spokenCaptions.clear(); captionSegment = null
+                captionFilter = SpeechText(preserveSpacing = true)
                 captionAligned = config.speech.sentenceHttpTts || config.speech.clientSegmentedTts
                 captionOverlay?.resetPlayback()
                 renderCaptions()
             }, onReplyDelta = { delta ->
-                captionBuffer.append(delta)
+                // Subtitles show only what is going to be spoken: chains of thought,
+                // tool blocks and status markup never reach the caption layer.
+                captionBuffer.append((captionFilter.push(delta) + captionFilter.flush()).joinToString(""))
                 mutableState.value = mutableState.value.copy(caption = captionBuffer.text)
                 if (!captionAligned || spokenCaptions.text.isEmpty()) renderCaptions()
             }, onSpeechSegment = { text ->
