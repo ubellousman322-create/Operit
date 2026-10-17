@@ -111,8 +111,8 @@ class MnnModelDownloadManager private constructor(private val context: Context) 
         private const val TEMP_SUFFIX = ".tmp"
         
         val MODEL_DIR = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            "Operit/models/mnn"
+            com.ai.assistance.operit.util.OperitPaths.operitRootDir(),
+            "models/mnn"
         )
     }
 
