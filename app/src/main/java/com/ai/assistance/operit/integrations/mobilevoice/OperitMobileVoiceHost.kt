@@ -2,6 +2,7 @@ package com.ai.assistance.operit.integrations.mobilevoice
 
 import android.content.Context
 import com.ai.assistance.operit.core.tools.ChatListResultData
+import com.ai.assistance.operit.data.repository.ChatHistoryManager
 import com.ai.assistance.operit.core.tools.defaultTool.standard.StandardChatManagerTool
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.integrations.externalchat.ExternalChatRequest
@@ -44,6 +45,7 @@ class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoice
                 when (pending.kind) {
                     "list" -> handleList(pending)
                     "reply" -> handleReply(pending)
+                    "observe_stream" -> handleObserveStream(pending)
                     else -> pending.acceptEmbedded(fail(pending, "OPERIT_UNAVAILABLE"))
                 }
             } catch (t: Throwable) {
@@ -138,6 +140,78 @@ class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoice
         return data.chats
     }
 
+    /**
+     * 只听回复。
+     *
+     * 这里原本只有 list / reply 两种请求，observe_stream 直接掉进 else 报
+     * OPERIT_UNAVAILABLE——所以「只听回复」一次都没真正连上过。
+     * Operit 在流式回复时每秒会把当前正文落一次库，这里就照这个节奏读：
+     * 每次只取 after 之后的内容，字幕和朗读就能跟着正文一起长。
+     */
+    private suspend fun handleObserveStream(pending: OperitPending) {
+        val chatId = pending.chatId?.takeIf { it.isNotBlank() }
+        if (chatId == null) {
+            pending.acceptEmbedded(fail(pending, "OPERIT_INVALID_REQUEST"))
+            return
+        }
+        val after = pending.after
+        val messages = try {
+            ChatHistoryManager.getInstance(hostContext)
+                .loadChatMessages(chatId, order = "desc", limit = OBSERVE_WINDOW)
+                .filter { it.sender == "ai" }
+                .sortedBy { it.timestamp }
+        } catch (t: Throwable) {
+            writeDiagnostic(pending, t)
+            pending.acceptEmbedded(fail(pending, "OPERIT_OBSERVE_FAILED"))
+            return
+        }
+        val processing = messages.lastOrNull()?.let { it.completedAt == 0L } == true
+        if (after == null) {
+            // Opening only hands over a position: history is never read aloud.
+            val position = messages.maxOfOrNull { it.timestamp } ?: 0L
+            pending.acceptEmbedded(snapshot(pending, position, processing))
+            pending.acceptEmbedded(event(pending, "complete"))
+            return
+        }
+        for (message in messages) {
+            if (message.timestamp <= after) continue
+            val text = message.content
+            val finished = message.completedAt > 0L
+            if (text.isEmpty() && finished) continue
+            pending.acceptEmbedded(
+                event(pending, "message_start").apply {
+                    addProperty("timestamp", message.timestamp)
+                    addProperty("finished", finished)
+                }
+            )
+            var offset = 0
+            while (offset < text.length) {
+                var end = minOf(offset + OBSERVE_CHUNK, text.length)
+                if (end < text.length && text[end - 1].isHighSurrogate()) end--
+                pending.acceptEmbedded(
+                    event(pending, "chunk").apply { addProperty("text", text.substring(offset, end)) }
+                )
+                offset = end
+            }
+            pending.acceptEmbedded(event(pending, "message_end"))
+        }
+        val cursor = maxOf(
+            after,
+            messages.filter { it.completedAt > 0L }.maxOfOrNull { it.timestamp } ?: after
+        )
+        pending.acceptEmbedded(snapshot(pending, cursor, processing))
+        pending.acceptEmbedded(event(pending, "complete"))
+    }
+
+    private fun snapshot(pending: OperitPending, cursor: Long, processing: Boolean): JsonObject =
+        event(pending, "snapshot").apply {
+            addProperty("cursor", cursor)
+            addProperty("processing", processing)
+            addProperty("failed", false)
+            addProperty("paged", true)
+            addProperty("streaming", true)
+        }
+
     private suspend fun handleReply(pending: OperitPending) {
         val text = pending.text
         if (text.isNullOrBlank()) {
@@ -203,4 +277,10 @@ class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoice
 
     private fun fail(pending: OperitPending, code: String): JsonObject =
         event(pending, "error").apply { addProperty("code", code) }
+
+    private companion object {
+        const val OBSERVE_WINDOW = 6
+        const val OBSERVE_CHUNK = 4000
+    }
+
 }
