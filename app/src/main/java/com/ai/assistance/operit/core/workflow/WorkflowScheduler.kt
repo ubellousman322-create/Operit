@@ -120,7 +120,7 @@ class WorkflowScheduler(private val context: Context) {
 
         workManager.enqueueUniquePeriodicWork(
             getWorkName(workflowId),
-            ExistingPeriodicWorkPolicy.REPLACE,
+            ExistingPeriodicWorkPolicy.UPDATE,
             workRequest
         )
 
@@ -235,7 +235,7 @@ class WorkflowScheduler(private val context: Context) {
 
                 workManager.enqueueUniquePeriodicWork(
                     getWorkName(workflowId),
-                    ExistingPeriodicWorkPolicy.REPLACE,
+                    ExistingPeriodicWorkPolicy.UPDATE,
                     workRequest
                 )
                 AppLogger.d(TAG, "Scheduled cron workflow (periodic): $workflowId, trigger: $triggerNodeId, expression: $cronExpression")
