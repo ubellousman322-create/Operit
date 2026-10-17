@@ -75,11 +75,7 @@ class MCPRepository(private val context: Context) {
 
     // 插件安装目录
     private val pluginsBaseDir by lazy {
-        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        val operitDir = File(downloadsDir, OPERIT_DIR_NAME)
-        val pluginsDir = File(operitDir, PLUGINS_DIR_NAME)
-
-        if (!operitDir.exists()) operitDir.mkdirs()
+        val pluginsDir = File(com.ai.assistance.operit.util.OperitPaths.operitRootDir(), PLUGINS_DIR_NAME)
         if (!pluginsDir.exists()) pluginsDir.mkdirs()
 
         if (pluginsDir.exists() && pluginsDir.canWrite()) {
