@@ -1024,8 +1024,7 @@ open class GeminiProvider(
     }
 
      private fun getOutputImagesDir(): File {
-         val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-         return File(downloadsDir, "Operit/output images")
+         return File(com.ai.assistance.operit.util.OperitPaths.operitRootDir(), "output images")
      }
 
      private fun fileExtensionForImageMime(mimeType: String): String {
