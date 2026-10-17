@@ -173,14 +173,20 @@ class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoice
             pending.acceptEmbedded(event(pending, "complete"))
             return
         }
-        for (message in messages) {
-            if (message.timestamp <= after) continue
-            val text = message.content
-            val finished = message.completedAt > 0L
-            if (text.isEmpty() && finished) continue
+        // 协议一次只认一条：readReplies 看到第二条 message_start 会判非法事件。
+        val next = messages.firstOrNull { it.timestamp > after && it.content.isNotEmpty() }
+        var cursor = after
+        if (next == null) {
+            // 空回复（只发了工具调用之类）直接跨过去，不然会永远卡在原地。
+            messages.filter { it.timestamp > after && it.completedAt > 0L }
+                .maxOfOrNull { it.timestamp }
+                ?.let { cursor = it }
+        } else {
+            val text = next.content
+            val finished = next.completedAt > 0L
             pending.acceptEmbedded(
                 event(pending, "message_start").apply {
-                    addProperty("timestamp", message.timestamp)
+                    addProperty("timestamp", next.timestamp)
                     addProperty("finished", finished)
                 }
             )
@@ -194,11 +200,8 @@ class OperitMobileVoiceHost(private val hostContext: Context) : OperitLocalVoice
                 offset = end
             }
             pending.acceptEmbedded(event(pending, "message_end"))
+            if (finished) cursor = next.timestamp
         }
-        val cursor = maxOf(
-            after,
-            messages.filter { it.completedAt > 0L }.maxOfOrNull { it.timestamp } ?: after
-        )
         pending.acceptEmbedded(snapshot(pending, cursor, processing))
         pending.acceptEmbedded(event(pending, "complete"))
     }
