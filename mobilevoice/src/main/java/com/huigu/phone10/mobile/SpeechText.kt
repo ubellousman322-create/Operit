@@ -84,11 +84,23 @@ class SpeechText(private val preserveSpacing: Boolean = false,
     private fun finishTag(raw: String) {
         val match = Regex("^<\\s*(/?)\\s*([A-Za-z][A-Za-z0-9_:-]*)").find(raw) ?: return
         val name = match.groupValues[2].lowercase()
-        val isHidden = name in setOf("think", "thinking", "analysis", "reasoning", "tool", "tools", "function", "status") ||
-            name.startsWith("tool_") || name.startsWith("function_")
+        val group = hiddenGroup(name) ?: return
         if (match.groupValues[1] == "/") {
-            val index = hidden.lastIndexOf(name)
+            val index = hidden.lastIndexOf(group)
             if (index >= 0) while (hidden.size > index) hidden.removeAt(hidden.lastIndex)
-        } else if (isHidden && !raw.trimEnd().endsWith("/>")) hidden.add(name)
+        } else if (!raw.trimEnd().endsWith("/>")) hidden.add(group)
+    }
+
+    //
+    // Same-meaning tags count as one family: models mix <think> with </thinking>.
+    // The old code paired names one-to-one, and when they did not match it kept
+    // the rest of the reply inside the hidden tag - the voice went silent after
+    // the first word or two. Grouping also covers the unclosed cases.
+    private fun hiddenGroup(name: String): String? = when {
+        name == "think" || name == "thinking" || name == "analysis" || name == "reasoning" -> "thought"
+        name == "status" -> "status"
+        name == "tool" || name == "tools" || name == "tool_result" || name.startsWith("tool_") -> "tool"
+        name == "function" || name.startsWith("function_") -> "function"
+        else -> null
     }
 }
