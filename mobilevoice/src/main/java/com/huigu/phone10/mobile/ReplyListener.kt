@@ -127,9 +127,19 @@ internal class ReplyListener(
                         if (beforeRead != revision || utterance.consumed) { discard(utterance); continue }
                     }
                     if (!text.startsWith(utterance.text)) {
-                        discard(utterance)
-                        report("Operit 改写了正在播放的正文，本条已停止朗读，请查看文字。")
-                        continue
+                        // The streamed snapshot and the final body occasionally differ by a
+                        // prefix (XML simplification, rerendered markup). The old branch threw
+                        // the whole utterance away - heard as "two words, then silence".
+                        // Realign on the common prefix and keep reading the new tail.
+                        val common = commonPrefixLength(text, utterance.text)
+                        if (common > 0 && text.length > common) {
+                            diagnose("listen_text_rewritten_continue_" + utterance.trace + "_common_" + common)
+                            utterance.text = text.substring(0, common)
+                        } else {
+                            discard(utterance)
+                            report("Operit 改写了正在播放的正文，本条已停止朗读，请查看文字。")
+                            continue
+                        }
                     }
                     var waiting = false
                     while (utterances.values.filter { !it.consumed && it !== utterance }.sumOf { it.text.length } + text.length > MAX_PENDING_CHARS) {
@@ -160,6 +170,13 @@ internal class ReplyListener(
                 utterances.entries.removeAll { it.value.consumed && it.key <= cursor }
             }
         } finally { interrupt(); queue.cancel(); speaker.cancelAndJoin() }
+    }
+
+    private fun commonPrefixLength(a: String, b: String): Int {
+        val limit = minOf(a.length, b.length)
+        var index = 0
+        while (index < limit && a[index] == b[index]) index++
+        return index
     }
 
     fun interrupt() {
