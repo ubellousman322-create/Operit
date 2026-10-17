@@ -102,7 +102,14 @@ internal class ElevenLabsSpeech(private val config: SpeechConfig, private val so
                     if (even > 0) runInterruptible { onPcm(aligned.copyOf(even)) }
                 }
                 if (json["isFinal"]?.asBoolean == true) {
-                    require(inputFinished.get() && total > 0 && carry == null)
+                    if (!inputFinished.get()) {
+                        // Text is still being fed but the server already sent a final frame.
+                        // The old require() threw here and the whole reply stopped after the
+                        // first word or two. Treat it as a segment boundary and keep waiting.
+                        VoiceDiagnostics.record("eleven_final_before_input_done_kb_" + (total / 1024))
+                        continue
+                    }
+                    require(total > 0 && carry == null)
                     return@coroutineScope
                 }
             }
