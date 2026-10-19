@@ -42,6 +42,8 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Redeem
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.ScreenshotMonitor
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Call
@@ -97,6 +99,8 @@ fun AttachmentSelectorPanel(
         onAttachMemory: () -> Unit = {},
         onAttachPackage: (String) -> Unit = {},
         onOpenFavorites: () -> Unit = {},
+        onOpenRedPacket: () -> Unit = {},
+        onOpenTransfer: () -> Unit = {},
         onTakePhoto: (Uri) -> Unit,
         userQuery: String = "",
         onDismiss: () -> Unit
@@ -198,6 +202,22 @@ fun AttachmentSelectorPanel(
                                         onClick = {
                                             launchVoiceCall(context)
                                             onDismiss()
+                                        }
+                                ),
+                                AttachmentPanelItem(
+                                        icon = Icons.Default.Redeem,
+                                        label = "红包",
+                                        onClick = {
+                                            onDismiss()
+                                            onOpenRedPacket()
+                                        }
+                                ),
+                                AttachmentPanelItem(
+                                        icon = Icons.Default.SwapHoriz,
+                                        label = "转账",
+                                        onClick = {
+                                            onDismiss()
+                                            onOpenTransfer()
                                         }
                                 ),
                                 AttachmentPanelItem(
@@ -323,6 +343,8 @@ fun AttachmentSelectorPopupPanel(
         onAttachMemory: () -> Unit = {},
         onAttachPackage: (String) -> Unit = {},
         onOpenFavorites: () -> Unit = {},
+        onOpenRedPacket: () -> Unit = {},
+        onOpenTransfer: () -> Unit = {},
         onTakePhoto: (Uri) -> Unit,
         onDismiss: () -> Unit
 ) {
@@ -390,6 +412,22 @@ fun AttachmentSelectorPopupPanel(
                             onClick = {
                                 launchVoiceCall(context)
                                 onDismiss()
+                            }
+                    ),
+                    AttachmentPanelItem(
+                            icon = Icons.Default.Redeem,
+                            label = "红包",
+                            onClick = {
+                                onDismiss()
+                                onOpenRedPacket()
+                            }
+                    ),
+                    AttachmentPanelItem(
+                            icon = Icons.Default.SwapHoriz,
+                            label = "转账",
+                            onClick = {
+                                onDismiss()
+                                onOpenTransfer()
                             }
                     ),
                     AttachmentPanelItem(
