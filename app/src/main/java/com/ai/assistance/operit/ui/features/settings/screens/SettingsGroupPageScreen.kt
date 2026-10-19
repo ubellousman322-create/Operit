@@ -27,12 +27,14 @@ import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.ManageHistory
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -48,6 +50,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.data.preferences.PatPreferences
 import com.ai.assistance.operit.core.tools.defaultTool.standard.CookiePrivacyManager
 import com.ai.assistance.operit.ui.main.components.GlassActionRow
 import com.ai.assistance.operit.ui.main.components.rememberNavigationDrawerAppearance
@@ -71,6 +74,8 @@ fun SettingsGroupPageScreen(
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
         var showClearCookieConfirm by remember { mutableStateOf(false) }
+        var showPatDialog by remember { mutableStateOf(false) }
+        var patSuffixDraft by remember { mutableStateOf(PatPreferences.getUserPatSuffix(context)) }
         val entries =
                 when (groupId) {
                         "personalization" ->
@@ -99,6 +104,11 @@ fun SettingsGroupPageScreen(
                                                 "layout",
                                                 stringResource(R.string.layout_adjustment),
                                                 Icons.Default.AspectRatio
+                                        ),
+                                        SettingsGroupEntry(
+                                                "pat",
+                                                "拍一拍",
+                                                Icons.Default.TouchApp
                                         )
                                 )
                         "data_permissions" ->
@@ -192,6 +202,9 @@ fun SettingsGroupPageScreen(
                                         onClick = {
                                                 if (entry.key == "clear_cookies") {
                                                         showClearCookieConfirm = true
+                                                } else if (entry.key == "pat") {
+                                                        patSuffixDraft = PatPreferences.getUserPatSuffix(context)
+                                                        showPatDialog = true
                                                 } else {
                                                         onOpen(entry.key)
                                                 }
@@ -200,6 +213,41 @@ fun SettingsGroupPageScreen(
                                 Spacer(modifier = Modifier.height(8.dp))
                         }
                 }
+        }
+        if (showPatDialog) {
+                AlertDialog(
+                        onDismissRequest = { showPatDialog = false },
+                        title = { Text(text = "拍一拍") },
+                        text = {
+                                Column {
+                                        Text(
+                                                text =
+                                                        "双击我的头像时，聊天页中间会落一行字。这里填的会接在「我拍了拍 ave」后面，留空就什么都不接。",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        OutlinedTextField(
+                                                value = patSuffixDraft,
+                                                onValueChange = { patSuffixDraft = it.take(24) },
+                                                singleLine = true,
+                                                modifier = Modifier.fillMaxWidth(),
+                                                placeholder = { Text(text = "比如：的脑袋") }
+                                        )
+                                }
+                        },
+                        confirmButton = {
+                                TextButton(
+                                        onClick = {
+                                                PatPreferences.setUserPatSuffix(context, patSuffixDraft)
+                                                showPatDialog = false
+                                        }
+                                ) { Text(text = "保存") }
+                        },
+                        dismissButton = {
+                                TextButton(onClick = { showPatDialog = false }) { Text(text = "取消") }
+                        }
+                )
         }
         if (showClearCookieConfirm) {
                 AlertDialog(
