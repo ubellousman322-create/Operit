@@ -821,6 +821,8 @@ private fun MessageItem(
                         payment = chatPayment,
                         isUserSide = isUserSide,
                         textColor = if (isUserSide) userTextColor else aiTextColor,
+                        textBackgroundColor =
+                            if (isUserSide) userMessageColor else aiMessageColor,
                         received = received,
                         onOpen = { showPaymentDialog = true },
                     )
