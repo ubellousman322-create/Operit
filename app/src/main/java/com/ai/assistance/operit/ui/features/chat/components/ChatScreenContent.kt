@@ -35,6 +35,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import com.ai.assistance.operit.data.model.ChatPatMarkup
+import com.ai.assistance.operit.data.preferences.PatPreferences
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -289,6 +291,13 @@ fun ChatScreenContent(
                         onCreateBranch = { timestamp -> actualViewModel.createBranch(timestamp) },
                         onInsertSummary = { message -> actualViewModel.insertSummary(message) },
                         onMentionRoleFromAvatar = { roleName -> actualViewModel.insertRoleMention(roleName) },
+                        onPatAvatar = {
+                            actualViewModel.sendTextMessage(
+                                    ChatPatMarkup.buildFromUser(
+                                            PatPreferences.getUserPatSuffix(context)
+                                    )
+                            )
+                        },
                         autoScrollToBottom = autoScrollToBottom,
                         onAutoScrollToBottomChange = onAutoScrollToBottomChange,
                         hasOlderDisplayHistory = hasOlderDisplayHistory,
@@ -410,6 +419,13 @@ fun ChatScreenContent(
                         onInsertSummary = { message -> actualViewModel.insertSummary(message) },
                         onAutoReadMessage = { content -> actualViewModel.enableAutoReadAndSpeak(content) },
                         onMentionRoleFromAvatar = { roleName -> actualViewModel.insertRoleMention(roleName) },
+                        onPatAvatar = {
+                            actualViewModel.sendTextMessage(
+                                    ChatPatMarkup.buildFromUser(
+                                            PatPreferences.getUserPatSuffix(context)
+                                    )
+                            )
+                        },
                         autoScrollToBottom = autoScrollToBottom,
                         onAutoScrollToBottomChange = onAutoScrollToBottomChange,
                         hasOlderDisplayHistory = hasOlderDisplayHistory,
