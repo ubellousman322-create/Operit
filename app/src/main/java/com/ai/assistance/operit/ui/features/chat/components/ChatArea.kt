@@ -89,10 +89,13 @@ import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.ChatMessageDisplayMode
 import com.ai.assistance.operit.data.model.ChatMessageLocatorPreview
 import com.ai.assistance.operit.data.model.ChatPatMarkup
+import com.ai.assistance.operit.data.model.ChatPayment
 import com.ai.assistance.operit.data.model.ChatPaymentMarkup
 import com.ai.assistance.operit.ui.features.chat.components.pat.ChatPatHint
 import com.ai.assistance.operit.ui.features.chat.components.payment.ChatPaymentBubble
-import com.ai.assistance.operit.ui.features.chat.components.payment.ChatPaymentDetailDialog
+import com.ai.assistance.operit.ui.features.chat.components.payment.RedPacketOpenDialog
+import com.ai.assistance.operit.ui.features.chat.components.payment.TransferReceiveDialog
+import com.ai.assistance.operit.data.preferences.PaymentReceiptPreferences
 
 import androidx.compose.ui.window.PopupProperties
 
@@ -765,6 +768,16 @@ private fun MessageItem(
             if (patOnly) {
                 ChatPatHint(text = patText ?: "")
             } else if (chatPayment != null) {
+                // 对面发过来的才需要你亲手收下；自己发出去的只是摆在那儿。
+                val receivable = !chatPayment.isFromUser
+                var received by remember(message.timestamp) {
+                    mutableStateOf(
+                        receivable &&
+                            PaymentReceiptPreferences.isReceived(context, message.timestamp)
+                    )
+                }
+                val paymentSender =
+                    chatPayment.senderName.ifBlank { message.roleName.ifBlank { "对方" } }
                 Box(
                     modifier =
                         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
@@ -776,14 +789,39 @@ private fun MessageItem(
                         payment = chatPayment,
                         isUserSide = message.sender == "user",
                         textColor = if (message.sender == "user") userTextColor else aiTextColor,
+                        received = received,
                         onOpen = { showPaymentDialog = true },
                     )
                 }
                 if (showPaymentDialog) {
-                    ChatPaymentDetailDialog(
-                        payment = chatPayment,
-                        onDismiss = { showPaymentDialog = false },
-                    )
+                    when (chatPayment) {
+                        is ChatPayment.RedPacket ->
+                            RedPacketOpenDialog(
+                                payment = chatPayment,
+                                senderName = paymentSender,
+                                onDismiss = { showPaymentDialog = false },
+                                onOpened = {
+                                    received = true
+                                    PaymentReceiptPreferences.markReceived(
+                                        context,
+                                        message.timestamp
+                                    )
+                                },
+                            )
+                        is ChatPayment.Transfer ->
+                            TransferReceiveDialog(
+                                payment = chatPayment,
+                                senderName = paymentSender,
+                                onDismiss = { showPaymentDialog = false },
+                                onReceive = {
+                                    received = true
+                                    PaymentReceiptPreferences.markReceived(
+                                        context,
+                                        message.timestamp
+                                    )
+                                },
+                            )
+                    }
                 }
             } else when (chatStyle) {
                 ChatStyle.CURSOR -> {
