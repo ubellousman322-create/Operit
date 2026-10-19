@@ -79,7 +79,12 @@ object ChatPaymentMarkup {
     fun parse(content: String, messageSender: String = ""): ChatPayment? {
         if (content.isBlank() || !content.contains('<')) return null
 
-        val match = paymentTagRegex.find(content) ?: return null
+        // 思考和工具块里经常出现没带属性的 <transfer> 字样，先跳过那些，
+        // 只认真正写了金额的那一个。
+        val match =
+                paymentTagRegex.findAll(content).firstOrNull { candidate ->
+                    normalizeAmount(readAttrs(candidate.groupValues[2])["amount"]) != null
+                } ?: return null
         val tag = match.groupValues[1]
 
         val attrs = readAttrs(match.groupValues[2])
@@ -205,6 +210,9 @@ object ChatPaymentMarkup {
                 .replace(ChatMarkupRegex.toolSelfClosingTag, "")
                 .replace(ChatMarkupRegex.toolResultTag, "")
                 .replace(ChatMarkupRegex.toolResultSelfClosingTag, "")
+                .replace(ChatMarkupRegex.thinkTag, "")
+                .replace(ChatMarkupRegex.thinkSelfClosingTag, "")
+                .replace(ChatMarkupRegex.emotionTag, "")
                 .trim()
     }
 
