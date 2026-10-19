@@ -88,7 +88,9 @@ import com.ai.assistance.operit.data.model.AiReference
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.ChatMessageDisplayMode
 import com.ai.assistance.operit.data.model.ChatMessageLocatorPreview
+import com.ai.assistance.operit.data.model.ChatPatMarkup
 import com.ai.assistance.operit.data.model.ChatPaymentMarkup
+import com.ai.assistance.operit.ui.features.chat.components.pat.ChatPatHint
 import com.ai.assistance.operit.ui.features.chat.components.payment.ChatPaymentBubble
 import com.ai.assistance.operit.ui.features.chat.components.payment.ChatPaymentDetailDialog
 
@@ -232,6 +234,7 @@ fun ChatArea(
     onCreateBranch: ((Long) -> Unit)? = null, // 添加创建分支回调参数
     onInsertSummary: ((ChatMessage) -> Unit)? = null, // 添加插入总结回调参数
     onMentionRoleFromAvatar: ((String) -> Unit)? = null, // 长按角色头像提及
+    onPatAvatar: (() -> Unit)? = null, // 双击 AI 头像拍一拍
     autoScrollToBottom: Boolean = true,
     onAutoScrollToBottomChange: ((Boolean) -> Unit)? = null,
     hasOlderDisplayHistory: Boolean = false,
@@ -470,6 +473,7 @@ fun ChatArea(
                             onCreateBranch = onCreateBranch,
                             onInsertSummary = onInsertSummary,
                             onMentionRoleFromAvatar = onMentionRoleFromAvatar,
+                            onPatAvatar = onPatAvatar,
                             chatStyle = chatStyle,
                             showMessageTokenStats = showMessageTokenStats,
                             showMessageTimingStats = showMessageTimingStats,
@@ -641,6 +645,7 @@ private fun MessageItem(
     onCreateBranch: ((Long) -> Unit)? = null, // 添加创建分支回调
     onInsertSummary: ((ChatMessage) -> Unit)? = null, // 添加插入总结回调
     onMentionRoleFromAvatar: ((String) -> Unit)? = null, // 长按角色头像提及
+    onPatAvatar: (() -> Unit)? = null, // 双击 AI 头像拍一拍
     chatStyle: ChatStyle, // 新增参数
     showMessageTokenStats: Boolean = false,
     showMessageTimingStats: Boolean = false,
@@ -739,7 +744,27 @@ private fun MessageItem(
                 }
             var showPaymentDialog by remember(message.content) { mutableStateOf(false) }
 
-            if (chatPayment != null) {
+            // 拍一拍：整条只有标记就只在中间留一行字；夹在正文里就抠出来摊在气泡上方。
+            val chatPat =
+                remember(message.content, message.sender) {
+                    ChatPatMarkup.parse(message.content, message.sender)
+                }
+            val patText = chatPat?.let { ChatPatMarkup.displayText(it, message.roleName) }
+            val patOnly = chatPat != null && chatPat.remainingText.isEmpty()
+            val bubbleMessage =
+                if (patText != null && !patOnly) {
+                    message.copy(content = chatPat?.remainingText.orEmpty())
+                } else {
+                    message
+                }
+
+            if (patText != null && !patOnly) {
+                ChatPatHint(text = patText)
+            }
+
+            if (patOnly) {
+                ChatPatHint(text = patText ?: "")
+            } else if (chatPayment != null) {
                 Box(
                     modifier =
                         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
@@ -763,7 +788,7 @@ private fun MessageItem(
             } else when (chatStyle) {
                 ChatStyle.CURSOR -> {
                     CursorStyleChatMessage(
-                        message = message,
+                        message = bubbleMessage,
                         userMessageColor = userMessageColor,
                         userMessageLiquidGlassEnabled = cursorUserBubbleLiquidGlass,
                         userMessageWaterGlassEnabled = cursorUserBubbleWaterGlass,
@@ -787,7 +812,7 @@ private fun MessageItem(
 
                 ChatStyle.BUBBLE -> {
                     BubbleStyleChatMessage(
-                        message = message,
+                        message = bubbleMessage,
                         userMessageColor = userMessageColor,
                         aiMessageColor = aiMessageColor,
                         userTextColor = userTextColor,
@@ -811,6 +836,7 @@ private fun MessageItem(
                         index = index,
                         enableDialogs = enableDialogs,
                         onRoleAvatarLongPress = onMentionRoleFromAvatar,
+                        onAvatarDoubleTap = onPatAvatar,
                         onEditSummary = { summaryMessage ->
                             onSelectMessageToEdit?.invoke(index, summaryMessage, "summary")
                         }
