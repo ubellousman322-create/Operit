@@ -64,6 +64,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.ai.assistance.operit.data.model.AttachmentInfo
 import com.ai.assistance.operit.data.model.InputProcessingState
 import com.ai.assistance.operit.data.model.ChatMessage
+import com.ai.assistance.operit.data.model.ChatPaymentMarkup
+import com.ai.assistance.operit.ui.features.chat.components.payment.RedPacketSendDialog
+import com.ai.assistance.operit.ui.features.chat.components.payment.TransferSendDialog
 import com.ai.assistance.operit.core.tools.ToolProgressBus
 import com.ai.assistance.operit.ui.common.animations.SimpleAnimatedVisibility
 import com.ai.assistance.operit.ui.features.chat.components.AttachmentChip
@@ -128,6 +131,8 @@ fun ClassicChatInputSection(
 ) {
     val showTokenLimitDialog = remember { mutableStateOf(false) }
     val showFullscreenInput = remember { mutableStateOf(false) }
+    var showRedPacketDialog by remember { mutableStateOf(false) }
+    var showTransferDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val isProcessing =
         isLoading ||
@@ -777,9 +782,45 @@ fun ClassicChatInputSection(
                 onAttachMemory = onAttachMemory,
                 onAttachPackage = onAttachPackage,
                 onOpenFavorites = onOpenFavorites,
+                onOpenRedPacket = { showRedPacketDialog = true },
+                onOpenTransfer = { showTransferDialog = true },
                 onTakePhoto = onTakePhoto,
                 userQuery = userMessage.text,
                 onDismiss = { setShowAttachmentPanel(false) }
+            )
+
+            RedPacketSendDialog(
+                visible = showRedPacketDialog,
+                onDismiss = { showRedPacketDialog = false },
+                onSend = { amount, greeting, attachMessage, extraText ->
+                    val content =
+                        ChatPaymentMarkup.buildRedPacket(
+                            amount = amount,
+                            greeting = greeting,
+                            extraText = if (attachMessage) extraText else "",
+                            from = "user",
+                        )
+                    if (content.isNotBlank()) {
+                        actualViewModel.sendTextMessage(content)
+                    }
+                },
+            )
+
+            TransferSendDialog(
+                visible = showTransferDialog,
+                onDismiss = { showTransferDialog = false },
+                onSend = { amount, note, extraText ->
+                    val content =
+                        ChatPaymentMarkup.buildTransfer(
+                            amount = amount,
+                            note = note,
+                            extraText = extraText,
+                            from = "user",
+                        )
+                    if (content.isNotBlank()) {
+                        actualViewModel.sendTextMessage(content)
+                    }
+                },
             )
 
             if (showFullscreenInput.value) {
