@@ -88,6 +88,7 @@ import com.ai.assistance.operit.data.model.AiReference
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.ChatMessageDisplayMode
 import com.ai.assistance.operit.data.model.ChatMessageLocatorPreview
+import com.ai.assistance.operit.data.model.ChatPatEvent
 import com.ai.assistance.operit.data.model.ChatPatMarkup
 import com.ai.assistance.operit.data.model.ChatPayment
 import com.ai.assistance.operit.data.model.ChatPaymentMarkup
@@ -297,7 +298,12 @@ fun ChatArea(
         }
     }
 
-    val lastMessageContentLength = lastMessage?.content?.length
+    val assistantDisplayName =
+    remember(chatHistory) {
+        chatHistory.lastOrNull { it.sender == "ai" && it.roleName.isNotBlank() }?.roleName.orEmpty()
+    }
+
+val lastMessageContentLength = lastMessage?.content?.length
     LaunchedEffect(
         autoScrollToBottom,
         messagesCount,
@@ -477,6 +483,7 @@ fun ChatArea(
                             onInsertSummary = onInsertSummary,
                             onMentionRoleFromAvatar = onMentionRoleFromAvatar,
                             onPatAvatar = onPatAvatar,
+                            assistantName = assistantDisplayName,
                             chatStyle = chatStyle,
                             showMessageTokenStats = showMessageTokenStats,
                             showMessageTimingStats = showMessageTimingStats,
@@ -649,6 +656,7 @@ private fun MessageItem(
     onInsertSummary: ((ChatMessage) -> Unit)? = null, // 添加插入总结回调
     onMentionRoleFromAvatar: ((String) -> Unit)? = null, // 长按角色头像提及
     onPatAvatar: (() -> Unit)? = null, // 双击 AI 头像拍一拍
+    assistantName: String = "", // 对面那个角色的名字，拍一拍要用
     chatStyle: ChatStyle, // 新增参数
     showMessageTokenStats: Boolean = false,
     showMessageTimingStats: Boolean = false,
@@ -752,7 +760,9 @@ private fun MessageItem(
                 remember(message.content, message.sender) {
                     ChatPatMarkup.parse(message.content, message.sender)
                 }
-            val patText = chatPat?.let { ChatPatMarkup.displayText(it, message.roleName) }
+            val patDisplayName =
+                if (chatPat is ChatPatEvent.FromUser) assistantName else message.roleName
+            val patText = chatPat?.let { ChatPatMarkup.displayText(it, patDisplayName) }
             val patOnly = chatPat != null && chatPat.remainingText.isEmpty()
             val bubbleMessage =
                 if (patText != null && !patOnly) {
