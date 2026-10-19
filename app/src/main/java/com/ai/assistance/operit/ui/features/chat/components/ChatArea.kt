@@ -9,6 +9,8 @@ import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
+import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -54,6 +56,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -70,6 +73,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -104,10 +108,13 @@ import androidx.compose.material.icons.filled.AutoFixHigh
 
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Assistant
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Reply
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.Summarize
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.alpha
 import com.ai.assistance.operit.api.chat.llmprovider.MediaLinkParser
 import com.ai.assistance.operit.plugins.chatmessage.ChatMessageMenuDialogRequest
@@ -121,6 +128,8 @@ import com.ai.assistance.operit.ui.features.chat.components.style.cursor.CursorS
 import com.ai.assistance.operit.ui.features.chat.components.style.bubble.BubbleImageStyleConfig
 import com.ai.assistance.operit.ui.features.chat.components.style.bubble.BubbleStyleChatMessage
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
+import coil.compose.rememberAsyncImagePainter
+import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.ChatMarkupRegex
 import com.ai.assistance.operit.util.LatexMathMlConverter
@@ -788,20 +797,40 @@ private fun MessageItem(
                 }
                 val paymentSender =
                     chatPayment.senderName.ifBlank { message.roleName.ifBlank { "对方" } }
-                Box(
+                val isUserSide = message.sender == "user"
+                val themeSnapshot = LocalThemePreferenceSnapshot.current
+                val displayPrefs =
+                    remember { DisplayPreferencesManager.getInstance(context) }
+                val globalUserAvatarUri by
+                    displayPrefs.globalUserAvatarUri.collectAsState(initial = null)
+                Row(
                     modifier =
-                        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                    contentAlignment =
-                        if (message.sender == "user") Alignment.CenterEnd
-                        else Alignment.CenterStart,
+                        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                    horizontalArrangement =
+                        if (isUserSide) Arrangement.End else Arrangement.Start,
+                    verticalAlignment = Alignment.Top,
                 ) {
+                    if (!isUserSide) {
+                        ChatPaymentAvatar(
+                            uri = themeSnapshot.customAiAvatarUri,
+                            fallbackIsUser = false,
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
                     ChatPaymentBubble(
                         payment = chatPayment,
-                        isUserSide = message.sender == "user",
-                        textColor = if (message.sender == "user") userTextColor else aiTextColor,
+                        isUserSide = isUserSide,
+                        textColor = if (isUserSide) userTextColor else aiTextColor,
                         received = received,
                         onOpen = { showPaymentDialog = true },
                     )
+                    if (isUserSide) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        ChatPaymentAvatar(
+                            uri = globalUserAvatarUri ?: themeSnapshot.customUserAvatarUri,
+                            fallbackIsUser = true,
+                        )
+                    }
                 }
                 if (showPaymentDialog) {
                     when (chatPayment) {
@@ -1727,6 +1756,33 @@ private fun LoadingDotsIndicator(textColor: Color) {
                         color = textColor.copy(alpha = 0.6f),
                         shape = CircleShape,
                     ),
+            )
+        }
+    }
+}
+
+
+/** 红包/转账气泡旁边的头像；拿不到图就用一个底色圆。 */
+@Composable
+private fun ChatPaymentAvatar(uri: String?, fallbackIsUser: Boolean) {
+    val modifier = Modifier.size(34.dp).clip(CircleShape)
+    if (!uri.isNullOrBlank()) {
+        Image(
+            painter = rememberAsyncImagePainter(model = Uri.parse(uri)),
+            contentDescription = null,
+            modifier = modifier,
+            contentScale = ContentScale.Crop,
+        )
+    } else {
+        Box(
+            modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = if (fallbackIsUser) Icons.Default.Person else Icons.Default.Assistant,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
             )
         }
     }
