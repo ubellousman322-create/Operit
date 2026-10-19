@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.data.model
 
+import com.ai.assistance.operit.util.ChatMarkupRegex
 import java.util.Locale
 
 /**
@@ -53,8 +54,8 @@ object ChatPaymentMarkup {
 
     const val DEFAULT_GREETING = "恭喜发财，大吉大利"
 
-    private val tagRegex =
-            Regex("<([A-Za-z][A-Za-z0-9_]*)\\b([^>]*)/?>", RegexOption.IGNORE_CASE)
+    private val paymentTagRegex =
+            Regex("<(hongbao|transfer)\\b([^>]*)/?>", RegexOption.IGNORE_CASE)
     private val attrRegex =
             Regex("([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*\"([^\"]*)\"", RegexOption.IGNORE_CASE)
     private val attrSingleQuoteRegex =
@@ -65,7 +66,7 @@ object ChatPaymentMarkup {
         if (content.isBlank()) return false
         if (!content.contains('<')) return false
         val head = content.trimStart()
-        val match = tagRegex.find(head) ?: return false
+        val match = paymentTagRegex.find(head) ?: return false
         if (match.range.first != 0) return false
         return isPaymentTag(match.groupValues[1])
     }
@@ -78,9 +79,8 @@ object ChatPaymentMarkup {
     fun parse(content: String, messageSender: String = ""): ChatPayment? {
         if (content.isBlank() || !content.contains('<')) return null
 
-        val match = tagRegex.find(content) ?: return null
+        val match = paymentTagRegex.find(content) ?: return null
         val tag = match.groupValues[1]
-        if (!isPaymentTag(tag)) return null
 
         val attrs = readAttrs(match.groupValues[2])
         val amount = normalizeAmount(attrs["amount"]) ?: return null
@@ -89,7 +89,7 @@ object ChatPaymentMarkup {
                         ?: messageSender.takeIf { it.isNotBlank() }
                                 ?: ChatPayment.FROM_USER
         val senderName = attrs["sender"].orEmpty().trim()
-        val trailing = content.replaceRange(match.range, "").trim()
+        val trailing = cleanTrailing(content.replaceRange(match.range, ""))
 
         return if (tag.equals(TAG_RED_PACKET, ignoreCase = true)) {
             ChatPayment.RedPacket(
@@ -192,6 +192,20 @@ object ChatPaymentMarkup {
     private fun appendExtra(tag: String, extraText: String): String {
         val extra = extraText.trim()
         return if (extra.isEmpty()) tag else tag + "\n" + extra
+    }
+
+    /** 卡片旁边那段正文里不能带内部标记（附件、状态、工具标签）。 */
+    private fun cleanTrailing(raw: String): String {
+        return raw
+                .replace(ChatMarkupRegex.attachmentTag, "")
+                .replace(ChatMarkupRegex.attachmentSelfClosingTag, "")
+                .replace(ChatMarkupRegex.statusTag, "")
+                .replace(ChatMarkupRegex.statusSelfClosingTag, "")
+                .replace(ChatMarkupRegex.toolTag, "")
+                .replace(ChatMarkupRegex.toolSelfClosingTag, "")
+                .replace(ChatMarkupRegex.toolResultTag, "")
+                .replace(ChatMarkupRegex.toolResultSelfClosingTag, "")
+                .trim()
     }
 
     private fun isPaymentTag(raw: String): Boolean =
