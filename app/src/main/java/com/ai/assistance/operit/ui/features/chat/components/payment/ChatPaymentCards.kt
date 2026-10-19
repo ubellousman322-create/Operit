@@ -77,6 +77,7 @@ fun ChatPaymentBubble(
         payment: ChatPayment,
         isUserSide: Boolean,
         textColor: Color,
+        textBackgroundColor: Color,
         received: Boolean,
         modifier: Modifier = Modifier,
         onOpen: () -> Unit = {},
@@ -91,12 +92,18 @@ fun ChatPaymentBubble(
     ) {
         // 带的话放在卡片上方：先说话，再把红包/转账递过去。
         if (payment.trailingText.isNotBlank()) {
-            Text(
-                    text = payment.trailingText,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = textColor,
-                    lineHeight = 22.sp,
-            )
+            Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = textBackgroundColor,
+            ) {
+                Text(
+                        text = payment.trailingText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = textColor,
+                        lineHeight = 22.sp,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                )
+            }
             Spacer(modifier = Modifier.height(6.dp))
         }
         when (payment) {
@@ -124,7 +131,7 @@ private fun RedPacketCard(
             shape = shape,
             color = Color.Transparent,
             modifier =
-                    Modifier.width(196.dp)
+                    Modifier.width(232.dp)
                             .clip(shape)
                             .clickable(enabled = !received, onClick = onOpen),
     ) {
@@ -132,12 +139,12 @@ private fun RedPacketCard(
                 modifier =
                         Modifier.fillMaxWidth()
                                 .background(background)
-                                .padding(horizontal = 12.dp, vertical = 12.dp)
+                                .padding(horizontal = 14.dp, vertical = 17.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                         modifier =
-                                Modifier.size(36.dp)
+                                Modifier.size(42.dp)
                                         .clip(CircleShape)
                                         .background(
                                                 if (received) Color(0x1A000000) else Color(0x33FFFFFF)
@@ -148,7 +155,7 @@ private fun RedPacketCard(
                             imageVector = Icons.Default.Redeem,
                             contentDescription = null,
                             tint = iconTint,
-                            modifier = Modifier.size(21.dp),
+                            modifier = Modifier.size(24.dp),
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
@@ -156,7 +163,7 @@ private fun RedPacketCard(
                     Text(
                             text = payment.greeting,
                             color = titleColor,
-                            fontSize = 15.sp,
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Medium,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
@@ -193,7 +200,7 @@ private fun TransferCard(
             shape = shape,
             color = Color.Transparent,
             modifier =
-                    Modifier.width(196.dp)
+                    Modifier.width(232.dp)
                             .clip(shape)
                             .clickable(enabled = !received, onClick = onOpen),
     ) {
@@ -201,18 +208,18 @@ private fun TransferCard(
                 modifier =
                         Modifier.fillMaxWidth()
                                 .background(background)
-                                .padding(horizontal = 12.dp, vertical = 12.dp)
+                                .padding(horizontal = 14.dp, vertical = 17.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                        modifier = Modifier.size(36.dp).clip(CircleShape).background(iconBackground),
+                        modifier = Modifier.size(42.dp).clip(CircleShape).background(iconBackground),
                         contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                             imageVector = Icons.Default.SwapHoriz,
                             contentDescription = null,
                             tint = iconTint,
-                            modifier = Modifier.size(22.dp),
+                            modifier = Modifier.size(26.dp),
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
@@ -220,7 +227,7 @@ private fun TransferCard(
                     Text(
                             text = "¥${payment.amount}",
                             color = titleColor,
-                            fontSize = 21.sp,
+                            fontSize = 24.sp,
                             fontWeight = FontWeight.SemiBold,
                     )
                     Spacer(modifier = Modifier.height(3.dp))
