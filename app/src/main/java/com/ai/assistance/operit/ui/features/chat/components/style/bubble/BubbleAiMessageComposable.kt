@@ -94,6 +94,7 @@ fun BubbleAiMessageComposable(
     heightMemory: ChatMessageHeightMemory? = null,
     enableDialogs: Boolean = true,
     onAvatarLongPressMention: ((String) -> Unit)? = null,
+    onAvatarDoubleTap: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val preferencesManager = remember { UserPreferencesManager.getInstance(context) }
@@ -272,6 +273,7 @@ fun BubbleAiMessageComposable(
             .clip(avatarShape)
             .combinedClickable(
                 onClick = {},
+                onDoubleClick = { onAvatarDoubleTap?.invoke() },
                 onLongClick = {
                     val roleName = message.roleName.trim()
                     if (roleName.isNotEmpty()) {
@@ -481,6 +483,7 @@ fun BubbleAiMessageComposable(
                 .clip(avatarShape)
                 .combinedClickable(
                     onClick = {},
+                    onDoubleClick = { onAvatarDoubleTap?.invoke() },
                     onLongClick = {
                         val roleName = message.roleName.trim()
                         if (roleName.isNotEmpty()) {
