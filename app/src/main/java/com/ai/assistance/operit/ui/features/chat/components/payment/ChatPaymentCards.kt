@@ -53,6 +53,11 @@ private val PaymentOrangeTop = Color(0xFFF7AC3E)
 private val PaymentOrangeBottom = Color(0xFFF29B25)
 private val PaymentOrangeAccent = Color(0xFFFF8A2B)
 
+/** 红包气泡用红，跟转账的橙拉开距离。 */
+private val PacketBubbleTop = Color(0xFFE8604C)
+private val PacketBubbleBottom = Color(0xFFD8453A)
+private val PacketBubbleGold = Color(0xFFFCE7C0)
+
 /** 拆过的卡片整体压成灰的，跟微信一样，一眼能看出这个已经拿过了。 */
 private val PaymentConsumedCard = Color(0xFFE9E6E1)
 private val PaymentConsumedText = Color(0xFF8A8783)
@@ -84,18 +89,19 @@ fun ChatPaymentBubble(
             modifier = modifier.widthIn(max = 268.dp),
             horizontalAlignment = if (isUserSide) Alignment.End else Alignment.Start,
     ) {
-        when (payment) {
-            is ChatPayment.RedPacket -> RedPacketCard(payment, corner, received, onOpen)
-            is ChatPayment.Transfer -> TransferCard(payment, corner, received, onOpen)
-        }
+        // 带的话放在卡片上方：先说话，再把红包/转账递过去。
         if (payment.trailingText.isNotBlank()) {
-            Spacer(modifier = Modifier.height(6.dp))
             Text(
                     text = payment.trailingText,
                     style = MaterialTheme.typography.bodyMedium,
                     color = textColor,
                     lineHeight = 22.sp,
             )
+            Spacer(modifier = Modifier.height(6.dp))
+        }
+        when (payment) {
+            is ChatPayment.RedPacket -> RedPacketCard(payment, corner, received, onOpen)
+            is ChatPayment.Transfer -> TransferCard(payment, corner, received, onOpen)
         }
     }
 }
@@ -109,16 +115,16 @@ private fun RedPacketCard(
 ) {
     val background =
             if (received) Brush.verticalGradient(listOf(PaymentConsumedCard, PaymentConsumedCard))
-            else Brush.verticalGradient(listOf(PaymentOrangeTop, PaymentOrangeBottom))
-    val titleColor = if (received) PaymentConsumedText else Color.White
-    val subColor = if (received) PaymentConsumedText.copy(alpha = 0.8f) else Color(0xCCFFFFFF)
-    val iconTint = if (received) PaymentConsumedText else Color.White
+            else Brush.verticalGradient(listOf(PacketBubbleTop, PacketBubbleBottom))
+    val titleColor = if (received) PaymentConsumedText else PacketBubbleGold
+    val subColor = if (received) PaymentConsumedText.copy(alpha = 0.8f) else PacketBubbleGold.copy(alpha = 0.8f)
+    val iconTint = if (received) PaymentConsumedText else PacketBubbleGold
 
     Surface(
             shape = shape,
             color = Color.Transparent,
             modifier =
-                    Modifier.width(238.dp)
+                    Modifier.width(210.dp)
                             .clip(shape)
                             .clickable(enabled = !received, onClick = onOpen),
     ) {
@@ -193,7 +199,7 @@ private fun TransferCard(
             shape = shape,
             color = Color.Transparent,
             modifier =
-                    Modifier.width(238.dp)
+                    Modifier.width(210.dp)
                             .clip(shape)
                             .clickable(enabled = !received, onClick = onOpen),
     ) {
