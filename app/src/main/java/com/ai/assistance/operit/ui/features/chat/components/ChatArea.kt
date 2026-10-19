@@ -88,6 +88,9 @@ import com.ai.assistance.operit.data.model.AiReference
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.ChatMessageDisplayMode
 import com.ai.assistance.operit.data.model.ChatMessageLocatorPreview
+import com.ai.assistance.operit.data.model.ChatPaymentMarkup
+import com.ai.assistance.operit.ui.features.chat.components.payment.ChatPaymentBubble
+import com.ai.assistance.operit.ui.features.chat.components.payment.ChatPaymentDetailDialog
 
 import androidx.compose.ui.window.PopupProperties
 
@@ -729,7 +732,35 @@ private fun MessageItem(
             ),
     ) {
         Column {
-            when (chatStyle) {
+            // 红包/转账是整条消息的主角，直接画成卡片，不再套一层普通气泡。
+            val chatPayment =
+                remember(message.content, message.sender) {
+                    ChatPaymentMarkup.parse(message.content, message.sender)
+                }
+            var showPaymentDialog by remember(message.content) { mutableStateOf(false) }
+
+            if (chatPayment != null) {
+                Box(
+                    modifier =
+                        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                    contentAlignment =
+                        if (message.sender == "user") Alignment.CenterEnd
+                        else Alignment.CenterStart,
+                ) {
+                    ChatPaymentBubble(
+                        payment = chatPayment,
+                        isUserSide = message.sender == "user",
+                        textColor = if (message.sender == "user") userTextColor else aiTextColor,
+                        onOpen = { showPaymentDialog = true },
+                    )
+                }
+                if (showPaymentDialog) {
+                    ChatPaymentDetailDialog(
+                        payment = chatPayment,
+                        onDismiss = { showPaymentDialog = false },
+                    )
+                }
+            } else when (chatStyle) {
                 ChatStyle.CURSOR -> {
                     CursorStyleChatMessage(
                         message = message,
