@@ -124,7 +124,7 @@ private fun RedPacketCard(
             shape = shape,
             color = Color.Transparent,
             modifier =
-                    Modifier.width(210.dp)
+                    Modifier.width(196.dp)
                             .clip(shape)
                             .clickable(enabled = !received, onClick = onOpen),
     ) {
@@ -132,12 +132,12 @@ private fun RedPacketCard(
                 modifier =
                         Modifier.fillMaxWidth()
                                 .background(background)
-                                .padding(horizontal = 14.dp, vertical = 14.dp)
+                                .padding(horizontal = 12.dp, vertical = 12.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                         modifier =
-                                Modifier.size(40.dp)
+                                Modifier.size(36.dp)
                                         .clip(CircleShape)
                                         .background(
                                                 if (received) Color(0x1A000000) else Color(0x33FFFFFF)
@@ -148,7 +148,7 @@ private fun RedPacketCard(
                             imageVector = Icons.Default.Redeem,
                             contentDescription = null,
                             tint = iconTint,
-                            modifier = Modifier.size(23.dp),
+                            modifier = Modifier.size(21.dp),
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
@@ -162,7 +162,7 @@ private fun RedPacketCard(
                             overflow = TextOverflow.Ellipsis,
                             lineHeight = 21.sp,
                     )
-                    Spacer(modifier = Modifier.height(5.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                             text = if (received) "已接收" else "领取红包",
                             color = subColor,
@@ -170,12 +170,6 @@ private fun RedPacketCard(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(9.dp))
-            Text(
-                    text = if (received) "红包 · 已接收" else "红包",
-                    color = subColor,
-                    fontSize = 10.sp,
-            )
         }
     }
 }
@@ -199,7 +193,7 @@ private fun TransferCard(
             shape = shape,
             color = Color.Transparent,
             modifier =
-                    Modifier.width(210.dp)
+                    Modifier.width(196.dp)
                             .clip(shape)
                             .clickable(enabled = !received, onClick = onOpen),
     ) {
@@ -207,18 +201,18 @@ private fun TransferCard(
                 modifier =
                         Modifier.fillMaxWidth()
                                 .background(background)
-                                .padding(horizontal = 14.dp, vertical = 14.dp)
+                                .padding(horizontal = 12.dp, vertical = 12.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                        modifier = Modifier.size(40.dp).clip(CircleShape).background(iconBackground),
+                        modifier = Modifier.size(36.dp).clip(CircleShape).background(iconBackground),
                         contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                             imageVector = Icons.Default.SwapHoriz,
                             contentDescription = null,
                             tint = iconTint,
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(22.dp),
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
@@ -231,28 +225,19 @@ private fun TransferCard(
                     )
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                            text = if (received) "已接收" else "请收款",
+                            text =
+                                    when {
+                                            received -> "已接收"
+                                            payment.note.isNotBlank() -> "请收款 · ${payment.note}"
+                                            else -> "请收款"
+                                    },
                             color = subColor,
                             fontSize = 11.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
-            if (payment.note.isNotBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                        text = payment.note,
-                        color = subColor,
-                        fontSize = 12.sp,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                    text = if (received) "转账 · 已接收" else "转账",
-                    color = subColor,
-                    fontSize = 10.sp,
-            )
         }
     }
 }
