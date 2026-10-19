@@ -43,6 +43,7 @@ fun BubbleStyleChatMessage(
     index: Int = -1,
     enableDialogs: Boolean = true,  // 新增参数：是否启用弹窗功能，默认启用
     onRoleAvatarLongPress: ((String) -> Unit)? = null,
+    onAvatarDoubleTap: (() -> Unit)? = null,
     onEditSummary: ((ChatMessage) -> Unit)? = null,
 ) {
     when (message.sender) {
@@ -79,6 +80,7 @@ fun BubbleStyleChatMessage(
                 heightMemory = heightMemory,
                 enableDialogs = enableDialogs,
                 onAvatarLongPressMention = onRoleAvatarLongPress,
+                onAvatarDoubleTap = onAvatarDoubleTap,
             )
         }
         "summary" -> {
