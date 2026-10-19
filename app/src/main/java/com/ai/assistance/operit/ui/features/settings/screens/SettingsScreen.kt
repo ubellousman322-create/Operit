@@ -24,6 +24,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.tools.defaultTool.standard.CookiePrivacyManager
 import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.preferences.GitHubAuthPreferences
+import com.ai.assistance.operit.data.preferences.PatPreferences
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
 import com.ai.assistance.operit.ui.features.github.GitHubLoginDialog
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
@@ -61,6 +62,8 @@ fun SettingsScreen(
         val scope = rememberCoroutineScope()
         var showGitHubLogin by remember { mutableStateOf(false) }
         var showClearCookieConfirm by remember { mutableStateOf(false) }
+        var showPatDialog by remember { mutableStateOf(false) }
+        var patSuffixDraft by remember { mutableStateOf(PatPreferences.getUserPatSuffix(context)) }
 
         val isGitHubLoggedIn = githubAuth.isLoggedInFlow.collectAsState(initial = false).value
         val gitHubUser = githubAuth.userInfoFlow.collectAsState(initial = null).value
@@ -129,6 +132,47 @@ fun SettingsScreen(
                         )
                 }
 
+                if (showPatDialog) {
+                        AlertDialog(
+                                onDismissRequest = { showPatDialog = false },
+                                title = { Text(text = "拍一拍") },
+                                text = {
+                                        Column {
+                                                Text(
+                                                        text =
+                                                                "你双击我的头像时，聊天页中间会写上一句。这里填的会接在「我拍了拍 ave」后面，留空就什么都不接。",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                                Spacer(modifier = Modifier.height(12.dp))
+                                                OutlinedTextField(
+                                                        value = patSuffixDraft,
+                                                        onValueChange = { patSuffixDraft = it.take(24) },
+                                                        singleLine = true,
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        placeholder = { Text(text = "比如：的脑袋") }
+                                                )
+                                        }
+                                },
+                                confirmButton = {
+                                        TextButton(
+                                                onClick = {
+                                                        PatPreferences.setUserPatSuffix(
+                                                                context,
+                                                                patSuffixDraft
+                                                        )
+                                                        showPatDialog = false
+                                                }
+                                        ) { Text(text = "保存") }
+                                },
+                                dismissButton = {
+                                        TextButton(onClick = { showPatDialog = false }) {
+                                                Text(text = "取消")
+                                        }
+                                }
+                        )
+                }
+
                 // ======= 个性化配置 =======
                 SettingsSection(
                         title = stringResource(id = R.string.settings_section_personalization),
@@ -168,6 +212,19 @@ fun SettingsScreen(
                                 subtitle = stringResource(R.string.layout_adjustment_subtitle),
                                 icon = Icons.Default.AspectRatio,
                                 onClick = navigateToLayoutAdjustmentSettings
+                        )
+
+                        CompactSettingsItem(
+                                title = "拍一拍",
+                                subtitle =
+                                        PatPreferences.getUserPatSuffix(context).ifBlank {
+                                                "双击头像拍一下，留空就是「我拍了拍 ave」"
+                                        },
+                                icon = Icons.Default.TouchApp,
+                                onClick = {
+                                        patSuffixDraft = PatPreferences.getUserPatSuffix(context)
+                                        showPatDialog = true
+                                }
                         )
                 }
 
