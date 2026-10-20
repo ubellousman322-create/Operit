@@ -1742,23 +1742,50 @@ private fun AgentModelSelectorPopup(
                     ),
             contentAlignment = Alignment.BottomEnd,
         ) {
-            Card(
+            val modelPopupShape = RoundedCornerShape(16.dp)
+            val modelPopupLiquid = isLiquidGlassSupported()
+            val modelPopupWater = !modelPopupLiquid && isWaterGlassSupported()
+            Box(
                 modifier =
                     Modifier
                         .padding(bottom = 44.dp, end = 12.dp)
                         .width(300.dp)
                         .heightIn(max = 420.dp)
+                        .then(
+                            if (modelPopupWater)
+                                Modifier.waterGlass(
+                                    enabled = true,
+                                    shape = modelPopupShape,
+                                    containerColor = popupContainerColor,
+                                    shadowElevation = 10.dp,
+                                    borderWidth = 0.7.dp,
+                                    overlayAlphaBoost = 0.06f,
+                                )
+                            else Modifier
+                        )
+                        .then(
+                            if (modelPopupLiquid)
+                                Modifier.liquidGlass(
+                                    enabled = true,
+                                    shape = modelPopupShape,
+                                    containerColor = popupContainerColor,
+                                    shadowElevation = 10.dp,
+                                    borderWidth = 0.42.dp,
+                                    blurRadius = 20.dp,
+                                    overlayAlphaBoost = 0.08f,
+                                )
+                            else Modifier
+                        )
+                        .clip(modelPopupShape)
+                        .background(
+                            if (modelPopupLiquid || modelPopupWater) Color.Transparent
+                            else popupContainerColor
+                        )
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             onClick = {},
                         ),
-                shape = RoundedCornerShape(8.dp),
-                colors =
-                    CardDefaults.cardColors(
-                        containerColor = popupContainerColor,
-                    ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             ) {
                 Column(
                     modifier =
