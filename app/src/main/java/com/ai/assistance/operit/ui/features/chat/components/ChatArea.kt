@@ -803,36 +803,39 @@ private fun MessageItem(
                     remember { DisplayPreferencesManager.getInstance(context) }
                 val globalUserAvatarUri by
                     displayPrefs.globalUserAvatarUri.collectAsState(initial = null)
-                Row(
+                Box(
                     modifier =
                         Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                    horizontalArrangement =
-                        if (isUserSide) Arrangement.End else Arrangement.Start,
-                    verticalAlignment = Alignment.Top,
                 ) {
-                    if (!isUserSide) {
-                        ChatPaymentAvatar(
-                            uri = themeSnapshot.customAiAvatarUri,
-                            fallbackIsUser = false,
+                    Column(
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .padding(
+                                    start = if (isUserSide) 0.dp else 42.dp,
+                                    end = if (isUserSide) 42.dp else 0.dp,
+                                ),
+                        horizontalAlignment = if (isUserSide) Alignment.End else Alignment.Start,
+                    ) {
+                        ChatPaymentBubble(
+                            payment = chatPayment,
+                            isUserSide = isUserSide,
+                            textColor = if (isUserSide) userTextColor else aiTextColor,
+                            textBackgroundColor =
+                                if (isUserSide) userMessageColor else aiMessageColor,
+                            received = received,
+                            onOpen = { showPaymentDialog = true },
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
                     }
-                    ChatPaymentBubble(
-                        payment = chatPayment,
-                        isUserSide = isUserSide,
-                        textColor = if (isUserSide) userTextColor else aiTextColor,
-                        textBackgroundColor =
-                            if (isUserSide) userMessageColor else aiMessageColor,
-                        received = received,
-                        onOpen = { showPaymentDialog = true },
+                    ChatPaymentAvatar(
+                        uri =
+                            if (isUserSide) globalUserAvatarUri ?: themeSnapshot.customUserAvatarUri
+                            else themeSnapshot.customAiAvatarUri,
+                        fallbackIsUser = isUserSide,
+                        modifier =
+                            Modifier.align(
+                                if (isUserSide) Alignment.TopEnd else Alignment.TopStart
+                            ),
                     )
-                    if (isUserSide) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        ChatPaymentAvatar(
-                            uri = globalUserAvatarUri ?: themeSnapshot.customUserAvatarUri,
-                            fallbackIsUser = true,
-                        )
-                    }
                 }
                 if (showPaymentDialog) {
                     when (chatPayment) {
@@ -1766,18 +1769,22 @@ private fun LoadingDotsIndicator(textColor: Color) {
 
 /** 红包/转账气泡旁边的头像；拿不到图就用一个底色圆。 */
 @Composable
-private fun ChatPaymentAvatar(uri: String?, fallbackIsUser: Boolean) {
-    val modifier = Modifier.size(34.dp).clip(CircleShape)
+private fun ChatPaymentAvatar(
+    uri: String?,
+    fallbackIsUser: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val avatarModifier = modifier.size(34.dp).clip(CircleShape)
     if (!uri.isNullOrBlank()) {
         Image(
             painter = rememberAsyncImagePainter(model = Uri.parse(uri)),
             contentDescription = null,
-            modifier = modifier,
+            modifier = avatarModifier,
             contentScale = ContentScale.Crop,
         )
     } else {
         Box(
-            modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
+            modifier = avatarModifier.background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
