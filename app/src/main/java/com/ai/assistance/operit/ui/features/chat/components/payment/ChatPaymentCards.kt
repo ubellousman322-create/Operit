@@ -79,6 +79,7 @@ fun ChatPaymentBubble(
         textColor: Color,
         textBackgroundColor: Color,
         received: Boolean,
+        fillWidth: Boolean = false,
         modifier: Modifier = Modifier,
         onOpen: () -> Unit = {},
 ) {
@@ -87,7 +88,7 @@ fun ChatPaymentBubble(
             else RoundedCornerShape(4.dp, 14.dp, 14.dp, 14.dp)
 
     Column(
-            modifier = modifier.widthIn(max = 268.dp),
+            modifier = if (fillWidth) modifier.fillMaxWidth() else modifier.widthIn(max = 268.dp),
             horizontalAlignment = if (isUserSide) Alignment.End else Alignment.Start,
     ) {
         // 带的话放在卡片上方：先说话，再把红包/转账递过去。
