@@ -78,6 +78,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.theme.isLiquidGlassSupported
+import com.ai.assistance.operit.ui.theme.isWaterGlassSupported
+import com.ai.assistance.operit.ui.theme.liquidGlass
+import com.ai.assistance.operit.ui.theme.waterGlass
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.packTool.PackageManager as ToolPackageManager
 import com.ai.assistance.operit.data.skill.SkillRepository
@@ -466,13 +470,44 @@ fun AttachmentSelectorPopupPanel(
                                 ),
                 contentAlignment = Alignment.BottomCenter
         ) {
-            Surface(
-                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                    color = containerColor,
-                    shadowElevation = 6.dp,
+            val popupShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+            val popupLiquidEnabled = isLiquidGlassSupported()
+            val popupWaterEnabled = !popupLiquidEnabled && isWaterGlassSupported()
+            Box(
                     modifier =
                             Modifier.fillMaxWidth()
                                     .padding(bottom = 44.dp)
+                                    .then(
+                                            if (popupWaterEnabled)
+                                                    Modifier.waterGlass(
+                                                            enabled = true,
+                                                            shape = popupShape,
+                                                            containerColor = containerColor,
+                                                            shadowElevation = 10.dp,
+                                                            borderWidth = 0.7.dp,
+                                                            overlayAlphaBoost = 0.06f,
+                                                    )
+                                            else Modifier
+                                    )
+                                    .then(
+                                            if (popupLiquidEnabled)
+                                                    Modifier.liquidGlass(
+                                                            enabled = true,
+                                                            shape = popupShape,
+                                                            containerColor = containerColor,
+                                                            shadowElevation = 10.dp,
+                                                            borderWidth = 0.42.dp,
+                                                            blurRadius = 20.dp,
+                                                            overlayAlphaBoost = 0.08f,
+                                                    )
+                                            else Modifier
+                                    )
+                                    .clip(popupShape)
+                                    .background(
+                                            if (popupLiquidEnabled || popupWaterEnabled)
+                                                    Color.Transparent
+                                            else containerColor
+                                    )
                                     .clickable(
                                             interactionSource = remember { MutableInteractionSource() },
                                             indication = null,
