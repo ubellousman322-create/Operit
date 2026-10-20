@@ -14,8 +14,8 @@
         <!-- Customize your theme here. -->
         
         <!-- splash: night and moon -->
-        <item name="android:windowSplashScreenBackground">#2A3440</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_moon_foreground</item>
-        <item name="android:windowSplashScreenAnimationDuration">500</item>
+        <item name="android:windowSplashScreenBackground">#F4E8E3</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_blank</item>
+        <item name="android:windowSplashScreenAnimationDuration">0</item>
     </style>
 </resources>
