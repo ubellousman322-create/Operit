@@ -2043,7 +2043,7 @@ private fun AgentThinkingSettingsItem(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .background(popupContainerColor)
+                    .background(Color.Transparent)
                     .padding(horizontal = 12.dp),
         ) {
             AgentThinkingSubSettingItem(
@@ -2310,7 +2310,7 @@ private fun AgentModelSelectorItem(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .background(popupContainerColor)
+                    .background(Color.Transparent)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
         ) {
             if (configSummaries.isEmpty()) {
@@ -2410,7 +2410,7 @@ private fun AgentModelSelectorItem(
                                 modifier =
                                     Modifier
                                         .fillMaxWidth()
-                                        .background(popupContainerColor)
+                                        .background(Color.Transparent)
                                         .padding(start = 16.dp, top = 4.dp, bottom = 4.dp, end = 8.dp),
                             ) {
                                 val validIndex =
@@ -2581,23 +2581,53 @@ private fun AgentExtraSettingsPopup(
                     ),
             contentAlignment = Alignment.BottomEnd,
         ) {
+            val extraShape = RoundedCornerShape(16.dp)
+            val extraLiquid = isLiquidGlassSupported()
+            val extraWater = !extraLiquid && isWaterGlassSupported()
             Card(
                 modifier =
                     Modifier
                         .padding(bottom = 44.dp, end = 12.dp)
                         .width(300.dp)
                         .heightIn(max = 420.dp)
+                        .then(
+                            if (extraWater)
+                                Modifier.waterGlass(
+                                    enabled = true,
+                                    shape = extraShape,
+                                    containerColor = popupContainerColor,
+                                    shadowElevation = 10.dp,
+                                    borderWidth = 0.7.dp,
+                                    overlayAlphaBoost = 0.06f,
+                                )
+                            else Modifier
+                        )
+                        .then(
+                            if (extraLiquid)
+                                Modifier.liquidGlass(
+                                    enabled = true,
+                                    shape = extraShape,
+                                    containerColor = popupContainerColor,
+                                    shadowElevation = 10.dp,
+                                    borderWidth = 0.42.dp,
+                                    blurRadius = 20.dp,
+                                    overlayAlphaBoost = 0.08f,
+                                )
+                            else Modifier
+                        )
+                        .clip(extraShape)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             onClick = {},
                         ),
-                shape = RoundedCornerShape(8.dp),
+                shape = extraShape,
                 colors =
                     CardDefaults.cardColors(
-                        containerColor = popupContainerColor,
+                        containerColor =
+                            if (extraLiquid || extraWater) Color.Transparent else popupContainerColor,
                     ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             ) {
                 Column(
                     modifier =
@@ -3356,22 +3386,52 @@ private fun AgentInfoPopup(
                     ),
             contentAlignment = Alignment.BottomEnd,
         ) {
+            val infoShape = RoundedCornerShape(16.dp)
+            val infoLiquid = isLiquidGlassSupported()
+            val infoWater = !infoLiquid && isWaterGlassSupported()
             Card(
                 modifier =
                     Modifier
                         .padding(bottom = 52.dp, end = 12.dp)
                         .width(220.dp)
+                        .then(
+                            if (infoWater)
+                                Modifier.waterGlass(
+                                    enabled = true,
+                                    shape = infoShape,
+                                    containerColor = popupContainerColor,
+                                    shadowElevation = 10.dp,
+                                    borderWidth = 0.7.dp,
+                                    overlayAlphaBoost = 0.06f,
+                                )
+                            else Modifier
+                        )
+                        .then(
+                            if (infoLiquid)
+                                Modifier.liquidGlass(
+                                    enabled = true,
+                                    shape = infoShape,
+                                    containerColor = popupContainerColor,
+                                    shadowElevation = 10.dp,
+                                    borderWidth = 0.42.dp,
+                                    blurRadius = 20.dp,
+                                    overlayAlphaBoost = 0.08f,
+                                )
+                            else Modifier
+                        )
+                        .clip(infoShape)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             onClick = {},
                         ),
-                shape = RoundedCornerShape(8.dp),
+                shape = infoShape,
                 colors =
                     CardDefaults.cardColors(
-                        containerColor = popupContainerColor,
+                        containerColor =
+                            if (infoLiquid || infoWater) Color.Transparent else popupContainerColor,
                     ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
