@@ -803,19 +803,22 @@ private fun MessageItem(
                     remember { DisplayPreferencesManager.getInstance(context) }
                 val globalUserAvatarUri by
                     displayPrefs.globalUserAvatarUri.collectAsState(initial = null)
-                Box(
-                    modifier =
-                        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                ) {
+                val paymentAvatarUri =
+                    if (isUserSide) globalUserAvatarUri ?: themeSnapshot.customUserAvatarUri
+                    else themeSnapshot.customAiAvatarUri
+
+                if (themeSnapshot.bubbleWideLayoutEnabled) {
+                    // 宽气泡：头像单独一行，文字和卡片占满整行宽度。
                     Column(
                         modifier =
-                            Modifier.fillMaxWidth()
-                                .padding(
-                                    start = if (isUserSide) 0.dp else 42.dp,
-                                    end = if (isUserSide) 42.dp else 0.dp,
-                                ),
+                            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
                         horizontalAlignment = if (isUserSide) Alignment.End else Alignment.Start,
                     ) {
+                        ChatPaymentAvatar(
+                            uri = paymentAvatarUri,
+                            fallbackIsUser = isUserSide,
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
                         ChatPaymentBubble(
                             payment = chatPayment,
                             isUserSide = isUserSide,
@@ -823,19 +826,44 @@ private fun MessageItem(
                             textBackgroundColor =
                                 if (isUserSide) userMessageColor else aiMessageColor,
                             received = received,
+                            fillWidth = true,
                             onOpen = { showPaymentDialog = true },
                         )
                     }
-                    ChatPaymentAvatar(
-                        uri =
-                            if (isUserSide) globalUserAvatarUri ?: themeSnapshot.customUserAvatarUri
-                            else themeSnapshot.customAiAvatarUri,
-                        fallbackIsUser = isUserSide,
+                } else {
+                    // 普通气泡：头像在旁，内容让开 42dp 并排。
+                    Box(
                         modifier =
-                            Modifier.align(
-                                if (isUserSide) Alignment.TopEnd else Alignment.TopStart
-                            ),
-                    )
+                            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                    ) {
+                        Column(
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .padding(
+                                        start = if (isUserSide) 0.dp else 42.dp,
+                                        end = if (isUserSide) 42.dp else 0.dp,
+                                    ),
+                            horizontalAlignment = if (isUserSide) Alignment.End else Alignment.Start,
+                        ) {
+                            ChatPaymentBubble(
+                                payment = chatPayment,
+                                isUserSide = isUserSide,
+                                textColor = if (isUserSide) userTextColor else aiTextColor,
+                                textBackgroundColor =
+                                    if (isUserSide) userMessageColor else aiMessageColor,
+                                received = received,
+                                onOpen = { showPaymentDialog = true },
+                            )
+                        }
+                        ChatPaymentAvatar(
+                            uri = paymentAvatarUri,
+                            fallbackIsUser = isUserSide,
+                            modifier =
+                                Modifier.align(
+                                    if (isUserSide) Alignment.TopEnd else Alignment.TopStart
+                                ),
+                        )
+                    }
                 }
                 if (showPaymentDialog) {
                     when (chatPayment) {
