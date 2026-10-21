@@ -121,7 +121,8 @@ object WaifuMessageProcessor {
                     blockGroup.stream.collect { xmlBuilder.append(it) }
                     val xmlBlock = xmlBuilder.toString()
                     if (xmlBlock.trimStart().startsWith("<think", ignoreCase = true)) {
-                        appendRenderableText(xmlBlock)
+                        // 思考段打上零宽标记，消息层和渲染层都靠它认
+                        appendRenderableText("\u200B" + xmlBlock)
                     }
                 }
 
