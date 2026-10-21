@@ -94,7 +94,6 @@ fun BubbleAiMessageComposable(
     heightMemory: ChatMessageHeightMemory? = null,
     enableDialogs: Boolean = true,
     onAvatarLongPressMention: ((String) -> Unit)? = null,
-    onAvatarDoubleTap: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val preferencesManager = remember { UserPreferencesManager.getInstance(context) }
@@ -115,8 +114,8 @@ fun BubbleAiMessageComposable(
     
     val showModelProvider = themeSnapshot.showModelProvider
     val showModelName = themeSnapshot.showModelName
-    // 只有思考块的消息不重复写角色名，避免同一次回复看起来像两个人开口
-    val onlyThinkingBlock = remember(message.content) { isOnlyThinkingBlock(message.content) }
+    // 只有思考块的消息在消息层就不带角色名，这里直接用它来判断
+    val onlyThinkingBlock = message.roleName.isEmpty()
     val showRoleName = themeSnapshot.showRoleName && !onlyThinkingBlock
     val toolCollapseMode by displayPreferencesManager.toolCollapseMode.collectAsState(initial = ToolCollapseMode.ALL)
     
@@ -277,7 +276,6 @@ fun BubbleAiMessageComposable(
             .clip(avatarShape)
             .combinedClickable(
                 onClick = {},
-                onDoubleClick = { onAvatarDoubleTap?.invoke() },
                 onLongClick = {
                     val roleName = message.roleName.trim()
                     if (roleName.isNotEmpty()) {
@@ -491,7 +489,6 @@ fun BubbleAiMessageComposable(
                 .clip(avatarShape)
                 .combinedClickable(
                     onClick = {},
-                    onDoubleClick = { onAvatarDoubleTap?.invoke() },
                     onLongClick = {
                         val roleName = message.roleName.trim()
                         if (roleName.isNotEmpty()) {
@@ -707,7 +704,5 @@ fun BubbleAiMessageComposable(
 }
 
 /** 内容里只有 <think> 块，没有正文 */
-private fun isOnlyThinkingBlock(content: String): Boolean {
-    return content.trimStart().startsWith("\u200B")
-}
+
 
