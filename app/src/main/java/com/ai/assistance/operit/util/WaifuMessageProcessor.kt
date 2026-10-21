@@ -349,7 +349,7 @@ object WaifuMessageProcessor {
                         )
                     )
                 }
-                pieces.add(match.value.trim())
+                pieces.add("\u200B" + match.value.trim())
                 cursor = match.range.last + 1
             }
             if (cursor < content.length) {
