@@ -162,8 +162,11 @@ fun ColorPickerDialog(
         }
     }
 
-    // 每次打开都把当前颜色同步进取色器，否则会停在默认白色
+    // 每次打开都把当前颜色同步进取色器。等两帧，让取色器控件先挂上去再设色，
+    // 否则这次设置会被控件的初始化盖掉，看上去永远是白色。
     LaunchedEffect(currentColor) {
+        withFrameNanos { }
+        withFrameNanos { }
         pickerController.selectByColor(currentColor, fromUser = false)
     }
     // The controller's selected color is the source of truth for our UI.
