@@ -1171,7 +1171,7 @@ class MessageProcessingDelegate(
                             content = segment,
                             contentStream = null,
                             timestamp = ChatMessageTimestampAllocator.next(),
-                            roleName = currentRoleName,
+                            roleName = if (segment.trimStart().startsWith("\u200B")) "" else currentRoleName,
                             provider = provider,
                             modelName = modelName,
                             sentAt = requestSentAt
