@@ -122,7 +122,7 @@ object WaifuMessageProcessor {
                     val xmlBlock = xmlBuilder.toString()
                     if (xmlBlock.trimStart().startsWith("<think", ignoreCase = true)) {
                         // 思考段打上零宽标记，消息层和渲染层都靠它认
-                        appendRenderableText("\u200B" + xmlBlock)
+                        appendRenderableText(xmlBlock)
                     }
                 }
 
@@ -337,7 +337,7 @@ object WaifuMessageProcessor {
         for (m in matches) {
             val before = content.substring(cursor, m.range.first).trim()
             if (before.isNotEmpty()) out.add(before)
-            out.add("\u200B" + m.value.trim())
+            out.add(m.value.trim())
             cursor = m.range.last + 1
         }
         val after = content.substring(cursor).trim()
@@ -367,7 +367,7 @@ object WaifuMessageProcessor {
                         )
                     )
                 }
-                pieces.add("\u200B" + match.value.trim())
+                pieces.add(match.value.trim())
                 cursor = match.range.last + 1
             }
             if (cursor < content.length) {
