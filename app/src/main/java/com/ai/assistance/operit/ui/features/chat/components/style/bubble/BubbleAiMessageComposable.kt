@@ -94,7 +94,6 @@ fun BubbleAiMessageComposable(
     heightMemory: ChatMessageHeightMemory? = null,
     enableDialogs: Boolean = true,
     onAvatarLongPressMention: ((String) -> Unit)? = null,
-    onAvatarDoubleTap: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val preferencesManager = remember { UserPreferencesManager.getInstance(context) }
@@ -277,7 +276,6 @@ fun BubbleAiMessageComposable(
             .clip(avatarShape)
             .combinedClickable(
                 onClick = {},
-                onDoubleClick = { onAvatarDoubleTap?.invoke() },
                 onLongClick = {
                     val roleName = message.roleName.trim()
                     if (roleName.isNotEmpty()) {
@@ -699,11 +697,6 @@ fun BubbleAiMessageComposable(
 
 /** 内容里只有 <think> 块，没有正文 */
 private fun isOnlyThinkingBlock(content: String): Boolean {
-    val trimmed = content.trim()
-    if (trimmed.isEmpty()) return false
-    if (!trimmed.startsWith("<think", ignoreCase = true)) return false
-    val closeIdx = trimmed.indexOf("</think", ignoreCase = true)
-    if (closeIdx < 0) return true
-    val rest = trimmed.substring(closeIdx).substringAfter(">", "").trim()
-    return rest.isEmpty()
+    return content.trimStart().startsWith("\u200B")
 }
+
