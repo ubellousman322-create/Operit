@@ -116,7 +116,7 @@ fun BubbleAiMessageComposable(
     val showModelProvider = themeSnapshot.showModelProvider
     val showModelName = themeSnapshot.showModelName
     // 思考段在消息内容开头带零宽标记，直接看它，不误伤别的消息
-    val onlyThinkingBlock = message.content.trimStart().startsWith("<think", ignoreCase = true)
+    val onlyThinkingBlock = message.content.trimStart().startsWith("\u200B")
     val showRoleName = themeSnapshot.showRoleName && !onlyThinkingBlock
     val toolCollapseMode by displayPreferencesManager.toolCollapseMode.collectAsState(initial = ToolCollapseMode.ALL)
     
@@ -420,7 +420,11 @@ fun BubbleAiMessageComposable(
                         }
                     }
 
-                    if (effectiveBubbleImageStyle != null) {
+                    if (onlyThinkingBlock) {
+
+                        renderContent()
+
+                    } else if (effectiveBubbleImageStyle != null) {
                         BubbleImageBackgroundSurface(
                             imageStyle = effectiveBubbleImageStyle,
                             shape = bubbleShape,
@@ -630,7 +634,11 @@ fun BubbleAiMessageComposable(
                         }
                     }
 
-                    if (effectiveBubbleImageStyle != null) {
+                    if (onlyThinkingBlock) {
+
+                        renderContent()
+
+                    } else if (effectiveBubbleImageStyle != null) {
                         BubbleImageBackgroundSurface(
                             imageStyle = effectiveBubbleImageStyle,
                             shape = bubbleShape,
