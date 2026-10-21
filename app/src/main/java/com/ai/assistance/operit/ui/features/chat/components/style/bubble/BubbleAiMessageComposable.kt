@@ -117,6 +117,11 @@ fun BubbleAiMessageComposable(
     val showModelName = themeSnapshot.showModelName
     // 思考段在消息内容开头带零宽标记，直接看它，不误伤别的消息
     val onlyThinkingBlock = message.content.trimStart().startsWith("\u200B")
+    // 非 waifu：消息生成完之后，把开头的思考块单独拎到气泡外面
+    val thinkSplit = remember(message.content) { splitLeadingThinkBlock(message.content) }
+    val leadingThinkPart = thinkSplit.first
+    val bodyContentPart = thinkSplit.second
+    val shouldSplitThink = message.contentStream == null && leadingThinkPart.isNotEmpty()
     val showRoleName = themeSnapshot.showRoleName && !onlyThinkingBlock
     val toolCollapseMode by displayPreferencesManager.toolCollapseMode.collectAsState(initial = ToolCollapseMode.ALL)
     
@@ -305,7 +310,7 @@ fun BubbleAiMessageComposable(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (bubbleShowAvatar) {
-                        if (!aiAvatarUri.isNullOrEmpty() && message.roleName.isNotEmpty()) {
+                        if (!aiAvatarUri.isNullOrEmpty()) {
                             Image(
                                 painter = rememberAsyncImagePainter(model = Uri.parse(aiAvatarUri)),
                                 contentDescription = "AI Avatar",
@@ -349,6 +354,34 @@ fun BubbleAiMessageComposable(
                 }
 
                 Spacer(modifier = Modifier.height(6.dp))
+            }
+
+            if (shouldSplitThink) {
+
+                StreamMarkdownRenderer(
+
+                    content = leadingThinkPart,
+
+                    textColor = textColor,
+
+                    backgroundColor = Color.Transparent,
+
+                    onLinkClick = rememberedOnLinkClick,
+
+                    xmlRenderer = xmlRenderer,
+
+                    nodeGrouper = nodeGrouper,
+
+                    enableDialogs = enableDialogs,
+
+                    modifier = Modifier.padding(horizontal = bubbleContentPaddingLeft.dp),
+
+                    state = rendererState,
+
+                    fillMaxWidth = false,
+
+                )
+
             }
 
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
@@ -399,7 +432,7 @@ fun BubbleAiMessageComposable(
                                 )
                             } else {
                                 StreamMarkdownRenderer(
-                                    content = message.content,
+                                    content = if (shouldSplitThink) bodyContentPart else message.content,
                                     textColor = textColor,
                                     backgroundColor = backgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
@@ -500,7 +533,7 @@ fun BubbleAiMessageComposable(
                     }
                 )
             // Avatar
-            if (!aiAvatarUri.isNullOrEmpty() && message.roleName.isNotEmpty()) {
+            if (!aiAvatarUri.isNullOrEmpty()) {
                 Image(
                     painter = rememberAsyncImagePainter(model = Uri.parse(aiAvatarUri)),
                     contentDescription = "AI Avatar",
@@ -560,6 +593,34 @@ fun BubbleAiMessageComposable(
                 )
             }
             
+            if (shouldSplitThink) {
+            
+                StreamMarkdownRenderer(
+            
+                    content = leadingThinkPart,
+            
+                    textColor = textColor,
+            
+                    backgroundColor = Color.Transparent,
+            
+                    onLinkClick = rememberedOnLinkClick,
+            
+                    xmlRenderer = xmlRenderer,
+            
+                    nodeGrouper = nodeGrouper,
+            
+                    enableDialogs = enableDialogs,
+            
+                    modifier = Modifier.padding(horizontal = bubbleContentPaddingLeft.dp),
+            
+                    state = rendererState,
+            
+                    fillMaxWidth = false,
+            
+                )
+            
+            }
+            
             BoxWithConstraints {
                 val maxBubbleWidth = maxWidth * 0.85f
                 if (imageUrl != null) {
@@ -613,7 +674,7 @@ fun BubbleAiMessageComposable(
                                 // 对于已完成的静态消息，使用 content 参数的渲染器以支持Markdown
                                 // 共享相同的state，避免重新计算nodes等状态
                                 StreamMarkdownRenderer(
-                                    content = message.content,
+                                    content = if (shouldSplitThink) bodyContentPart else message.content,
                                     textColor = textColor,
                                     backgroundColor = backgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
