@@ -122,13 +122,12 @@ fun BubbleAiMessageComposable(
     
     val showModelProvider = themeSnapshot.showModelProvider
     val showModelName = themeSnapshot.showModelName
-    // 思考段在消息内容开头带零宽标记，直接看它，不误伤别的消息
-    val onlyThinkingBlock = message.content.trimStart().startsWith("<think", ignoreCase = true)
-    // 把开头的思考块抠出来自己画，正文才交给渲染器
+        // 把开头的思考块抠出来自己画，正文才交给渲染器
     val thinkSplit = remember(message.content) { splitLeadingThinkBlock(message.content) }
     val leadingThinkText = thinkSplit.first
     val bodyContentPart = thinkSplit.second
-    val showRoleName = themeSnapshot.showRoleName && !onlyThinkingBlock
+    // 只有“纯思考”那条才不写名字；带正文的消息照常写
+    val showRoleName = themeSnapshot.showRoleName && !(leadingThinkText.isNotEmpty() && bodyContentPart.isBlank())
     val toolCollapseMode by displayPreferencesManager.toolCollapseMode.collectAsState(initial = ToolCollapseMode.ALL)
     
     // 根据角色名获取头像
