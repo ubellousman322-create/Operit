@@ -174,14 +174,16 @@ fun BubbleAiMessageComposable(
         showStatusTags,
         initialThinkingExpanded,
         allowExpandedThinkingFullHeight,
-        enableDialogs
+        enableDialogs,
+        message.waitDurationMs
     ) {
         CustomXmlRenderer(
             showThinkingProcess = effectiveShowThinkingProcess,
             showStatusTags = showStatusTags,
             initialThinkingExpanded = initialThinkingExpanded,
             allowExpandedThinkingFullHeight = allowExpandedThinkingFullHeight,
-            enableDialogs = enableDialogs
+            enableDialogs = enableDialogs,
+            thinkingDurationMs = message.waitDurationMs
         )
     }
 
