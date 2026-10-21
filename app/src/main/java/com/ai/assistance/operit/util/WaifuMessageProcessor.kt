@@ -324,12 +324,45 @@ object WaifuMessageProcessor {
         )
     }
 
+    private val THINK_BLOCK_REGEX =
+        Regex("<think(?:ing)?>[\\s\\S]*?</think(?:ing)?>", RegexOption.IGNORE_CASE)
+
     private fun splitMessageBySentencesInternal(
         content: String,
         removePunctuation: Boolean,
         includeTrailingIncomplete: Boolean,
     ): List<String> {
         if (content.isBlank()) return emptyList()
+
+        // 思考块单独成一条消息，不和正文挤在同一个气泡里
+        val thinkMatches = THINK_BLOCK_REGEX.findAll(content).toList()
+        if (thinkMatches.isNotEmpty()) {
+            val pieces = mutableListOf<String>()
+            var cursor = 0
+            for (match in thinkMatches) {
+                if (match.range.first > cursor) {
+                    pieces.addAll(
+                        splitMessageBySentencesInternal(
+                            content = content.substring(cursor, match.range.first),
+                            removePunctuation = removePunctuation,
+                            includeTrailingIncomplete = includeTrailingIncomplete,
+                        )
+                    )
+                }
+                pieces.add(match.value.trim())
+                cursor = match.range.last + 1
+            }
+            if (cursor < content.length) {
+                pieces.addAll(
+                    splitMessageBySentencesInternal(
+                        content = content.substring(cursor),
+                        removePunctuation = removePunctuation,
+                        includeTrailingIncomplete = includeTrailingIncomplete,
+                    )
+                )
+            }
+            return pieces
+        }
 
         val entities = mutableListOf<String>()
 
