@@ -8,6 +8,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.Canvas
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Path
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -116,7 +123,11 @@ fun BubbleAiMessageComposable(
     val showModelProvider = themeSnapshot.showModelProvider
     val showModelName = themeSnapshot.showModelName
     // 思考段在消息内容开头带零宽标记，直接看它，不误伤别的消息
-    val onlyThinkingBlock = message.content.trimStart().startsWith("\u200B")
+    val onlyThinkingBlock = message.content.trimStart().startsWith("<think", ignoreCase = true)
+    // 把开头的思考块抠出来自己画，正文才交给渲染器
+    val thinkSplit = remember(message.content) { splitLeadingThinkBlock(message.content) }
+    val leadingThinkText = thinkSplit.first
+    val bodyContentPart = thinkSplit.second
     val showRoleName = themeSnapshot.showRoleName && !onlyThinkingBlock
     val toolCollapseMode by displayPreferencesManager.toolCollapseMode.collectAsState(initial = ToolCollapseMode.ALL)
     
@@ -350,6 +361,15 @@ fun BubbleAiMessageComposable(
 
                 Spacer(modifier = Modifier.height(6.dp))
             }
+            if (leadingThinkText.isNotEmpty()) {
+                Surface(
+                    modifier = Modifier.widthIn(max = 340.dp).padding(bottom = 6.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    color = backgroundColor,
+                ) {
+                    ThinkingBlock(thinkText = leadingThinkText)
+                }
+            }
 
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val maxBubbleWidth = maxWidth
@@ -399,7 +419,7 @@ fun BubbleAiMessageComposable(
                                 )
                             } else {
                                 StreamMarkdownRenderer(
-                                    content = message.content,
+                                    content = bodyContentPart,
                                     textColor = textColor,
                                     backgroundColor = backgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
@@ -420,11 +440,7 @@ fun BubbleAiMessageComposable(
                         }
                     }
 
-                    if (onlyThinkingBlock) {
-
-                        renderContent()
-
-                    } else if (effectiveBubbleImageStyle != null) {
+                    if (effectiveBubbleImageStyle != null) {
                         BubbleImageBackgroundSurface(
                             imageStyle = effectiveBubbleImageStyle,
                             shape = bubbleShape,
@@ -613,7 +629,7 @@ fun BubbleAiMessageComposable(
                                 // 对于已完成的静态消息，使用 content 参数的渲染器以支持Markdown
                                 // 共享相同的state，避免重新计算nodes等状态
                                 StreamMarkdownRenderer(
-                                    content = message.content,
+                                    content = bodyContentPart,
                                     textColor = textColor,
                                     backgroundColor = backgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
@@ -634,11 +650,7 @@ fun BubbleAiMessageComposable(
                         }
                     }
 
-                    if (onlyThinkingBlock) {
-
-                        renderContent()
-
-                    } else if (effectiveBubbleImageStyle != null) {
+                    if (effectiveBubbleImageStyle != null) {
                         BubbleImageBackgroundSurface(
                             imageStyle = effectiveBubbleImageStyle,
                             shape = bubbleShape,
@@ -708,4 +720,62 @@ fun BubbleAiMessageComposable(
 
 /** 内容里只有 <think> 块，没有正文 */
 
+/** 把开头连续的 <think> 块和后面的正文分开 */
+private fun splitLeadingThinkBlock(content: String): Pair<String, String> {
+    val trimmed = content.trimStart()
+    if (!trimmed.startsWith("<think", ignoreCase = true)) return "" to content
+    val close = trimmed.indexOf("</think", ignoreCase = true)
+    if (close < 0) return "" to content
+    val end = trimmed.indexOf(">", close)
+    if (end < 0) return "" to content
+    val openEnd = trimmed.indexOf(">")
+    val inner = if (openEnd in 0 until end) trimmed.substring(openEnd + 1, close).trim() else ""
+    return inner to trimmed.substring(end + 1).trimStart()
+}
 
+/** 思考气泡里的胶囊和展开内容 */
+@Composable
+private fun ThinkingBlock(thinkText: String) {
+    var expanded by remember(thinkText) { mutableStateOf(false) }
+    val fg = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.88f)
+    Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+        Row(
+            modifier = Modifier.clickable { expanded = !expanded },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Canvas(modifier = Modifier.size(14.dp)) {
+                val c = size.minDimension / 2f
+                val outer = c
+                val inner = c * 0.38f
+                val path = Path()
+                for (i in 0 until 8) {
+                    val ang = (-90f + i * 45f) * (PI / 180.0)
+                    val rr = if (i % 2 == 0) outer else inner
+                    val x = c + (rr * cos(ang)).toFloat()
+                    val y = c + (rr * sin(ang)).toFloat()
+                    if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                }
+                path.close()
+                drawPath(path, color = fg)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = "思考过程", style = MaterialTheme.typography.labelLarge, color = fg)
+            Spacer(modifier = Modifier.width(4.dp))
+            val rot by animateFloatAsState(if (expanded) 180f else 0f, label = "thinkArrow")
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = null,
+                tint = fg,
+                modifier = Modifier.size(18.dp).rotate(rot),
+            )
+        }
+        if (expanded) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = thinkText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+            )
+        }
+    }
+}
