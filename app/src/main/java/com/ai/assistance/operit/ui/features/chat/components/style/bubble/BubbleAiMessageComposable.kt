@@ -371,6 +371,7 @@ fun BubbleAiMessageComposable(
                 }
             }
 
+            if (bodyContentPart.isNotBlank() || imageUrl != null) {
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val maxBubbleWidth = maxWidth
                 if (imageUrl != null) {
@@ -490,6 +491,7 @@ fun BubbleAiMessageComposable(
                     }
                 }
             }
+            }
         }
     } else {
     Row(
@@ -576,6 +578,7 @@ fun BubbleAiMessageComposable(
                 )
             }
             
+            if (bodyContentPart.isNotBlank() || imageUrl != null) {
             BoxWithConstraints {
                 val maxBubbleWidth = maxWidth * 0.85f
                 if (imageUrl != null) {
@@ -699,6 +702,7 @@ fun BubbleAiMessageComposable(
                         }
                     }
                 }
+            }
             }
         }
         }
