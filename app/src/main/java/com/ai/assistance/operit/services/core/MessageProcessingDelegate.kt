@@ -1157,24 +1157,15 @@ class MessageProcessingDelegate(
 
                 suspend fun emitWaifuSegment(segment: String) {
                     if (segment.isBlank()) return
-                    // 思考块和正文混在一段里时，先切开再各发一条
-                    val splitParts = WaifuMessageProcessor.splitThinkingFromContent(segment)
-                    if (splitParts.size > 1) {
-                        splitParts.forEach { part -> emitWaifuSegment(part) }
-                        return
-                    }
 
                     val interrupt = waifuEmittedMessages.isEmpty()
-                    val isThinkSegment = segment.trimStart().startsWith("<think", ignoreCase = true)
-                    val prevWasThink =
-                        waifuEmittedMessages.lastOrNull()?.content?.trimStart()?.startsWith("<think", ignoreCase = true) == true
                     val segmentMessage =
                         ChatMessage(
                             sender = "ai",
                             content = segment,
                             contentStream = null,
                             timestamp = ChatMessageTimestampAllocator.next(),
-                            roleName = if (isThinkSegment || waifuEmittedMessages.isEmpty()) currentRoleName else "",
+                            roleName = currentRoleName,
                             provider = provider,
                             modelName = modelName,
                             sentAt = requestSentAt
