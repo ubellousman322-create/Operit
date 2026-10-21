@@ -327,6 +327,23 @@ object WaifuMessageProcessor {
     private val THINK_BLOCK_REGEX =
         Regex("<think(?:ing)?>[\\s\\S]*?</think(?:ing)?>", RegexOption.IGNORE_CASE)
 
+    /** 把一段内容里的思考块和正文切成多段，思考段带零宽标记，供消息层逐条发出 */
+    fun splitThinkingFromContent(content: String): List<String> {
+        val matches = THINK_BLOCK_REGEX.findAll(content).toList()
+        if (matches.isEmpty()) return listOf(content)
+        val out = mutableListOf<String>()
+        var cursor = 0
+        for (m in matches) {
+            val before = content.substring(cursor, m.range.first).trim()
+            if (before.isNotEmpty()) out.add(before)
+            out.add("\u200B" + m.value.trim())
+            cursor = m.range.last + 1
+        }
+        val after = content.substring(cursor).trim()
+        if (after.isNotEmpty()) out.add(after)
+        return if (out.isEmpty()) listOf(content) else out
+    }
+
     private fun splitMessageBySentencesInternal(
         content: String,
         removePunctuation: Boolean,
