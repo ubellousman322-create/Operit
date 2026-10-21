@@ -74,6 +74,7 @@ class CustomXmlRenderer(
     private val initialThinkingExpanded: Boolean = false,
     private val allowExpandedThinkingFullHeight: Boolean = false,
     private val enableDialogs: Boolean = true,  // 新增参数：是否启用弹窗功能，默认启用
+    private val thinkingDurationMs: Long = 0L,  // 这次回复等待首字的时间，用作思考时长
     private val fallback: XmlContentRenderer = DefaultXmlRenderer()
 ) : XmlContentRenderer {
     // 定义渲染器能够处理的内置标签集合
@@ -834,7 +835,7 @@ class CustomXmlRenderer(
         val thinkBodyToggleInteractionSource = remember { MutableInteractionSource() }
 
         var thinkStartMs by remember { mutableStateOf(0L) }
-        var thinkElapsedMs by remember { mutableStateOf(0L) }
+        var thinkElapsedMs by remember { mutableStateOf(thinkingDurationMs) }
         LaunchedEffect(isThinkingInProgress) {
             if (isThinkingInProgress) {
                 thinkStartMs = System.currentTimeMillis()
