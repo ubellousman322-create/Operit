@@ -116,11 +116,7 @@ fun BubbleAiMessageComposable(
     val showModelProvider = themeSnapshot.showModelProvider
     val showModelName = themeSnapshot.showModelName
     // 思考段在消息内容开头带零宽标记，直接看它，不误伤别的消息
-    val onlyThinkingBlock = message.content.trimStart().startsWith("<think", ignoreCase = true)
-    // 非 waifu：一条消息里，思考块画在气泡外面，正文留在气泡里
-    val thinkSplit = remember(message.content) { splitLeadingThinkBlock(message.content) }
-    val leadingThinkPart = thinkSplit.first
-    val bodyContentPart = thinkSplit.second
+    val onlyThinkingBlock = message.content.trimStart().startsWith("\u200B")
     val showRoleName = themeSnapshot.showRoleName && !onlyThinkingBlock
     val toolCollapseMode by displayPreferencesManager.toolCollapseMode.collectAsState(initial = ToolCollapseMode.ALL)
     
@@ -355,20 +351,6 @@ fun BubbleAiMessageComposable(
                 Spacer(modifier = Modifier.height(6.dp))
             }
 
-            if (leadingThinkPart.isNotEmpty()) {
-                StreamMarkdownRenderer(
-                    content = leadingThinkPart,
-                    textColor = textColor,
-                    backgroundColor = Color.Transparent,
-                    onLinkClick = rememberedOnLinkClick,
-                    xmlRenderer = xmlRenderer,
-                    nodeGrouper = nodeGrouper,
-                    enableDialogs = enableDialogs,
-                    modifier = Modifier.padding(horizontal = bubbleContentPaddingLeft.dp),
-                    state = rendererState,
-                    fillMaxWidth = false,
-                )
-            }
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val maxBubbleWidth = maxWidth
                 if (imageUrl != null) {
@@ -417,7 +399,7 @@ fun BubbleAiMessageComposable(
                                 )
                             } else {
                                 StreamMarkdownRenderer(
-                                    content = bodyContentPart,
+                                    content = message.content,
                                     textColor = textColor,
                                     backgroundColor = backgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
@@ -578,34 +560,6 @@ fun BubbleAiMessageComposable(
                 )
             }
             
-            if (leadingThinkPart.isNotEmpty()) {
-            
-                StreamMarkdownRenderer(
-            
-                    content = leadingThinkPart,
-            
-                    textColor = textColor,
-            
-                    backgroundColor = Color.Transparent,
-            
-                    onLinkClick = rememberedOnLinkClick,
-            
-                    xmlRenderer = xmlRenderer,
-            
-                    nodeGrouper = nodeGrouper,
-            
-                    enableDialogs = enableDialogs,
-            
-                    modifier = Modifier.padding(horizontal = bubbleContentPaddingLeft.dp),
-            
-                    state = rendererState,
-            
-                    fillMaxWidth = false,
-            
-                )
-            
-            }
-            
             BoxWithConstraints {
                 val maxBubbleWidth = maxWidth * 0.85f
                 if (imageUrl != null) {
@@ -659,7 +613,7 @@ fun BubbleAiMessageComposable(
                                 // 对于已完成的静态消息，使用 content 参数的渲染器以支持Markdown
                                 // 共享相同的state，避免重新计算nodes等状态
                                 StreamMarkdownRenderer(
-                                    content = bodyContentPart,
+                                    content = message.content,
                                     textColor = textColor,
                                     backgroundColor = backgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
@@ -754,13 +708,4 @@ fun BubbleAiMessageComposable(
 
 /** 内容里只有 <think> 块，没有正文 */
 
-/** 把开头连续的 <think> 块和后面的正文分开 */
-private fun splitLeadingThinkBlock(content: String): Pair<String, String> {
-    val trimmed = content.trimStart()
-    if (!trimmed.startsWith("<think", ignoreCase = true)) return "" to content
-    val close = trimmed.indexOf("</think", ignoreCase = true)
-    if (close < 0) return content to ""
-    val end = trimmed.indexOf(">", close)
-    if (end < 0) return content to ""
-    return trimmed.substring(0, end + 1) to trimmed.substring(end + 1)
-}
+
