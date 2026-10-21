@@ -367,7 +367,7 @@ fun BubbleAiMessageComposable(
                     shape = RoundedCornerShape(18.dp),
                     color = backgroundColor,
                 ) {
-                    ThinkingBlock(thinkText = leadingThinkText)
+                    ThinkingBlock(thinkText = leadingThinkText, durationMs = message.waitDurationMs)
                 }
             }
 
@@ -739,8 +739,14 @@ private fun splitLeadingThinkBlock(content: String): Pair<String, String> {
 
 /** 思考气泡里的胶囊和展开内容 */
 @Composable
-private fun ThinkingBlock(thinkText: String) {
+private fun ThinkingBlock(thinkText: String, durationMs: Long = 0L) {
     var expanded by remember(thinkText) { mutableStateOf(false) }
+    val titleText =
+        if (durationMs > 0L) {
+            "思考了 " + String.format(java.util.Locale.US, "%.1f", durationMs / 1000f) + " 秒"
+        } else {
+            "思考过程"
+        }
     val fg = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.88f)
     Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
         Row(
@@ -763,7 +769,7 @@ private fun ThinkingBlock(thinkText: String) {
                 drawPath(path, color = fg)
             }
             Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "思考过程", style = MaterialTheme.typography.labelLarge, color = fg)
+            Text(text = titleText, style = MaterialTheme.typography.labelLarge, color = fg)
             Spacer(modifier = Modifier.width(4.dp))
             val rot by animateFloatAsState(if (expanded) 180f else 0f, label = "thinkArrow")
             Icon(
