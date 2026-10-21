@@ -162,6 +162,10 @@ fun ColorPickerDialog(
         }
     }
 
+    // 每次打开都把当前颜色同步进取色器，否则会停在默认白色
+    LaunchedEffect(currentColor) {
+        pickerController.selectByColor(currentColor, fromUser = false)
+    }
     // The controller's selected color is the source of truth for our UI.
     val pickedColor by pickerController.selectedColor
 
