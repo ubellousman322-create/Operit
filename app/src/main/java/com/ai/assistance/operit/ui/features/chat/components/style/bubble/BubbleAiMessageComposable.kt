@@ -769,4 +769,13 @@ fun BubbleAiMessageComposable(
 
 /** 内容里只有 <think> 块，没有正文 */
 
-
+/** 把开头连续的 <think> 块和后面的正文分开 */
+private fun splitLeadingThinkBlock(content: String): Pair<String, String> {
+    val trimmed = content.trimStart()
+    if (!trimmed.startsWith("<think", ignoreCase = true)) return "" to content
+    val close = trimmed.indexOf("</think", ignoreCase = true)
+    if (close < 0) return content to ""
+    val end = trimmed.indexOf(">", close)
+    if (end < 0) return content to ""
+    return trimmed.substring(0, end + 1) to trimmed.substring(end + 1).trimStart()
+}
