@@ -114,8 +114,8 @@ fun BubbleAiMessageComposable(
     
     val showModelProvider = themeSnapshot.showModelProvider
     val showModelName = themeSnapshot.showModelName
-    // 只有思考块的消息在消息层就不带角色名，这里直接用它来判断
-    val onlyThinkingBlock = message.roleName.isEmpty()
+    // 思考段在消息内容开头带零宽标记，直接看它，不误伤别的消息
+    val onlyThinkingBlock = message.content.trimStart().startsWith("\u200B")
     val showRoleName = themeSnapshot.showRoleName && !onlyThinkingBlock
     val toolCollapseMode by displayPreferencesManager.toolCollapseMode.collectAsState(initial = ToolCollapseMode.ALL)
     
