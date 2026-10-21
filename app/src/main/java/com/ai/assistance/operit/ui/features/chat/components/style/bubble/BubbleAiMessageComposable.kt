@@ -363,7 +363,7 @@ fun BubbleAiMessageComposable(
             }
             if (leadingThinkText.isNotEmpty()) {
                 Surface(
-                    modifier = Modifier.widthIn(max = 340.dp).padding(bottom = 6.dp),
+                    modifier = Modifier.widthIn(max = 340.dp),
                     shape = RoundedCornerShape(18.dp),
                     color = backgroundColor,
                 ) {
@@ -738,7 +738,7 @@ private fun splitLeadingThinkBlock(content: String): Pair<String, String> {
 private fun ThinkingBlock(thinkText: String) {
     var expanded by remember(thinkText) { mutableStateOf(false) }
     val fg = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.88f)
-    Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+    Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
         Row(
             modifier = Modifier.clickable { expanded = !expanded },
             verticalAlignment = Alignment.CenterVertically,
