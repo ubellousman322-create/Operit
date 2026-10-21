@@ -303,7 +303,7 @@ fun BubbleAiMessageComposable(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (bubbleShowAvatar) {
-                        if (!aiAvatarUri.isNullOrEmpty()) {
+                        if (!aiAvatarUri.isNullOrEmpty() && message.roleName.isNotEmpty()) {
                             Image(
                                 painter = rememberAsyncImagePainter(model = Uri.parse(aiAvatarUri)),
                                 contentDescription = "AI Avatar",
@@ -497,7 +497,7 @@ fun BubbleAiMessageComposable(
                     }
                 )
             // Avatar
-            if (!aiAvatarUri.isNullOrEmpty()) {
+            if (!aiAvatarUri.isNullOrEmpty() && message.roleName.isNotEmpty()) {
                 Image(
                     painter = rememberAsyncImagePainter(model = Uri.parse(aiAvatarUri)),
                     contentDescription = "AI Avatar",
