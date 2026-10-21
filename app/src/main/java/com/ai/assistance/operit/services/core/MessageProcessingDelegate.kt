@@ -1165,9 +1165,9 @@ class MessageProcessingDelegate(
                     }
 
                     val interrupt = waifuEmittedMessages.isEmpty()
-                    val isThinkSegment = segment.trimStart().startsWith("\u200B")
+                    val isThinkSegment = segment.trimStart().startsWith("<think", ignoreCase = true)
                     val prevWasThink =
-                        waifuEmittedMessages.lastOrNull()?.content?.trimStart()?.startsWith("\u200B") == true
+                        waifuEmittedMessages.lastOrNull()?.content?.trimStart()?.startsWith("<think", ignoreCase = true) == true
                     val segmentMessage =
                         ChatMessage(
                             sender = "ai",
