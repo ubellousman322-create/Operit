@@ -361,7 +361,7 @@ fun BubbleAiMessageComposable(
 
                 Spacer(modifier = Modifier.height(6.dp))
             }
-            if (leadingThinkText.isNotEmpty()) {
+            if (leadingThinkText.isNotEmpty() && message.contentStream == null) {
                 Surface(
                     modifier = Modifier.widthIn(max = 340.dp),
                     shape = RoundedCornerShape(18.dp),
