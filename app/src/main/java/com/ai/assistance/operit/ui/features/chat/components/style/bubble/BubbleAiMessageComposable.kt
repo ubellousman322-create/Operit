@@ -365,7 +365,7 @@ fun BubbleAiMessageComposable(
                 Surface(
                     modifier = Modifier.widthIn(max = 340.dp),
                     shape = RoundedCornerShape(18.dp),
-                    color = backgroundColor,
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f),
                 ) {
                     ThinkingBlock(thinkText = leadingThinkText)
                 }
