@@ -117,7 +117,12 @@ object WaifuMessageProcessor {
             val blockType = blockGroup.tag ?: MarkdownProcessorType.PLAIN_TEXT
             when (blockType) {
                 MarkdownProcessorType.XML_BLOCK -> {
-                    blockGroup.stream.collect { }
+                    val xmlBuilder = StringBuilder()
+                    blockGroup.stream.collect { xmlBuilder.append(it) }
+                    val xmlBlock = xmlBuilder.toString()
+                    if (xmlBlock.trimStart().startsWith("<think", ignoreCase = true)) {
+                        appendRenderableText(xmlBlock)
+                    }
                 }
 
                 MarkdownProcessorType.CODE_BLOCK,
@@ -347,8 +352,10 @@ object WaifuMessageProcessor {
             }
 
         // 1. 将Markdown实体、URL和邮箱替换为占位符，以保护它们不被错误分割
+        // 0. 先把情绪标签换成表情图片，让它跟着文字走
+        val contentWithEmoji = processEmotionTags(content)
         var contentWithPlaceholders =
-            MARKDOWN_ENTITY_REGEX.replace(content) { createPlaceholder(it.value) }
+            MARKDOWN_ENTITY_REGEX.replace(contentWithEmoji) { createPlaceholder(it.value) }
         contentWithPlaceholders = protectMatches(contentWithPlaceholders, BARE_URL_REGEX)
         contentWithPlaceholders = protectMatches(contentWithPlaceholders, EMAIL_ADDRESS_REGEX)
         contentWithPlaceholders = protectMatches(contentWithPlaceholders, DOMAIN_URL_REGEX)
@@ -383,7 +390,8 @@ object WaifuMessageProcessor {
             val contentWithoutThinking = ChatUtils.removeThinkingContent(segment.content)
             if (contentWithoutThinking.isBlank()) continue
 
-            val separatedContent = separateEmotionAndText(contentWithoutThinking)
+            // 表情已经内联在文字里，不再拆成独立的一条消息
+            val separatedContent = listOf(contentWithoutThinking)
 
             for (item in separatedContent) {
                 // 如果这个item是表情包（包含![开头的），直接添加
@@ -753,7 +761,12 @@ object WaifuMessageProcessor {
                     builder.append(block.rawContent)
                 }
 
-                StructuredAssistantContentParser.BlockKind.XML -> Unit
+                StructuredAssistantContentParser.BlockKind.XML -> {
+                    // 思维链要留给气泡渲染，其它 XML（工具调用、状态）照旧丢弃
+                    if (block.rawContent.trimStart().startsWith("<think", ignoreCase = true)) {
+                        builder.append(block.rawContent)
+                    }
+                }
             }
         }
 
@@ -883,6 +896,8 @@ object WaifuMessageProcessor {
                             MarkdownProcessorType.CODE_BLOCK,
                             MarkdownProcessorType.TABLE,
                             MarkdownProcessorType.BLOCK_LATEX -> true
+                            MarkdownProcessorType.XML_BLOCK ->
+                                block.trimStart().startsWith("<think", ignoreCase = true)
                             else -> false
                         }
 
