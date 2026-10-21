@@ -1159,13 +1159,14 @@ class MessageProcessingDelegate(
                     if (segment.isBlank()) return
 
                     val interrupt = waifuEmittedMessages.isEmpty()
+                    val isThinkSegment = segment.trimStart().startsWith("<think", ignoreCase = true)
                     val segmentMessage =
                         ChatMessage(
                             sender = "ai",
                             content = segment,
                             contentStream = null,
                             timestamp = ChatMessageTimestampAllocator.next(),
-                            roleName = currentRoleName,
+                            roleName = if (isThinkSegment || waifuEmittedMessages.isEmpty()) currentRoleName else "",
                             provider = provider,
                             modelName = modelName,
                             sentAt = requestSentAt
