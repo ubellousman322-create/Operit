@@ -418,7 +418,11 @@ fun BubbleAiMessageComposable(
                         }
                     }
 
-                    if (effectiveBubbleImageStyle != null) {
+                    if (onlyThinkingBlock) {
+
+                        renderContent()
+
+                    } else if (effectiveBubbleImageStyle != null) {
                         BubbleImageBackgroundSurface(
                             imageStyle = effectiveBubbleImageStyle,
                             shape = bubbleShape,
@@ -627,7 +631,11 @@ fun BubbleAiMessageComposable(
                         }
                     }
 
-                    if (effectiveBubbleImageStyle != null) {
+                    if (onlyThinkingBlock) {
+
+                        renderContent()
+
+                    } else if (effectiveBubbleImageStyle != null) {
                         BubbleImageBackgroundSurface(
                             imageStyle = effectiveBubbleImageStyle,
                             shape = bubbleShape,
