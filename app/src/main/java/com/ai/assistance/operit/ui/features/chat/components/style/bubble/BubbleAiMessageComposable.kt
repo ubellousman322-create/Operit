@@ -310,7 +310,7 @@ fun BubbleAiMessageComposable(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (bubbleShowAvatar) {
-                        if (!aiAvatarUri.isNullOrEmpty()) {
+                        if (!aiAvatarUri.isNullOrEmpty() && message.roleName.isNotEmpty()) {
                             Image(
                                 painter = rememberAsyncImagePainter(model = Uri.parse(aiAvatarUri)),
                                 contentDescription = "AI Avatar",
@@ -453,11 +453,7 @@ fun BubbleAiMessageComposable(
                         }
                     }
 
-                    if (onlyThinkingBlock) {
-
-                        renderContent()
-
-                    } else if (effectiveBubbleImageStyle != null) {
+                    if (effectiveBubbleImageStyle != null) {
                         BubbleImageBackgroundSurface(
                             imageStyle = effectiveBubbleImageStyle,
                             shape = bubbleShape,
@@ -533,7 +529,7 @@ fun BubbleAiMessageComposable(
                     }
                 )
             // Avatar
-            if (!aiAvatarUri.isNullOrEmpty()) {
+            if (!aiAvatarUri.isNullOrEmpty() && message.roleName.isNotEmpty()) {
                 Image(
                     painter = rememberAsyncImagePainter(model = Uri.parse(aiAvatarUri)),
                     contentDescription = "AI Avatar",
@@ -695,11 +691,7 @@ fun BubbleAiMessageComposable(
                         }
                     }
 
-                    if (onlyThinkingBlock) {
-
-                        renderContent()
-
-                    } else if (effectiveBubbleImageStyle != null) {
+                    if (effectiveBubbleImageStyle != null) {
                         BubbleImageBackgroundSurface(
                             imageStyle = effectiveBubbleImageStyle,
                             shape = bubbleShape,
