@@ -117,12 +117,7 @@ object WaifuMessageProcessor {
             val blockType = blockGroup.tag ?: MarkdownProcessorType.PLAIN_TEXT
             when (blockType) {
                 MarkdownProcessorType.XML_BLOCK -> {
-                    val xmlBuilder = StringBuilder()
-                    blockGroup.stream.collect { xmlBuilder.append(it) }
-                    val xmlBlock = xmlBuilder.toString()
-                    if (xmlBlock.trimStart().startsWith("<think", ignoreCase = true)) {
-                        appendRenderableText(xmlBlock)
-                    }
+                    blockGroup.stream.collect { }
                 }
 
                 MarkdownProcessorType.CODE_BLOCK,
@@ -761,12 +756,7 @@ object WaifuMessageProcessor {
                     builder.append(block.rawContent)
                 }
 
-                StructuredAssistantContentParser.BlockKind.XML -> {
-                    // 思维链要留给气泡渲染，其它 XML（工具调用、状态）照旧丢弃
-                    if (block.rawContent.trimStart().startsWith("<think", ignoreCase = true)) {
-                        builder.append(block.rawContent)
-                    }
-                }
+                StructuredAssistantContentParser.BlockKind.XML -> Unit
             }
         }
 
@@ -896,8 +886,6 @@ object WaifuMessageProcessor {
                             MarkdownProcessorType.CODE_BLOCK,
                             MarkdownProcessorType.TABLE,
                             MarkdownProcessorType.BLOCK_LATEX -> true
-                            MarkdownProcessorType.XML_BLOCK ->
-                                block.trimStart().startsWith("<think", ignoreCase = true)
                             else -> false
                         }
 
