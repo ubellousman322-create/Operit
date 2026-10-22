@@ -5,14 +5,6 @@ import android.webkit.WebSettings
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.Canvas
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Path
-import kotlinx.coroutines.delay
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -74,7 +66,6 @@ class CustomXmlRenderer(
     private val initialThinkingExpanded: Boolean = false,
     private val allowExpandedThinkingFullHeight: Boolean = false,
     private val enableDialogs: Boolean = true,  // 新增参数：是否启用弹窗功能，默认启用
-    private val thinkingDurationMs: Long = 0L,  // 这次回复等待首字的时间，用作思考时长
     private val fallback: XmlContentRenderer = DefaultXmlRenderer()
 ) : XmlContentRenderer {
     // 定义渲染器能够处理的内置标签集合
@@ -731,57 +722,6 @@ class CustomXmlRenderer(
         return "https://www.google.com/s2/favicons?sz=64&domain=$host"
     }
 
-    /** 思考过程的胶囊入口：星芒 + 耗时 + 箭头 */
-    @Composable
-    private fun ThinkPillRow(
-        text: String,
-        expanded: Boolean,
-        onClick: () -> Unit,
-    ) {
-        val fg = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.86f)
-        val bg = MaterialTheme.colorScheme.surface.copy(alpha = 0.55f)
-        val arrowRotation by
-            animateFloatAsState(
-                targetValue = if (expanded) 180f else 0f,
-                animationSpec = tween(durationMillis = 240),
-                label = "thinkPillArrow"
-            )
-        Row(
-            modifier =
-                Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(bg)
-                    .clickable(onClick = onClick)
-                    .padding(horizontal = 14.dp, vertical = 7.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Canvas(modifier = Modifier.size(14.dp)) {
-                val c = size.minDimension / 2f
-                val outer = c
-                val inner = c * 0.38f
-                val path = Path()
-                for (i in 0 until 8) {
-                    val ang = (-90f + i * 45f) * (PI / 180.0)
-                    val rr = if (i % 2 == 0) outer else inner
-                    val x = c + (rr * cos(ang)).toFloat()
-                    val y = c + (rr * sin(ang)).toFloat()
-                    if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
-                }
-                path.close()
-                drawPath(path, color = fg)
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = text, style = MaterialTheme.typography.labelLarge, color = fg)
-            Spacer(modifier = Modifier.width(2.dp))
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = null,
-                tint = fg,
-                modifier = Modifier.size(18.dp).rotate(arrowRotation),
-            )
-        }
-    }
-
     /** 渲染 <think> 和 <thinking> 标签内容 */
     @Composable
     private fun renderThinkContent(
@@ -834,28 +774,6 @@ class CustomXmlRenderer(
         val thinkVisibilityState = remember { MutableTransitionState(initialThinkingExpanded) }
         val thinkBodyToggleInteractionSource = remember { MutableInteractionSource() }
 
-        var thinkStartMs by remember { mutableStateOf(0L) }
-        var thinkElapsedMs by remember { mutableStateOf(thinkingDurationMs) }
-        LaunchedEffect(isThinkingInProgress) {
-            if (isThinkingInProgress) {
-                thinkStartMs = System.currentTimeMillis()
-                while (true) {
-                    thinkElapsedMs = System.currentTimeMillis() - thinkStartMs
-                    delay(100)
-                }
-            } else if (thinkStartMs > 0L) {
-                thinkElapsedMs = System.currentTimeMillis() - thinkStartMs
-            }
-        }
-        val thinkSeconds = thinkElapsedMs / 1000f
-        val thinkPillText =
-            when {
-                isThinkingInProgress && thinkStartMs > 0L ->
-                    "思考中 · " + String.format(java.util.Locale.US, "%.1f", thinkSeconds) + " 秒"
-                thinkElapsedMs > 0L ->
-                    "思考了 " + String.format(java.util.Locale.US, "%.1f", thinkSeconds) + " 秒"
-                else -> stringResource(id = R.string.thinking_process)
-            }
         val accessibilityDesc = stringResource(R.string.thinking_process_block)
 
         // 使用LaunchedEffect来初始化和同步状态，避免在快速重组时状态被意外重置
@@ -966,9 +884,14 @@ class CustomXmlRenderer(
                         label = "arrowRotation"
                     )
 
-                ThinkPillRow(
-                    text = thinkPillText,
+                CanvasExpandableHeaderRow(
+                    title = stringResource(id = R.string.thinking_process),
+                    semanticDescription =
+                        if (expanded) stringResource(R.string.common_collapse) else stringResource(R.string.common_expand),
                     expanded = expanded,
+                    titleColor = thinkingTitleBaseColor,
+                    rotationDegrees = rotation,
+                    shimmerShiftPx = thinkingTitleShimmerShiftPx,
                     onClick = {
                         skipCollapseAnimationOnce = false
                         val newExpandedValue = !expanded
