@@ -182,8 +182,7 @@ fun BubbleAiMessageComposable(
             showStatusTags = showStatusTags,
             initialThinkingExpanded = initialThinkingExpanded,
             allowExpandedThinkingFullHeight = allowExpandedThinkingFullHeight,
-            enableDialogs = enableDialogs,
-            thinkingDurationMs = message.waitDurationMs
+            enableDialogs = enableDialogs
         )
     }
 
@@ -696,7 +695,3 @@ fun BubbleAiMessageComposable(
         )
     }
 }
-
-/** 内容里只有 <think> 块，没有正文 */
-
-
