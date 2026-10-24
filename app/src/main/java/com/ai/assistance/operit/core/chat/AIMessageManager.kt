@@ -808,6 +808,7 @@ object AIMessageManager {
                     Regex("<reply_to[\\s\\S]*?</reply_to>", RegexOption.DOT_MATCHES_ALL),
                     context.getString(R.string.ai_message_reply_omitted)
                 )
+                .replace(Regex("<pat\\b[^>]*/?>", RegexOption.IGNORE_CASE), "")
 
             return ChatMarkupRegex.toolResultTagWithAttrs.replace(removedLargeTags) { mr ->
                 val attrs = mr.groupValues.getOrNull(2) ?: ""
@@ -1067,7 +1068,11 @@ object AIMessageManager {
                                 customTitle = summaryConfig.dialogueReviewTitle
                             )
                         )
-                        conversationReviewEntries.forEach { (speaker, content) ->
+                        val reviewLimit = summaryConfig.dialogueReviewLimit.coerceIn(0, 200)
+                        val reviewEntries =
+                            if (reviewLimit <= 0) conversationReviewEntries
+                            else conversationReviewEntries.takeLast(reviewLimit)
+                        reviewEntries.forEach { (speaker, content) ->
                             append("- ")
                             append(speaker)
                             append(": ")
@@ -1372,7 +1377,10 @@ object AIMessageManager {
                     "summary" ->
                         PromptTurn(
                             kind = PromptTurnKind.SUMMARY,
-                            content = message.content
+                            content =
+                                "<conversation_summary>\n" +
+                                    message.content +
+                                    "\n</conversation_summary>"
                         )
                     else -> null
                 }
