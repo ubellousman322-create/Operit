@@ -897,6 +897,8 @@
     <string name="settings_summary_dialogue_review_desc">在摘要末尾追加程序整理的用户、助手和工具调用记录</string>
     <string name="settings_summary_dialogue_review_title">回顾标题</string>
     <string name="settings_summary_dialogue_review_title_desc">摘要末尾显示的标题，留空使用默认标题</string>
+    <string name="settings_summary_dialogue_review_limit">回顾条数</string>
+    <string name="settings_summary_dialogue_review_limit_desc">只回顾最近几条消息，填 0 不限制</string>
 
     <string name="settings_section_display">显示与行为</string>
 
