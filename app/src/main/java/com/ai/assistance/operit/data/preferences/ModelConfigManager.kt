@@ -960,12 +960,14 @@ class ModelConfigManager(
     suspend fun updateSummaryDialogueReviewSettings(
             configId: String,
             enabled: Boolean,
-            title: String
+            title: String,
+            limit: Int = 12
     ): ModelConfigData {
         return updateConfigInternal(configId) {
             it.copy(
                     enableSummaryDialogueReview = enabled,
-                    summaryDialogueReviewTitle = title
+                    summaryDialogueReviewTitle = title,
+                    summaryDialogueReviewLimit = limit.coerceIn(0, 200)
             )
         }
     }
