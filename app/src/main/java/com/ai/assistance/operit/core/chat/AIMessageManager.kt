@@ -842,7 +842,7 @@ object AIMessageManager {
         }
 
         fun condenseUserForReview(text: String): String {
-            val pruned = pruneUserMessageForReview(text)
+            val pruned = stripXmlTagsForReview(pruneUserMessageForReview(text))
             return condenseHeadTail(pruned, headChars = 240, tailChars = 96)
         }
 
@@ -924,51 +924,8 @@ object AIMessageManager {
                         val tailChars = if (index == lastTextIndex) 120 else 48
                         condenseHeadTail(seg.raw, headChars = headChars, tailChars = tailChars).takeIf { it.isNotBlank() }
                     }
-                    "tool" -> {
-                        val name = seg.toolName ?: "tool"
-                        val paramsPreview = condenseToolParams(seg.raw)
-                        val bodyPreview = condenseToolBodyPreview(seg.raw)
-                        buildString {
-                            append(context.getString(R.string.ai_message_tool_start, name))
-                            if (paramsPreview.isNotBlank()) {
-                                append(" ")
-                                append(paramsPreview)
-                            }
-                            if (bodyPreview.isNotBlank()) {
-                                if (paramsPreview.isNotBlank()) append(" | ")
-                                else append(" ")
-                                append(bodyPreview)
-                            }
-                        }.trim().ifBlank { null }
-                    }
-                    "tool_result" -> {
-                        val s = seg.status?.lowercase()
-                        val statusText = when {
-                            s == null -> ""
-                            s == "success" -> context.getString(R.string.ai_message_success)
-                            s == "error" -> context.getString(R.string.ai_message_failure)
-                            else -> s
-                        }
-                        val name = seg.toolName ?: "tool"
-                        val resultPreview = condenseToolResultPreview(seg.raw)
-                        buildString {
-                            if (statusText.isBlank()) {
-                                append(context.getString(R.string.ai_message_result_prefix))
-                                append(name)
-                                append(context.getString(R.string.ai_message_result_suffix))
-                            } else {
-                                append(context.getString(R.string.ai_message_result_prefix))
-                                append(name)
-                                append(" ")
-                                append(statusText)
-                                append(context.getString(R.string.ai_message_result_suffix))
-                            }
-                            if (resultPreview.isNotBlank()) {
-                                append(" ")
-                                append(resultPreview)
-                            }
-                        }
-                    }
+                    "tool" -> null
+                    "tool_result" -> null
                     else -> null
                 }
             }
@@ -1072,13 +1029,15 @@ object AIMessageManager {
                         val reviewEntries =
                             if (reviewLimit <= 0) conversationReviewEntries
                             else conversationReviewEntries.takeLast(reviewLimit)
-                        reviewEntries.forEach { (speaker, content) ->
-                            append("- ")
-                            append(speaker)
-                            append(": ")
-                            append(content)
-                            append("\n")
-                        }
+                        reviewEntries
+                                .filter { it.second.isNotBlank() && it.second != "[Empty]" }
+                                .forEach { (speaker, content) ->
+                                    append("- ")
+                                    append(speaker)
+                                    append(": ")
+                                    append(content)
+                                    append("\n")
+                                }
                     }
                     if (packageWarmupBlock.isNotBlank()) {
                         append("\n\n")
