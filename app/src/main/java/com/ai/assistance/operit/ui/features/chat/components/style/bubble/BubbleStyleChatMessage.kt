@@ -4,6 +4,7 @@ package com.ai.assistance.operit.ui.features.chat.components.style.bubble
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import com.ai.assistance.operit.data.model.ChatMessage
+import com.ai.assistance.operit.core.config.FunctionalPrompts
 import com.ai.assistance.operit.ui.features.chat.components.ChatMessageHeightMemory
 import com.ai.assistance.operit.ui.features.chat.components.style.cursor.SummaryMessageComposable
 import com.ai.assistance.operit.util.stream.Stream
@@ -46,6 +47,29 @@ fun BubbleStyleChatMessage(
     onAvatarDoubleTap: (() -> Unit)? = null,
     onEditSummary: ((ChatMessage) -> Unit)? = null,
 ) {
+    val summaryLikeContent =
+        message.content.trimStart().let {
+            it.startsWith(FunctionalPrompts.SUMMARY_MARKER_CN) ||
+                it.startsWith(FunctionalPrompts.SUMMARY_MARKER_EN) ||
+                it.startsWith("<conversation_summary>")
+        }
+    if (summaryLikeContent) {
+        SummaryMessageComposable(
+            message = message,
+            backgroundColor = systemMessageColor.copy(alpha = 0.7f),
+            textColor = systemTextColor,
+            onDelete = {
+                if (index != -1) {
+                    onDeleteMessage?.invoke(index)
+                }
+            },
+            enableDialog = enableDialogs,
+            onEdit = { editedMessage ->
+                onEditSummary?.invoke(editedMessage)
+            }
+        )
+        return
+    }
     when (message.sender) {
         "user" -> {
             BubbleUserMessageComposable(
