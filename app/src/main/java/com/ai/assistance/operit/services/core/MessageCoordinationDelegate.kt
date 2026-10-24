@@ -2050,7 +2050,8 @@ class MessageCoordinationDelegate(
                     globalRules = config.summaryCustomRules.takeIf { it.isNotBlank() },
                     sectionOverrides = config.summarySectionOverrides,
                     dialogueReviewEnabled = config.enableSummaryDialogueReview,
-                    dialogueReviewTitle = config.summaryDialogueReviewTitle
+                    dialogueReviewTitle = config.summaryDialogueReviewTitle,
+                    dialogueReviewLimit = config.summaryDialogueReviewLimit
                 )
             } else {
                 ConversationSummaryConfig()
