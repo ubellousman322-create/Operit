@@ -174,6 +174,9 @@ fun ContextSummarySettingsScreen(onBackPressed: () -> Unit) {
     var dialogueReviewTitleInput by remember(currentConfig?.id) {
         mutableStateOf(currentConfig?.summaryDialogueReviewTitle.orEmpty())
     }
+    var dialogueReviewLimitInput by remember(currentConfig?.id) {
+        mutableStateOf((currentConfig?.summaryDialogueReviewLimit ?: 12).toString())
+    }
     val useEnglish = !LocaleUtils.usesChineseContent(context)
     var summarySectionsInput by remember(currentConfig?.id) {
         mutableStateOf(emptyList<SummarySectionConfig>())
@@ -210,6 +213,9 @@ fun ContextSummarySettingsScreen(onBackPressed: () -> Unit) {
     }
     LaunchedEffect(currentConfig?.id, currentConfig?.summaryDialogueReviewTitle) {
         dialogueReviewTitleInput = currentConfig?.summaryDialogueReviewTitle.orEmpty()
+    }
+    LaunchedEffect(currentConfig?.id, currentConfig?.summaryDialogueReviewLimit) {
+        dialogueReviewLimitInput = (currentConfig?.summaryDialogueReviewLimit ?: 12).toString()
     }
     LaunchedEffect(currentConfig?.id, currentConfig?.summarySectionOverrides, useEnglish) {
         summarySectionsInput = FunctionalPrompts.resolveSummarySections(
@@ -274,7 +280,7 @@ fun ContextSummarySettingsScreen(onBackPressed: () -> Unit) {
     )
     ContextSummaryDialogueReviewAutoSaveEffect(
         currentConfig = currentConfig,
-        dialogueReviewInputProvider = { dialogueReviewEnabled to dialogueReviewTitleInput },
+        dialogueReviewInputProvider = Triple(dialogueReviewEnabled, dialogueReviewTitleInput, dialogueReviewLimitInput),
         modelConfigManager = modelConfigManager,
         errorSaveFailed = errorSaveFailed,
         onSummaryErrorChange = { summaryError = it }
@@ -348,6 +354,8 @@ fun ContextSummarySettingsScreen(onBackPressed: () -> Unit) {
                     onDialogueReviewEnabledChange = { dialogueReviewEnabled = it },
                     dialogueReviewTitleInput = dialogueReviewTitleInput,
                     onDialogueReviewTitleChange = { dialogueReviewTitleInput = it },
+                    dialogueReviewLimitInput = dialogueReviewLimitInput,
+                    onDialogueReviewLimitInputChange = { dialogueReviewLimitInput = it },
                     summarySectionsInput = summarySectionsInput,
                     onSummarySectionsInputChange = { summarySectionsInput = it },
                     onOpenFullscreenEditor = { title, value, onValueChange ->
@@ -644,7 +652,7 @@ private fun ContextSummarySectionsAutoSaveEffect(
 @Composable
 private fun ContextSummaryDialogueReviewAutoSaveEffect(
     currentConfig: ModelConfigData?,
-    dialogueReviewInputProvider: () -> Pair<Boolean, String>,
+    dialogueReviewInputProvider: () -> Triple<Boolean, String, String>,
     modelConfigManager: ModelConfigManager,
     errorSaveFailed: String,
     onSummaryErrorChange: (String?) -> Unit
@@ -657,12 +665,14 @@ private fun ContextSummaryDialogueReviewAutoSaveEffect(
             .drop(1)
             .debounce(700)
             .distinctUntilChanged()
-            .collectLatest { (enabled, title) ->
+            .collectLatest { (enabled, title, limit) ->
                 val current = latestConfig ?: return@collectLatest
                 if (current.id != configId) return@collectLatest
                 val normalizedTitle = title.trim()
+                val parsedLimit = limit.toIntOrNull()?.coerceIn(0, 200) ?: 12
                 if (current.enableSummaryDialogueReview == enabled &&
-                    current.summaryDialogueReviewTitle == normalizedTitle
+                    current.summaryDialogueReviewTitle == normalizedTitle &&
+                    current.summaryDialogueReviewLimit == parsedLimit
                 ) {
                     return@collectLatest
                 }
@@ -670,7 +680,8 @@ private fun ContextSummaryDialogueReviewAutoSaveEffect(
                     modelConfigManager.updateSummaryDialogueReviewSettings(
                         configId = current.id,
                         enabled = enabled,
-                        title = normalizedTitle
+                        title = normalizedTitle,
+                        limit = parsedLimit
                     )
                     onSummaryErrorChange(null)
                 } catch (e: Exception) {
@@ -703,6 +714,8 @@ private fun RenderContextSummaryConfigSections(
     onDialogueReviewEnabledChange: (Boolean) -> Unit,
     dialogueReviewTitleInput: String,
     onDialogueReviewTitleChange: (String) -> Unit,
+    dialogueReviewLimitInput: String,
+    onDialogueReviewLimitInputChange: (String) -> Unit,
     summarySectionsInput: List<SummarySectionConfig>,
     onSummarySectionsInputChange: (List<SummarySectionConfig>) -> Unit,
     onOpenFullscreenEditor: (String, String, (String) -> Unit) -> Unit,
@@ -832,6 +845,8 @@ private fun RenderContextSummaryConfigSections(
         onEnabledChange = onDialogueReviewEnabledChange,
         title = dialogueReviewTitleInput,
         onTitleChange = onDialogueReviewTitleChange,
+        limitInput = dialogueReviewLimitInput,
+        onLimitChange = onDialogueReviewLimitInputChange,
         backgroundColor = componentBackgroundColor,
         summaryEnabled = enableSummary
     )
@@ -927,6 +942,8 @@ private fun DialogueReviewEditor(
     onEnabledChange: (Boolean) -> Unit,
     title: String,
     onTitleChange: (String) -> Unit,
+    limitInput: String,
+    onLimitChange: (String) -> Unit,
     backgroundColor: Color,
     summaryEnabled: Boolean
 ) {
@@ -951,6 +968,17 @@ private fun DialogueReviewEditor(
             enabled = summaryEnabled && enabled,
             singleLine = true,
             minHeight = 40.dp
+        )
+        SettingsInputField(
+            title = stringResource(id = R.string.settings_summary_dialogue_review_limit),
+            subtitle = stringResource(id = R.string.settings_summary_dialogue_review_limit_desc),
+            value = limitInput,
+            onValueChange = onLimitChange,
+            unitText = stringResource(id = R.string.model_config_unit_items),
+            backgroundColor = backgroundColor,
+            enabled = summaryEnabled && enabled,
+            keyboardOptions =
+                KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done)
         )
     }
     Spacer(modifier = Modifier.size(8.dp))
