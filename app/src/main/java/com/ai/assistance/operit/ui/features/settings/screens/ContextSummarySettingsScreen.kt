@@ -280,7 +280,9 @@ fun ContextSummarySettingsScreen(onBackPressed: () -> Unit) {
     )
     ContextSummaryDialogueReviewAutoSaveEffect(
         currentConfig = currentConfig,
-        dialogueReviewInputProvider = Triple(dialogueReviewEnabled, dialogueReviewTitleInput, dialogueReviewLimitInput),
+        dialogueReviewInputProvider = {
+            Triple(dialogueReviewEnabled, dialogueReviewTitleInput, dialogueReviewLimitInput)
+        },
         modelConfigManager = modelConfigManager,
         errorSaveFailed = errorSaveFailed,
         onSummaryErrorChange = { summaryError = it }
