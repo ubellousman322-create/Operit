@@ -767,7 +767,11 @@ private fun MessageItem(
             // 拍一拍：整条只有标记就只在中间留一行字；夹在正文里就抠出来摊在气泡上方。
             val chatPat =
                 remember(message.content, message.sender) {
-                    ChatPatMarkup.parse(message.content, message.sender)
+                    if (message.sender == "user" || message.sender == "ai") {
+                        ChatPatMarkup.parse(message.content, message.sender)
+                    } else {
+                        null
+                    }
                 }
             val patDisplayName =
                 if (chatPat is ChatPatEvent.FromUser) assistantName else message.roleName
