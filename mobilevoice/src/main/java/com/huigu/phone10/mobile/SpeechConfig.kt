@@ -57,6 +57,8 @@ data class SpeechConfig(val sttBaseUrl: String, val sttKey: String, val sttModel
             OPENAI -> openAiDefaults()
             MINIMAX -> copy(sttBaseUrl = "https://api.minimaxi.com/v1", sttKey = "", sttModel = "asr-1.0")
             MOSSLAND -> copy(sttBaseUrl = "https://api.mosi.cn/v1", sttKey = "", sttModel = "moss-transcribe-1.0")
+            LOCAL_SHERPA -> copy(sttBaseUrl = "", sttKey = "", sttModel = "sherpa-mnn",
+                sttVolcResource = null, sttVolcAppId = null)
             else -> copy(sttBaseUrl = "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async",
                 sttKey = "", sttModel = "bigmodel", sttVolcResource = null, sttVolcAppId = null)
         }
@@ -79,7 +81,7 @@ data class SpeechConfig(val sttBaseUrl: String, val sttKey: String, val sttModel
                 add("$label：${invalid.message}")
             }
         }
-        if (includeRecognition) address("识别接口地址", sttBaseUrl) {
+        if (includeRecognition && provider != LOCAL_SHERPA) address("识别接口地址", sttBaseUrl) {
             when (provider) {
                 BAILIAN -> bailianEndpoint(sttBaseUrl)
                 VOLCENGINE -> volcengineRecognitionEndpoint(sttBaseUrl)
@@ -97,7 +99,7 @@ data class SpeechConfig(val sttBaseUrl: String, val sttKey: String, val sttModel
                 else -> throw IllegalArgumentException("请选择支持的合成服务。")
             }
         }
-        (if (includeRecognition) listOf("识别 API Key" to sttKey, "识别模型" to sttModel) else emptyList()).plus(listOf("合成 API Key" to ttsKey,
+        (if (includeRecognition && provider != LOCAL_SHERPA) listOf("识别 API Key" to sttKey, "识别模型" to sttModel) else emptyList()).plus(listOf("合成 API Key" to ttsKey,
             "合成模型" to ttsModel, "音色 ID" to voice)).forEach { (label, value) ->
             if (value.isBlank()) add("$label：尚未填写。")
             else if (value.length > 4096 || '\r' in value || '\n' in value ||
@@ -236,7 +238,8 @@ data class SpeechConfig(val sttBaseUrl: String, val sttKey: String, val sttModel
         const val VOLCENGINE = "volcengine"
         const val QWEN_LOCAL = "qwen-local"
         const val ELEVENLABS = "elevenlabs"
-        val STT_PROVIDERS = setOf(BAILIAN, OPENAI, VOLCENGINE, MINIMAX, MOSSLAND)
+        const val LOCAL_SHERPA = "local-sherpa"
+        val STT_PROVIDERS = setOf(BAILIAN, OPENAI, VOLCENGINE, MINIMAX, MOSSLAND, LOCAL_SHERPA)
         val MOSS_STT_MODELS = setOf("moss-transcribe-1.0", "moss-transcribe-diarize-pro")
         val VOLC_STT_RESOURCES = setOf("volc.seedasr.sauc.duration", "volc.seedasr.sauc.concurrent",
             "volc.bigasr.sauc.duration", "volc.bigasr.sauc.concurrent")
