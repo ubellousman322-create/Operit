@@ -15,6 +15,8 @@ object SpeechServiceFactory {
     enum class SpeechServiceType {
         /** 基于Sherpa-ncnn的本地识别实现 */
         SHERPA_NCNN,
+        /** 基于Sherpa-mnn的本地识别实现（带 VAD） */
+        SHERPA_MNN,
         OPENAI_STT,
         DEEPGRAM_STT,
     }
@@ -64,7 +66,8 @@ object SpeechServiceFactory {
         httpConfig: SttHttpConfig,
     ): SpeechService {
         return when (type) {
-            SpeechServiceType.SHERPA_NCNN -> acquireLocalSpeechService(context, type)
+            SpeechServiceType.SHERPA_NCNN,
+            SpeechServiceType.SHERPA_MNN -> acquireLocalSpeechService(context, type)
             SpeechServiceType.OPENAI_STT -> {
                 runBlocking {
                     OpenAISttProvider(
@@ -132,6 +135,7 @@ object SpeechServiceFactory {
                     val service =
                         when (type) {
                             SpeechServiceType.SHERPA_NCNN -> SherpaSpeechProvider(appContext)
+                            SpeechServiceType.SHERPA_MNN -> SherpaMnnSpeechProvider(appContext)
                             else -> throw IllegalArgumentException("Not a local SpeechService type: $type")
                         }
                     LocalEntry(type = type, service = service, refCount = 1).also { localEntry = it }
