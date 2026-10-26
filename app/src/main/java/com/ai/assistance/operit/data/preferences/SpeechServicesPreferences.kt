@@ -226,6 +226,8 @@ class SpeechServicesPreferences(private val context: Context) {
             when (serviceType) {
                 SpeechServiceFactory.SpeechServiceType.SHERPA_NCNN -> {
                 }
+                SpeechServiceFactory.SpeechServiceType.SHERPA_MNN -> {
+                }
                 SpeechServiceFactory.SpeechServiceType.OPENAI_STT -> {
                     httpConfig?.let { prefs[STT_HTTP_CONFIG] = serializerJson.encodeToString(it) }
                 }
