@@ -142,6 +142,8 @@ class OperitApplication : Application(), ImageLoaderFactory, WorkConfiguration.P
         // context 先存下来（这一步不会失败）；注册要是失败，把原因写进文件，
         // 下次我直接读，不用再猜。
         com.huigu.phone10.mobile.OperitLocalVoice.appContext = this
+        // 同一个 context 给本地识别用：耳畔选了「手机本地」时靠它把 PCM 交给 Sherpa。
+        com.huigu.phone10.mobile.LocalAsr.appContext = this
         runCatching {
             com.huigu.phone10.mobile.OperitLocalVoice.host =
                 com.ai.assistance.operit.integrations.mobilevoice.OperitMobileVoiceHost(this)
