@@ -284,11 +284,33 @@ class VoiceService : Service() {
             }
         })
         val o = OperitBridge(this).also { bridge = it }
+        // 手机本地识别：选 local-sherpa 时这一段录音交给 Operit 的 Sherpa，不联网。
+        val localAsr = if (config.speech.provider == SpeechConfig.LOCAL_SHERPA) LocalAsr.resolve() else null
+        VoiceDiagnostics.record(if (localAsr != null) "stt_local_sherpa" else "stt_remote")
+        val transcribeUtterance: suspend (ByteArray) -> String = local@{ pcm ->
+            val asr = localAsr ?: return@local cloud.transcribe(pcm)
+            withContext(Dispatchers.IO) {
+                var id = -1L
+                try {
+                    id = asr.start()
+                    if (id < 0) throw IllegalStateException("本地识别未能启动。")
+                    asr.feed(id, pcm)
+                    asr.finish(id)?.trim().orEmpty()
+                } catch (cancelled: CancellationException) { throw cancelled }
+                catch (error: Exception) {
+                    VoiceDiagnostics.record("stt_local_failed: ${error.message.orEmpty()}")
+                    ""
+                } finally { if (id >= 0) runCatching { asr.cancel(id) } }
+            }
+        }
+        val transcribeDetailed: suspend (ByteArray) -> SpeechTranscript = { pcm ->
+            if (localAsr == null) cloud.transcribeDetailed(pcm) else SpeechTranscript(transcribeUtterance(pcm))
+        }
         val judge = if (!config.listenOnly && config.smartEndpoint && !config.confirmBeforeSend)
             CloudEndJudge(requireNotNull(config.endJudge)) else null
         wakeLock = (getSystemService(POWER_SERVICE) as PowerManager)
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Phone10Mobile:call").also { it.acquire() }
-        VoiceConversation(child, cloud::transcribe,
+        VoiceConversation(child, transcribeUtterance,
             { text, chunk -> o.reply(config.chatId, text, chunk) },
             { text -> play { output -> cloud.speak(text, output::configure, output::write) } },
             { stopPlayer() }, { message ->
@@ -313,7 +335,7 @@ class VoiceService : Service() {
             wholeReplyTts = config.speech.wholeReplyTts,
             firstClauseTts = config.speech.clientSegmentedTts,
             coherentTts = config.speech.coherentTts,
-            transcribeDetailed = cloud::transcribeDetailed,
+            transcribeDetailed = transcribeDetailed,
             confirmBeforeSend = !config.listenOnly && config.confirmBeforeSend,
             onDraftChanged = { draft ->
                 if (started && callScope === child) updatePendingDraft(draft)
