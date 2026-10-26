@@ -66,33 +66,38 @@ import java.util.Locale
             ProviderField("服务商", speech.provider ?: SpeechConfig.OPENAI, enabled,
                 listOf(SpeechConfig.BAILIAN to "阿里云百炼", SpeechConfig.VOLCENGINE to "火山引擎 / 豆包语音",
                     SpeechConfig.MINIMAX to "MiniMax 官方", SpeechConfig.MOSSLAND to "模思 Mossland",
+                    SpeechConfig.LOCAL_SHERPA to "手机本地（Sherpa MNN）",
                     SpeechConfig.OPENAI to "Audio API 兼容"), onStt)
-            FormField("识别接口地址", speech.sttBaseUrl, enabled, placeholder = "填写识别服务的地址") { onChange(settings.copy(speech = speech.copy(sttBaseUrl = it.trim()))) }
-            FormField("识别 API Key", speech.sttKey, enabled, secret = true,
-                placeholder = if (speech.isBailian) "填写百炼 API Key" else "填写识别服务的 API Key") { onChange(settings.copy(speech = speech.copy(sttKey = it.trim()))) }
-            if (speech.provider == SpeechConfig.VOLCENGINE) {
-                ProviderField("识别类型", speech.effectiveSttVolcResource, enabled, listOf(
-                    "volc.seedasr.sauc.duration" to "豆包识别 2.0（小时版）",
-                    "volc.seedasr.sauc.concurrent" to "豆包识别 2.0（并发版）",
-                    "volc.bigasr.sauc.duration" to "豆包识别 1.0（小时版）",
-                    "volc.bigasr.sauc.concurrent" to "豆包识别 1.0（并发版）")) {
-                    onChange(settings.copy(speech = speech.copy(sttVolcResource = it)))
-                }
-                FormField("识别旧版 App ID（选填）", speech.sttVolcAppId.orEmpty(), enabled,
-                    placeholder = "新版 API Key 留空；旧版填 App ID") {
-                    onChange(settings.copy(speech = speech.copy(sttVolcAppId = it.trim())))
-                }
-            } else if (speech.provider == SpeechConfig.MOSSLAND) {
-                ProviderField("识别模型", speech.sttModel, enabled, listOf(
-                    "moss-transcribe-1.0" to "普通转写", "moss-transcribe-diarize-pro" to "多说话人转写")) {
-                    onChange(settings.copy(speech = speech.copy(sttModel = it)))
-                }
-            } else FormField("识别模型", speech.sttModel, enabled) { onChange(settings.copy(speech = speech.copy(sttModel = it.trim()))) }
+            // 本地引擎不需要地址、密钥和模型名，这三项只在云端时出现。
+            if (speech.provider != SpeechConfig.LOCAL_SHERPA) {
+                FormField("识别接口地址", speech.sttBaseUrl, enabled, placeholder = "填写识别服务的地址") { onChange(settings.copy(speech = speech.copy(sttBaseUrl = it.trim()))) }
+                FormField("识别 API Key", speech.sttKey, enabled, secret = true,
+                    placeholder = if (speech.isBailian) "填写百炼 API Key" else "填写识别服务的 API Key") { onChange(settings.copy(speech = speech.copy(sttKey = it.trim()))) }
+                if (speech.provider == SpeechConfig.VOLCENGINE) {
+                    ProviderField("识别类型", speech.effectiveSttVolcResource, enabled, listOf(
+                        "volc.seedasr.sauc.duration" to "豆包识别 2.0（小时版）",
+                        "volc.seedasr.sauc.concurrent" to "豆包识别 2.0（并发版）",
+                        "volc.bigasr.sauc.duration" to "豆包识别 1.0（小时版）",
+                        "volc.bigasr.sauc.concurrent" to "豆包识别 1.0（并发版）")) {
+                        onChange(settings.copy(speech = speech.copy(sttVolcResource = it)))
+                    }
+                    FormField("识别旧版 App ID（选填）", speech.sttVolcAppId.orEmpty(), enabled,
+                        placeholder = "新版 API Key 留空；旧版填 App ID") {
+                        onChange(settings.copy(speech = speech.copy(sttVolcAppId = it.trim())))
+                    }
+                } else if (speech.provider == SpeechConfig.MOSSLAND) {
+                    ProviderField("识别模型", speech.sttModel, enabled, listOf(
+                        "moss-transcribe-1.0" to "普通转写", "moss-transcribe-diarize-pro" to "多说话人转写")) {
+                        onChange(settings.copy(speech = speech.copy(sttModel = it)))
+                    }
+                } else FormField("识别模型", speech.sttModel, enabled) { onChange(settings.copy(speech = speech.copy(sttModel = it.trim()))) }
+            }
             Hint(when (speech.provider) {
                 SpeechConfig.BAILIAN -> "地址、密钥和模型需属于同一地域。百炼识别使用 Paraformer 协议。"
                 SpeechConfig.VOLCENGINE -> "选择账号已开通的识别类型。新版填写 API Key；旧版在密钥框填写 Access Token，并填写识别 App ID。"
                 SpeechConfig.MINIMAX -> "使用 MiniMax 官方密钥，识别模型保持 asr-1.0。"
                 SpeechConfig.MOSSLAND -> "使用 Moss API 密钥，日常通话可先选普通转写。"
+                SpeechConfig.LOCAL_SHERPA -> "识别在手机本机完成，不联网、不需要密钥。首次使用要加载模型，可能等一两秒。"
                 else -> "服务需支持 Audio API 语音识别接口。"
             })
             ConfigDivider()
