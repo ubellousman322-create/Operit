@@ -221,6 +221,8 @@ sealed class Screen(
                             "favorites" -> navigateTo(MessageFavorites)
                             "assistant_config" -> navigateTo(AssistantConfig)
                             "model_config" -> navigateTo(ModelConfig)
+                            "functional_config" -> navigateTo(FunctionalConfig)
+                            "speech_services" -> navigateTo(SpeechServicesSettings)
                             "prompts" -> navigateTo(ModelPromptsSettings)
                             "appearance" -> navigateTo(ThemeSettings)
                             "backup" -> navigateTo(ChatBackupSettings)
