@@ -35,8 +35,15 @@ internal class ConnectionCheck(
             else "已连接 Operit，但未找到所选聊天，请重新选择聊天窗口。"
         }
         if (!settings.listenOnly) check("语音识别", "检查失败，请核对识别地址、密钥、模型和网络。") {
-            checkRecognition()
-            "接口已响应静音测试；人声识别请在通话中确认。"
+            if (settings.speech.provider == SpeechConfig.LOCAL_SHERPA) {
+                val local = LocalAsr.resolve()
+                if (local == null) "本机识别引擎没接上：请确认 Operit 已安装并且启动过一次。"
+                else if (local.warmUp()) "本机识别引擎已就绪；识别在手机上完成，不联网。"
+                else "本机模型没加载成功：请在 Operit 的语音服务里确认 Sherpa MNN 模型已下载。"
+            } else {
+                checkRecognition()
+                "接口已响应静音测试；人声识别请在通话中确认。"
+            }
         }
         check("语音合成", "检查失败，请核对合成地址、密钥、模型、音色 ID 和网络。") {
             checkSynthesis()
