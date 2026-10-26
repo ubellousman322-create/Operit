@@ -279,6 +279,46 @@ class SherpaMnnSpeechProvider(private val context: Context) : SpeechService {
         return currentVolume
     }
 
+    /**
+     * 一次性识别一整段 16 kHz 单声道 16 位小端 PCM。
+     *
+     * 不打开麦克风，也不碰 VAD：调用方（耳畔）自己已经录音并分好段，
+     * 这里只负责把这段波形变成文字。整段音频分块喂入 OnlineStream，
+     * 尾部补 0.3 秒静音逼出最后几个字。
+     */
+    suspend fun recognizePcm(pcm: ByteArray, sampleRate: Int = 16000): String? =
+        withContext(Dispatchers.IO) {
+            if (pcm.size < 6400) return@withContext null
+            if (!isInitialized.value && !initialize()) return@withContext null
+            val rec = recognizer ?: return@withContext null
+            val s = rec.createStream()
+            try {
+                val total = pcm.size / 2
+                val samples = FloatArray(total)
+                for (i in 0 until total) {
+                    val lo = pcm[i * 2].toInt() and 0xFF
+                    val hi = pcm[i * 2 + 1].toInt()
+                    samples[i] = ((lo or (hi shl 8)).toShort()) / 32768.0f
+                }
+                var offset = 0
+                val chunk = sampleRate / 5
+                while (offset < total) {
+                    val end = minOf(offset + chunk, total)
+                    s.acceptWaveform(samples.copyOfRange(offset, end), sampleRate)
+                    while (rec.isReady(s)) rec.decode(s)
+                    offset = end
+                }
+                s.acceptWaveform(FloatArray(sampleRate / 3) { 0f }, sampleRate)
+                while (rec.isReady(s)) rec.decode(s)
+                rec.getResult(s).text.ifBlank { null }
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "recognizePcm failed", e)
+                null
+            } finally {
+                runCatching { s.release() }
+            }
+        }
+
     override suspend fun startRecognition(
             languageCode: String,
             continuousMode: Boolean,
