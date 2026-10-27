@@ -21,6 +21,8 @@ interface LocalAsrHost {
     fun cancel(sessionId: Long)
     /** 预热模型，返回是否可用。设置页检查连接时用。 */
     suspend fun warmUp(): Boolean = true
+    /** 通话结束，把借来的识别服务还回去。 */
+    fun shutdown() = Unit
 }
 
 object LocalAsr {
