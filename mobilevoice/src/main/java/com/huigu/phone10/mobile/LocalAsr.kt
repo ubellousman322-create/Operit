@@ -9,12 +9,14 @@ import android.content.Context
  * 没注册时耳畔继续走云端，行为不变。
  */
 interface LocalAsrHost {
-    /** 开一次识别会话，返回会话 id；失败返回 -1。 */
-    fun start(): Long
-    /** 喂入一块 16 kHz、单声道、16 位小端 PCM。 */
+    /** 开一次流式识别会话，返回会话 id；失败返回 -1。 */
+    suspend fun start(): Long
+    /** 喂入一块 16 kHz、单声道、16 位小端 PCM。会当场解码，不攒到最后。 */
     fun feed(sessionId: Long, pcm: ByteArray)
-    /** 结束并取回最终文本；没识别出东西返回 null。 */
+    /** 收流并取最终文本；没识别出东西返回 null。 */
     suspend fun finish(sessionId: Long): String?
+    /** 当前已识别的文本，不结束会话。 */
+    fun partial(sessionId: Long): String? = null
     /** 中途放弃。 */
     fun cancel(sessionId: Long)
     /** 预热模型，返回是否可用。设置页检查连接时用。 */
