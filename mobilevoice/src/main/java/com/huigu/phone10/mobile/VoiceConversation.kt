@@ -18,7 +18,7 @@ class VoiceConversation(
     private val report: (String)->Unit,
     private val streamSpeak: (suspend (ReceiveChannel<String>)->Unit)? = null,
     private val judgeEnd: (suspend (String)->Boolean?)? = null,
-    private val continuationMillis: Long = 1500,
+    private val continuationMillis: Long = 400,
     private val transcribeDetailed: (suspend (ByteArray)->SpeechTranscript)? = null,
     private val sentenceTts: Boolean = false,
     private val onReplyStart: () -> Unit = {},
