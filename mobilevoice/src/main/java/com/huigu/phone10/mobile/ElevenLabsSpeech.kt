@@ -22,7 +22,8 @@ internal class ElevenLabsSpeech(private val config: SpeechConfig, private val so
         } catch (cancelled: CancellationException) { throw cancelled }
         catch (error: Exception) {
             currentCoroutineContext().ensureActive()
-            throw if (error is SpeechApiException) error else SpeechApiException("ElevenLabs 音频或结束事件无效。")
+            throw if (error is SpeechApiException) error
+                else SpeechApiException("ElevenLabs 音频或结束事件无效（${error.javaClass.simpleName}: ${error.message.orEmpty().take(120)}）。")
         }
     }
 
@@ -39,6 +40,7 @@ internal class ElevenLabsSpeech(private val config: SpeechConfig, private val so
             override fun onMessage(webSocket: WebSocket, bytes: ByteString) { fail(); webSocket.cancel() }
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                 val status = response?.code; response?.close()
+                android.util.Log.d("VoiceDiag", "eleven_fail status=$status err=${t.javaClass.simpleName}: ${t.message.orEmpty().take(120)}")
                 fail(when (status) {
                     401, 403 -> "ElevenLabs 密钥无效或没有合成权限，请检查账号和 API Key。"
                     402, 429 -> "ElevenLabs 额度不足或请求受限，请查看平台额度。"
@@ -51,7 +53,9 @@ internal class ElevenLabsSpeech(private val config: SpeechConfig, private val so
         var socket: WebSocket? = null
         var input: Job? = null
         try {
-            val ws = sockets.newWebSocket(Request.Builder().url(config.elevenEndpoint().toString().replaceFirst("https://", "wss://"))
+            val target = config.elevenEndpoint().toString().replaceFirst("https://", "wss://")
+            android.util.Log.d("VoiceDiag", "eleven_open url=$target")
+            val ws = sockets.newWebSocket(Request.Builder().url(target)
                 .header("xi-api-key", config.ttsKey).build(), listener).also { socket = it }
             fun send(text: String) {
                 val json = JsonObject().apply { addProperty("text", text) }
@@ -84,13 +88,16 @@ internal class ElevenLabsSpeech(private val config: SpeechConfig, private val so
                     val text = next.getOrNull() ?: break
                     append(text)
                 }
-                inputFinished.set(true); send("")
+                inputFinished.set(true)
+                android.util.Log.d("VoiceDiag", "eleven_input_done chars=$characters")
+                send("")
             }
             var carry: Byte? = null
             var total = 0L
             for (raw in events) {
                 ensureActive()
                 val json = JsonParser.parseString(raw).asJsonObject
+                android.util.Log.d("VoiceDiag", "eleven_msg keys=${json.keySet().joinToString(",")} len=${raw.length}")
                 if (json.has("error") || json.has("message")) throw SpeechApiException("ElevenLabs 合成失败，请检查模型、音色、密钥与额度。")
                 val audio = json["audio"]?.takeUnless { it.isJsonNull }?.asString
                 if (!audio.isNullOrEmpty()) {
@@ -102,6 +109,7 @@ internal class ElevenLabsSpeech(private val config: SpeechConfig, private val so
                     if (even > 0) runInterruptible { onPcm(aligned.copyOf(even)) }
                 }
                 if (json["isFinal"]?.asBoolean == true) {
+                    android.util.Log.d("VoiceDiag", "eleven_final inputFinished=${inputFinished.get()} total=$total carry=${carry != null}")
                     if (!inputFinished.get()) {
                         // Text is still being fed but the server already sent a final frame.
                         // The old require() threw here and the whole reply stopped after the
@@ -109,7 +117,9 @@ internal class ElevenLabsSpeech(private val config: SpeechConfig, private val so
                         VoiceDiagnostics.record("eleven_final_before_input_done_kb_" + (total / 1024))
                         continue
                     }
-                    require(total > 0 && carry == null)
+                    // 最后一块是奇数个字节时只丢掉半个采样，绝不能因此把整段播放判死。
+                    carry = null
+                    if (total <= 0) throw SpeechApiException("ElevenLabs 没有返回音频。")
                     return@coroutineScope
                 }
             }
