@@ -186,6 +186,9 @@ class PcmPlayer internal constructor(private val sink: PcmSink, private val befo
 
     // Never acquire writerLock here: close must interrupt a blocked or stalled writer.
     fun close() { if (closed.compareAndSet(false, true)) sink.close() }
+
+    // 这一路播放到现在的断音次数，收尾时用来判断要不要加缓冲。
+    fun underrunCount(): Int = sink.underrunCount()
     fun setPaused(value: Boolean) {
         if (closed.get()) return
         if (value && !paused.get()) pauseStarted = System.nanoTime()
