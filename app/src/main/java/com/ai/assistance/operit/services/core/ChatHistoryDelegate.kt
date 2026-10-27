@@ -6,6 +6,8 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.data.model.ChatMessage
+import com.ai.assistance.operit.integrations.mobilevoice.VoiceCallSession
+import com.huigu.phone10.mobile.VoiceDiagnostics
 import com.ai.assistance.operit.data.model.ChatMessageLocatorPreview
 import com.ai.assistance.operit.data.model.WorkspaceRenameResult
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
@@ -337,7 +339,48 @@ class ChatHistoryDelegate(
         chatHistoryManager.loadChatMessages(chatId)
 
     suspend fun getRuntimeChatHistory(chatId: String): List<ChatMessage> =
-        chatHistoryManager.loadRuntimeChatMessages(chatId)
+        chatHistoryManager.loadRuntimeChatMessages(chatId).let {
+            // 通话窗口内按 token 预算收：打字聊天仍是全量，一个字都不动。
+            if (VoiceCallSession.isActive()) trimRuntimeHistoryForVoiceCall(it) else it
+        }
+
+    /**
+     * 通话专用历史裁剪。
+     *
+     * 最近一次摘要之后的全部消息本来是无上限进上下文的，通话里这会直接把
+     * 首字时间拖到几秒。这里从后往前按 token 估算收，摘要本身单独保留，
+     * 保证「记性」还在，只是不再把整段聊天记录塞进每一轮。
+     */
+    private fun trimRuntimeHistoryForVoiceCall(
+        messages: List<ChatMessage>,
+        tokenBudget: Double = 6_000.0
+    ): List<ChatMessage> {
+        if (messages.isEmpty()) return messages
+        val summary = messages.lastOrNull { it.sender == "summary" }
+        val afterSummary = if (summary == null) messages else messages.filter { it.timestamp > summary.timestamp }
+        val picked = ArrayList<ChatMessage>()
+        var used = 0.0
+        var truncated = false
+        for (message in afterSummary.asReversed()) {
+            val cost = estimateTokensForVoiceCall(message.content)
+            if (picked.isNotEmpty() && used + cost > tokenBudget) { truncated = true; break }
+            picked.add(message)
+            used += cost
+        }
+        if (!truncated && summary == null) return picked.asReversed()
+        picked.reverse()
+        VoiceDiagnostics.record("voice_history_tokens_${used.toInt()}")
+        return if (summary == null) picked else listOf(summary) + picked
+    }
+
+    private fun estimateTokensForVoiceCall(text: String): Double {
+        var han = 0
+        var other = 0
+        for (char in text) {
+            if (char.code >= 0x3400 && char.code <= 0x9FFF) han++ else other++
+        }
+        return han * 1.5 + other * 0.35
+    }
 
     suspend fun getRuntimeChatHistoryUpTo(
         chatId: String,
