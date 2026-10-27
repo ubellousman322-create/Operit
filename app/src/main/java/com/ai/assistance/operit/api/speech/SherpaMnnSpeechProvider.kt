@@ -286,6 +286,64 @@ class SherpaMnnSpeechProvider(private val context: Context) : SpeechService {
      * 这里只负责把这段波形变成文字。整段音频分块喂入 OnlineStream，
      * 尾部补 0.3 秒静音逼出最后几个字。
      */
+    // ---- 流式 PCM 会话：耳畔边录边喂，静音一判定完就能取结果 ----
+    private val pcmStreams = java.util.concurrent.ConcurrentHashMap<Long, OnlineStream>()
+    private val pcmStreamIds = java.util.concurrent.atomic.AtomicLong(0L)
+
+    private fun pcmToFloats(pcm: ByteArray): FloatArray {
+        val total = pcm.size / 2
+        val out = FloatArray(total)
+        for (i in 0 until total) {
+            val lo = pcm[i * 2].toInt() and 0xFF
+            val hi = pcm[i * 2 + 1].toInt()
+            out[i] = (lo or (hi shl 8)).toShort() / 32768.0f
+        }
+        return out
+    }
+
+    /** 开一条流式会话；模型没就绪时返回 -1。 */
+    suspend fun openPcmStream(): Long {
+        if (!isInitialized.value && !initialize()) return -1L
+        val rec = recognizer ?: return -1L
+        val id = pcmStreamIds.incrementAndGet()
+        pcmStreams[id] = rec.createStream()
+        return id
+    }
+
+    /** 喂一块 PCM。函数内完成 decode，返回时就已消化完。 */
+    fun feedPcmStream(id: Long, pcm: ByteArray, sampleRate: Int = 16000) {
+        val stream = pcmStreams[id] ?: return
+        val rec = recognizer ?: return
+        if (pcm.size < 2) return
+        stream.acceptWaveform(pcmToFloats(pcm), sampleRate)
+        while (rec.isReady(stream)) rec.decode(stream)
+    }
+
+    /** 收流并取最终文本；中途文本可以用 partialPcmStream 拿。 */
+    suspend fun closePcmStream(id: Long, sampleRate: Int = 16000): String? {
+        val stream = pcmStreams.remove(id) ?: return null
+        val rec = recognizer
+        try {
+            if (rec == null) return null
+            stream.acceptWaveform(FloatArray(sampleRate / 3) { 0f }, sampleRate)
+            while (rec.isReady(stream)) rec.decode(stream)
+            return rec.getResult(stream).text.ifBlank { null }
+        } finally {
+            runCatching { stream.release() }
+        }
+    }
+
+    /** 当前已经识别出的文本，不结束会话。 */
+    fun partialPcmStream(id: Long): String? {
+        val stream = pcmStreams[id] ?: return null
+        val rec = recognizer ?: return null
+        return rec.getResult(stream).text.ifBlank { null }
+    }
+
+    fun cancelPcmStream(id: Long) {
+        pcmStreams.remove(id)?.let { runCatching { it.release() } }
+    }
+
     suspend fun recognizePcm(pcm: ByteArray, sampleRate: Int = 16000): String? =
         withContext(Dispatchers.IO) {
             if (pcm.size < 6400) return@withContext null
