@@ -63,7 +63,11 @@ internal class MiniMaxSpeech(private val config: SpeechConfig, private val socke
                         check(!connected); connected = true
                         send("task_start") {
                             addProperty("model", config.ttsModel)
-                            add("voice_setting", JsonObject().apply { addProperty("voice_id", config.voice) })
+                            add("voice_setting", JsonObject().apply {
+                                addProperty("voice_id", config.voice)
+                                // 情绪不进请求体的话，提示词里写什么都不起作用。
+                                config.ttsEmotion?.takeIf { it.isNotBlank() }?.let { addProperty("emotion", it) }
+                            })
                             add("audio_setting", JsonObject().apply {
                                 addProperty("sample_rate", 24_000); addProperty("format", "pcm"); addProperty("channel", 1)
                             })
