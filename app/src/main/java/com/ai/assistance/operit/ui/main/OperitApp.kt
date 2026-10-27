@@ -574,6 +574,10 @@ fun OperitApp(
                             "toolbox" -> navigateTo(Screen.Toolbox, fromDrawer = true)
                             "permissions" -> navigateTo(Screen.ShizukuCommands, fromDrawer = true)
                             "model_config" -> navigateTo(Screen.ModelConfig, fromDrawer = true)
+                            "functional_config" ->
+                                navigateTo(Screen.FunctionalConfig, fromDrawer = true)
+                            "speech_services" ->
+                                navigateTo(Screen.SpeechServicesSettings, fromDrawer = true)
                             "prompts" -> navigateTo(Screen.SettingsGroupPage("prompts"), fromDrawer = true)
                             "context_summary" ->
                                 navigateTo(Screen.ContextSummarySettings, fromDrawer = true)
