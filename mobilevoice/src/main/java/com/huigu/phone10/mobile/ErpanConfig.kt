@@ -106,7 +106,13 @@ import java.util.Locale
             ProviderField("服务商", ttsProvider, enabled,
                 listOf(SpeechConfig.BAILIAN to "阿里云百炼", SpeechConfig.VOLCENGINE to "火山引擎 / 豆包语音", SpeechConfig.MINIMAX to "MiniMax 官方", SpeechConfig.ELEVENLABS to "ElevenLabs", SpeechConfig.MOSSLAND to "模思 Mossland", SpeechConfig.QWEN_LOCAL to "本机语音", SpeechConfig.OPENAI to "Audio API 兼容"), onTts)
             if (ttsProvider == SpeechConfig.ELEVENLABS) Hint("填写 ElevenLabs API Key 和 Voice ID，可使用平台官方音色。消耗 ElevenLabs 额度；连接测试也会合成一句短语。")
-            if (ttsProvider == SpeechConfig.MINIMAX) Hint("填写 MiniMax 官方 Key 和音色 ID；百炼 Key 不适用。此接法尚待真实账号验证。")
+            if (ttsProvider == SpeechConfig.MINIMAX) {
+                FormField("情绪 emotion（选填）", speech.ttsEmotion.orEmpty(), enabled,
+                    placeholder = "happy / sad / angry / fearful / disgusted / surprised / neutral") {
+                    onChange(settings.copy(speech = speech.copy(ttsEmotion = it.trim().lowercase().ifBlank { null })))
+                }
+                Hint("情绪只对部分 MiniMax 音色有效，留空则不传。填写 MiniMax 官方 Key 和音色 ID；百炼 Key 不适用。")
+            }
             if (ttsProvider == SpeechConfig.MOSSLAND) Hint("在 Moss API 控制台创建 Key，从 Mossland 音色库复制音色 ID。支持声音边生成边播放；克隆音色请先在模思平台创建。")
             if (ttsProvider == SpeechConfig.QWEN_LOCAL) Hint("使用你电脑上的 Qwen 声音服务。先在电脑开启并完成预热；手机与电脑需保持 Tailscale 连接。原声留在电脑上，服务关闭时会提示，不会自动切换到付费云端。")
             FormField("合成接口地址", speech.ttsBaseUrl, enabled, placeholder = "填写合成服务的地址") { onChange(settings.copy(speech = speech.copy(ttsBaseUrl = it.trim()))) }
