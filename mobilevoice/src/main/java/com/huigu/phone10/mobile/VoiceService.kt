@@ -21,7 +21,9 @@ data class VoiceState(val running: Boolean = false, val message: String = "麦�
     val caption: String = "",
     val startedAt: Long = 0L,
     // 上一轮「说完话 → 手机里出第一个音」的实测毫秒数，-1 表示还没测到。
-    val firstAudioMillis: Long = -1L)
+    val firstAudioMillis: Long = -1L,
+    // 累计播放断音（AudioTrack underrun）次数，一声一卡就是这个在跳。
+    val underruns: Int = 0)
 
 /** Sole capture/turn/playback owner. The overlay only requests explicit state transitions. */
 class VoiceService : Service() {
@@ -49,7 +51,7 @@ class VoiceService : Service() {
     private var overlay: Phone10MicOverlay? = null
     private var captionOverlay: FloatingCaptions? = null
     private val captionBuffer = CaptionBuffer()
-    private var captionFilter = SpeechText(preserveSpacing = true)
+    private var captionFilter = SpeechText(preserveSpacing = true, stripCaptionTags = true)
     private val spokenCaptions = SpokenCaptions()
     @Volatile private var captionGeneration = 0L
     private var captionAligned = false
@@ -360,7 +362,7 @@ class VoiceService : Service() {
             }, onReplyStart = {
                 captionGeneration++
                 captionBuffer.clear(); spokenCaptions.clear(); captionSegment = null
-                captionFilter = SpeechText(preserveSpacing = true)
+                captionFilter = SpeechText(preserveSpacing = true, stripCaptionTags = true)
                 captionAligned = config.speech.sentenceHttpTts || config.speech.clientSegmentedTts
                 captionOverlay?.resetPlayback()
                 renderCaptions()
@@ -485,6 +487,13 @@ class VoiceService : Service() {
         }
         finally {
             levelJob.cancel()
+            runCatching {
+                val lost = output.underrunCount()
+                if (lost > 0) {
+                    VoiceDiagnostics.record("playback_underrun_$lost")
+                    mutableState.value = mutableState.value.copy(underruns = mutableState.value.underruns + lost)
+                }
+            }
             finishPlayback(Dispatchers.Main.immediate,
                 finishFocus = { owner.finishedPlayback() },
                 clearPlayer = { player.compareAndSet(output, null) },
@@ -602,6 +611,9 @@ class VoiceService : Service() {
         captionOverlay?.hide(); captionOverlay = null; captionBuffer.clear()
         replyListener?.interrupt(); replyListener = null
         conversation?.interrupt()
+        // 挂断时把本地识别流收掉，否则 Sherpa 会话会一直挂着。
+        streamSession.getAndSet(-1L).takeIf { it >= 0 }?.let { id -> localAsr?.cancel(id) }
+        localAsr = null
         runCatching { recorder?.close() }
         scope.cancel()
         bridge?.close()
