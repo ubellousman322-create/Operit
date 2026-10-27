@@ -33,7 +33,8 @@ class PcmRecorder(context: Context) {
 
     @SuppressLint("MissingPermission") // Foreground owner checks RECORD_AUDIO before invoking run.
     suspend fun run(onSpeechStart: () -> Unit, onUtterance: (ByteArray) -> Unit, onReady: () -> Unit = {},
-                    acceptInput: () -> Boolean = { true }) = withContext(Dispatchers.IO) {
+                    acceptInput: () -> Boolean = { true },
+                    onFrame: (ByteArray) -> Unit = {}) = withContext(Dispatchers.IO) {
         check(started.compareAndSet(false, true)) { "录音已启动。" }
         try {
             // Segmentation below owns minimum speech and trailing silence exactly once.
@@ -68,7 +69,7 @@ class PcmRecorder(context: Context) {
                     filled += count
                     if (filled == frame.size) {
                         val speech = vad.isSpeech(frame)
-                        if (!closed.get()) segmenter.accept(frame, speech, onSpeechStart, onUtterance, acceptInput())
+                        if (!closed.get()) segmenter.accept(frame, speech, onSpeechStart, onUtterance, acceptInput(), onFrame)
                         filled = 0
                     }
                 }
@@ -107,7 +108,7 @@ internal class UtteranceSegmenter {
     private var waitingForSilence = false
 
     fun accept(frame: ByteArray, speech: Boolean, onStart: () -> Unit, onUtterance: (ByteArray) -> Unit,
-               acceptInput: Boolean = true) {
+               acceptInput: Boolean = true, onFrame: (ByteArray) -> Unit = {}) {
         check(!failed) { "录音已停止。" }
         require(frame.size == 1024) { "录音帧大小无效。" }
         if (!acceptInput) {
@@ -127,10 +128,11 @@ internal class UtteranceSegmenter {
             speechFrames = if (speech) speechFrames + 1 else 0
             if (speechFrames < 3) return // 96 ms of consecutive human speech rejects isolated noise.
             active = true
-            preRoll.forEach { utterance.write(it) }
-            preRoll.clear()
             onStart()
-        } else utterance.write(frame)
+            // preRoll 是这句话的开头，必须补回给识别器，否则第一个字丢。
+            preRoll.forEach { utterance.write(it); onFrame(it) }
+            preRoll.clear()
+        } else { utterance.write(frame); onFrame(frame) }
         silenceFrames = if (speech) 0 else silenceFrames + 1
         if (utterance.size() > 960_000) {
             failed = true
