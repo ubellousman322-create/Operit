@@ -123,6 +123,18 @@ class SherpaMnnSpeechProvider(private val context: Context) : SpeechService {
             return
         }
 
+        // 模型文件不在时，OnlineRecognizer 照样能返回一个 Kotlin 对象，但内部 native
+        // 句柄是 0，之后 createStream 会直接 SIGSEGV。先确认文件真的在。
+        val encoderFile = File(localModelDir, "encoder-epoch-99-avg-1.int8.mnn")
+        val tokensFile = File(localModelDir, "tokens.txt")
+        if (!encoderFile.exists() || encoderFile.length() == 0L ||
+            !tokensFile.exists() || tokensFile.length() == 0L) {
+            AppLogger.e(TAG, "Sherpa MNN 模型缺失：${localModelDir.absolutePath}")
+            _recognitionState.value = SpeechService.RecognitionState.ERROR
+            _recognitionError.value =
+                SpeechService.RecognitionError(-2, "Sherpa MNN 模型文件缺失，请先下载模型。")
+            return
+        }
         val featConfig = FeatureConfig(
             sampleRate = 16000,
             featureDim = 80
