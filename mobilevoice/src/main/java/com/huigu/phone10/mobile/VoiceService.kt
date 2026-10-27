@@ -27,6 +27,9 @@ class VoiceService : Service() {
     private var callScope: CoroutineScope? = null
     private var transition: Job? = null
     private var recorder: PcmRecorder? = null
+    // 本地识别：一条流贯穿一句话，录音时就在解码。
+    @Volatile private var localAsr: LocalAsrHost? = null
+    private val streamSession = java.util.concurrent.atomic.AtomicLong(-1L)
     private var captureJob: Job? = null
     private var bridge: OperitBridge? = null
     private var conversation: VoiceConversation? = null
@@ -285,26 +288,37 @@ class VoiceService : Service() {
         })
         val o = OperitBridge(this).also { bridge = it }
         // 手机本地识别：选 local-sherpa 时这一段录音交给 Operit 的 Sherpa，不联网。
-        val localAsr = if (config.speech.provider == SpeechConfig.LOCAL_SHERPA) LocalAsr.resolve() else null
-        VoiceDiagnostics.record(if (localAsr != null) "stt_local_sherpa" else "stt_remote")
+        val asrHost = if (config.speech.provider == SpeechConfig.LOCAL_SHERPA) LocalAsr.resolve() else null
+        localAsr = asrHost
+        VoiceDiagnostics.record(if (asrHost != null) "stt_local_sherpa" else "stt_remote")
         val transcribeUtterance: suspend (ByteArray) -> String = local@{ pcm ->
-            val asr = localAsr ?: return@local cloud.transcribe(pcm)
+            val asr = asrHost ?: return@local cloud.transcribe(pcm)
+            // 录音时已经边录边喂完了，这里只负责收流。
+            val prepared = streamSession.getAndSet(-1L)
             withContext(Dispatchers.IO) {
+                if (prepared >= 0) {
+                    val text = runCatching { asr.finish(prepared) }.getOrNull()?.trim().orEmpty()
+                    VoiceDiagnostics.record("stt_local_stream_done")
+                    // 续上下一句的流，免得下一句开头几个字落在空里。
+                    runCatching { streamSession.set(asr.start()) }
+                    return@withContext text
+                }
+                // 流没开成（模型没装等）：退化成整段，至少不要静默失败。
                 var id = -1L
                 try {
                     id = asr.start()
-                    if (id < 0) throw IllegalStateException("本地识别未能启动。")
+                    if (id < 0) return@withContext ""
                     asr.feed(id, pcm)
                     asr.finish(id)?.trim().orEmpty()
                 } catch (cancelled: CancellationException) { throw cancelled }
                 catch (error: Exception) {
                     VoiceDiagnostics.record("stt_local_failed: ${error.message.orEmpty()}")
                     ""
-                } finally { if (id >= 0) runCatching { asr.cancel(id) } }
+                }
             }
         }
         val transcribeDetailed: suspend (ByteArray) -> SpeechTranscript = { pcm ->
-            if (localAsr == null) cloud.transcribeDetailed(pcm) else SpeechTranscript(transcribeUtterance(pcm))
+            if (asrHost == null) cloud.transcribeDetailed(pcm) else SpeechTranscript(transcribeUtterance(pcm))
         }
         val judge = if (!config.listenOnly && config.smartEndpoint && !config.confirmBeforeSend)
             CloudEndJudge(requireNotNull(config.endJudge)) else null
@@ -369,6 +383,10 @@ class VoiceService : Service() {
         val input = PcmRecorder(this).also { recorder = it }
         val ready = CompletableDeferred<Unit>()
         flow.setMicrophoneEnabled(true)
+        // 本地识别：开麦前就把流准备好，否则第一个字会落到空里。
+        localAsr?.let { asr ->
+            if (streamSession.get() < 0) streamSession.set(runCatching { asr.start() }.getOrDefault(-1L))
+        }
         captureJob = child.launch {
             try {
                 input.run({ child.launch {
@@ -382,7 +400,11 @@ class VoiceService : Service() {
                     }
                 } }, {
                     ready.complete(Unit)
-                }, acceptInput = flow::acceptsSpeech)
+                }, acceptInput = flow::acceptsSpeech, onFrame = { frame ->
+                    // 录音线程上直接喂：每 32ms 一块，一块就在本地解一块。
+                    val id = streamSession.get()
+                    if (id >= 0) localAsr?.feed(id, frame)
+                })
             } catch (cancelled: CancellationException) { ready.cancel(); throw cancelled }
             catch (error: Exception) {
                 val wasReady = ready.isCompleted && !ready.isCancelled
@@ -480,6 +502,8 @@ class VoiceService : Service() {
         // cannot become a new utterance after mute or after a later unmute.
         recorder = null
         captureJob = null
+        // 本地识别：关麦就把这一句的流收掉，不留悬挂的会话。
+        streamSession.getAndSet(-1L).takeIf { it >= 0 }?.let { id -> localAsr?.cancel(id) }
         runCatching { input?.close() }.onFailure { VoiceDiagnostics.record("capture_close_failed") }
         capture?.cancelAndJoin()
         setState(message)
