@@ -5,39 +5,42 @@ import com.ai.assistance.operit.api.speech.SherpaMnnSpeechProvider
 import com.huigu.phone10.mobile.LocalAsrHost
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicLong
 
 /**
- * 耳畔的「手机本地识别」落在 Operit 的 Sherpa MNN 上。
+ * 耳畔的「手机本地识别」落到 Operit 的 Sherpa MNN 上。
  *
- * 不联网，也不抢麦克风：耳畔自己录音、自己做 VAD 和分段，
- * 这里只把一段 16 kHz 单声道 16 位小端 PCM 变成文字。
+ * 不联网，也不抢麦克风：耳畔自己录音、自己管 VAD 和分段，
+ * 这里只负责把一块一块 16 kHz 单声道 16 位小端 PCM 当场解码。
+ * 录完的时候结果已经在了，不用等。
  */
 class OperitLocalAsr(hostContext: Context) : LocalAsrHost {
     private val provider = SherpaMnnSpeechProvider(hostContext.applicationContext)
+    // 没开流（比如宿主模型没装）时退化成整段：先攒着，finish 再识别。
     private val buffers = ConcurrentHashMap<Long, ByteArrayOutputStream>()
-    private val ids = AtomicLong(0L)
 
-    override fun start(): Long {
-        val id = ids.incrementAndGet()
-        buffers[id] = ByteArrayOutputStream()
-        return id
+    override suspend fun start(): Long {
+        val id = provider.openPcmStream()
+        if (id >= 0) return id
+        // 流开不了就不给会话，让调用方直接走整段兵底。
+        return -1L
     }
 
     override fun feed(sessionId: Long, pcm: ByteArray) {
-        val buffer = buffers[sessionId] ?: return
-        synchronized(buffer) { buffer.write(pcm) }
+        if (sessionId < 0) return
+        provider.feedPcmStream(sessionId, pcm)
     }
 
     override suspend fun finish(sessionId: Long): String? {
-        val buffer = buffers.remove(sessionId) ?: return null
-        val pcm = synchronized(buffer) { buffer.toByteArray() }
-        // 少于 0.2 秒的碎音直接丢，模型也识别不出东西。
-        if (pcm.size < 6400) return null
-        return runCatching { provider.recognizePcm(pcm) }.getOrNull()
+        if (sessionId < 0) return null
+        return runCatching { provider.closePcmStream(sessionId) }.getOrNull()
     }
 
+    override fun partial(sessionId: Long): String? =
+        if (sessionId < 0) null else runCatching { provider.partialPcmStream(sessionId) }.getOrNull()
+
     override fun cancel(sessionId: Long) {
+        if (sessionId < 0) return
+        provider.cancelPcmStream(sessionId)
         buffers.remove(sessionId)
     }
 
