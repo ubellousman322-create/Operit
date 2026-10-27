@@ -128,6 +128,12 @@ internal fun ErpanCallScreen(
                 fontSize = 17.sp
             )
             Spacer(Modifier.height(36.dp))
+            if (state.firstAudioMillis > 0) {
+                Text(
+                    "首声 ${state.firstAudioMillis} ms",
+                    color = Color(0xFF6F8499), fontSize = 11.sp
+                )
+            }
             Text(
                 state.caption.ifBlank { state.message },
                 color = Color(0xFFB9C6D4),
