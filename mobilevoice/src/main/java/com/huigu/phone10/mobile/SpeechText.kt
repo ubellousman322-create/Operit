@@ -4,7 +4,12 @@ class SpeechText(private val preserveSpacing: Boolean = false,
                  private val sentenceMode: Boolean = false,
                  private val firstClauseMode: Boolean = false,
                  private val coherentMode: Boolean = false,
+                 private val stripCaptionTags: Boolean = false,
                  private val nowMillis: () -> Long = { System.nanoTime() / 1_000_000 }) {
+    // 合成要保留 (breath) 这类标签，字幕不能显示它们。
+    private val captionTag = Regex(
+        "\\((?:breath|sigh|sighs|gasp|chuckle|gulp|sniffle|huff|groan|whispers|laugh)\\s*\\)",
+        RegexOption.IGNORE_CASE)
     private val pending = StringBuilder()
     private var tag: StringBuilder? = null
     private val hidden = mutableListOf<String>()
@@ -72,7 +77,9 @@ class SpeechText(private val preserveSpacing: Boolean = false,
         // A streamed delta may stop between an emoji's UTF-16 code units.
         val count = if ((firstClauseMode || coherentMode) && pending.isNotEmpty() && pending.last().isHighSurrogate())
             pending.length - 1 else pending.length
-        val cleaned = pending.substring(0, count).replace(Regex("[`*_#]"), "")
+        val raw = pending.substring(0, count)
+        val base = if (stripCaptionTags) raw.replace(captionTag, "") else raw
+        val cleaned = base.replace(Regex("[`*_#]"), "")
             .replace(Regex("\\s+"), " ")
         val text = if (preserveSpacing && cleaned.isNotBlank()) cleaned else cleaned.trim()
         pending.delete(0, count)
