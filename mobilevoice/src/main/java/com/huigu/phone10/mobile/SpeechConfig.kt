@@ -10,7 +10,7 @@ data class SpeechConfig(val sttBaseUrl: String, val sttKey: String, val sttModel
     val volcResource: String? = null, val volcAppId: String? = null, val voicePrompt: String? = null,
     val sttVolcResource: String? = null, val sttVolcAppId: String? = null,
     val mossSpeed: Double? = null, val qwenSplitGranularity: String? = null,
-    val mossTextMode: String? = null) {
+    val mossTextMode: String? = null, val ttsEmotion: String? = null) {
     // Gson leaves fields absent from older encrypted settings null.
     val isBailian: Boolean get() = provider == BAILIAN
     val effectiveTtsProvider: String get() = ttsProvider ?: provider ?: OPENAI
