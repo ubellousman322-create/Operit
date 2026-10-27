@@ -303,6 +303,9 @@ class SherpaMnnSpeechProvider(private val context: Context) : SpeechService {
 
     /** 开一条流式会话；模型没就绪时返回 -1。 */
     suspend fun openPcmStream(): Long {
+        // 这个实例是进程内共用的，可能被别的路径释放过。native 句柄变成野指针时
+        // createStream 会直接 SIGSEGV，所以这里必须重新确认而不是只看标志位。
+        if (recognizer == null) _isInitialized.value = false
         if (!isInitialized.value && !initialize()) return -1L
         val rec = recognizer ?: return -1L
         val id = pcmStreamIds.incrementAndGet()
