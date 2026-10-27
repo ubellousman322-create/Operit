@@ -613,6 +613,7 @@ class VoiceService : Service() {
         conversation?.interrupt()
         // 挂断时把本地识别流收掉，否则 Sherpa 会话会一直挂着。
         streamSession.getAndSet(-1L).takeIf { it >= 0 }?.let { id -> localAsr?.cancel(id) }
+        runCatching { localAsr?.shutdown() }
         localAsr = null
         runCatching { recorder?.close() }
         scope.cancel()
