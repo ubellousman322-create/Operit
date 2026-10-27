@@ -13,6 +13,7 @@ internal interface PcmSink {
     fun write(data: ByteArray, offset: Int, length: Int): Int
     fun playedFrames(): Long
     fun endPaddingBytes(): Int = 0
+    fun underrunCount(): Int = 0
     fun setPaused(paused: Boolean) = Unit
     fun close()
 }
@@ -252,6 +253,11 @@ private class AudioTrackSink(private val mediaPlayback: Boolean) : PcmSink {
     }
 
     override fun endPaddingBytes(): Int = synchronized(lock) { if (closed) 0 else track.bufferSizeInFrames * 2 }
+
+    // AudioTrack 自带的欠载计数：缓冲空了但还没写满，就会跳一次。
+    override fun underrunCount(): Int = synchronized(lock) {
+        if (closed) 0 else runCatching { track.underrunCount }.getOrDefault(0)
+    }
 
     override fun setPaused(paused: Boolean) = synchronized(lock) {
         this.paused = paused
