@@ -19,7 +19,9 @@ data class VoiceState(val running: Boolean = false, val message: String = "麦�
     val captionsVisible: Boolean = false, val listenOnly: Boolean = false,
     val pendingDraft: PendingVoiceDraft? = null,
     val caption: String = "",
-    val startedAt: Long = 0L)
+    val startedAt: Long = 0L,
+    // 上一轮「说完话 → 手机里出第一个音」的实测毫秒数，-1 表示还没测到。
+    val firstAudioMillis: Long = -1L)
 
 /** Sole capture/turn/playback owner. The overlay only requests explicit state transitions. */
 class VoiceService : Service() {
@@ -111,7 +113,9 @@ class VoiceService : Service() {
             require(config.chatId.isNotBlank())
             if (!config.listenOnly && config.confirmBeforeSend) require(Settings.canDrawOverlays(this))
             config.speech.validate(includeRecognition = !config.listenOnly)
-            if (!config.listenOnly && config.smartEndpoint && !config.confirmBeforeSend)
+            // 本地识别已经用 VAD 和静音窗口定端点，再问一次云端只多一次往返。
+            val needsCloudJudge = config.speech.provider != SpeechConfig.LOCAL_SHERPA
+            if (!config.listenOnly && needsCloudJudge && config.smartEndpoint && !config.confirmBeforeSend)
                 requireNotNull(config.endJudge) { "请配置智能判断服务。" }.validate()
             audio = getSystemService(AUDIO_SERVICE) as AudioManager
             setState(if (config.listenOnly) "正在连接只听回复…" else "正在开麦…", changing = true)
@@ -320,8 +324,8 @@ class VoiceService : Service() {
         val transcribeDetailed: suspend (ByteArray) -> SpeechTranscript = { pcm ->
             if (asrHost == null) cloud.transcribeDetailed(pcm) else SpeechTranscript(transcribeUtterance(pcm))
         }
-        val judge = if (!config.listenOnly && config.smartEndpoint && !config.confirmBeforeSend)
-            CloudEndJudge(requireNotNull(config.endJudge)) else null
+        val judge = if (!config.listenOnly && config.speech.provider != SpeechConfig.LOCAL_SHERPA &&
+            config.smartEndpoint && !config.confirmBeforeSend) CloudEndJudge(requireNotNull(config.endJudge)) else null
         wakeLock = (getSystemService(POWER_SERVICE) as PowerManager)
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Phone10Mobile:call").also { it.acquire() }
         VoiceConversation(child, transcribeUtterance,
@@ -421,7 +425,7 @@ class VoiceService : Service() {
         ready.await()
         if (started && callScope === child) {
             setState(if (config.confirmBeforeSend) "正在聆听 · 约 0.55 秒后待确认"
-                else if (config.smartEndpoint) "正在聆听 · 智能结束判断"
+                else if (config.smartEndpoint && config.speech.provider != SpeechConfig.LOCAL_SHERPA) "正在聆听 · 智能结束判断"
                 else "正在聆听 · 约 0.55 秒静音提交", true)
             VoiceDiagnostics.record("capture_started")
             foreground()
@@ -435,6 +439,8 @@ class VoiceService : Service() {
             if (firstPcm) {
                 firstPcm = false
                 VoiceDiagnostics.record("playback_first_pcm")
+                val measured = VoiceDiagnostics.lastFirstAudioMillis
+                if (measured > 0) mutableState.value = mutableState.value.copy(firstAudioMillis = measured)
             }
             owner.beforePlayback()
         }
