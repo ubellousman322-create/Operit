@@ -12,21 +12,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 /** Official bidi protocol; one reply owns one task/socket. Never retry submitted text. */
 internal class MiniMaxSpeech(private val config: SpeechConfig, private val sockets: WebSocket.Factory,
     private val timeoutMillis: Long = 600_000) {
-    suspend fun speakStream(texts: ReceiveChannel<String>, onPcm: (ByteArray) -> Unit) {
-        val first = texts.receiveCatching().getOrNull() ?: return
-        try {
-            withTimeoutOrNull(timeoutMillis) {
-                withContext(Dispatchers.IO) { exchange(first, texts, onPcm) }
-                true
-            } ?: throw SpeechApiException("MiniMax 合成超时。")
-        } catch (cancelled: CancellationException) { throw cancelled }
-        catch (error: Exception) {
-            currentCoroutineContext().ensureActive()
-            throw if (error is SpeechApiException) error else SpeechApiException("MiniMax 语音响应无效。")
-        }
-    }
-
-    private suspend fun exchange(first: String, texts: ReceiveChannel<String>, onPcm: (ByteArray) -> Unit) = coroutineScope {
+    suspend fun speakStream(texts: ReceiveChannel<String>, onPcm: (ByteArray) -> Unit) = coroutineScope {
+        // 建连和模型生成重叠：握手那几百毫秒不等第一段文字。
         val events = Channel<String>(16)
         val listener = object : WebSocketListener() {
             private fun fail() { events.close(SpeechApiException("MiniMax 语音连接中断。")) }
@@ -43,6 +30,26 @@ internal class MiniMaxSpeech(private val config: SpeechConfig, private val socke
         try {
             val ws = sockets.newWebSocket(Request.Builder().url(config.minimaxEndpoint(config.ttsBaseUrl))
                 .header("Authorization", "Bearer ${config.ttsKey}").build(), listener).also { socket = it }
+            val first = texts.receiveCatching().getOrNull() ?: return@coroutineScope
+            try {
+                withTimeoutOrNull(timeoutMillis) {
+                    withContext(Dispatchers.IO) { exchange(ws, events, first, texts, onPcm) }
+                    true
+                } ?: throw SpeechApiException("MiniMax 合成超时。")
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) {
+                currentCoroutineContext().ensureActive()
+                throw if (error is SpeechApiException) error else SpeechApiException("MiniMax 语音响应无效。")
+            }
+        } finally {
+            events.cancel()
+            runCatching { socket?.cancel() }
+        }
+    }
+
+    private suspend fun exchange(ws: WebSocket, events: Channel<String>, first: String,
+                                 texts: ReceiveChannel<String>, onPcm: (ByteArray) -> Unit) = coroutineScope {
+        try {
             fun send(event: String, configure: JsonObject.() -> Unit = {}) {
                 val json = JsonObject().apply { addProperty("event", event); configure() }
                 if (!ws.send(json.toString())) throw SpeechApiException("MiniMax 语音发送失败。")
@@ -126,7 +133,7 @@ internal class MiniMaxSpeech(private val config: SpeechConfig, private val socke
                 // is_final ends one audio request; sentence_end ends one sentence. Neither closes this task.
             }
             throw SpeechApiException("MiniMax 未返回完整的任务结束事件。")
-        } finally { events.cancel(); socket?.cancel() }
+        } finally { /* 连接由 speakStream 收 */ }
     }
 
     companion object {
