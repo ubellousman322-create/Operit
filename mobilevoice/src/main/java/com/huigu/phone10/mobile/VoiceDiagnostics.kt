@@ -11,7 +11,7 @@ object VoiceDiagnostics {
         val now = System.nanoTime() / 1_000_000
         events.addLast("$now ms · ${event.take(100)}")
         while (events.size > 120) events.removeFirst()
-        if (event == "speech_onset") onsetAt = now
+        if (event == "silence_segment_ready") onsetAt = now
         else if (event == "playback_first_pcm" && onsetAt > 0L) {
             lastFirstAudioMillis = now - onsetAt
             events.addLast("$now ms · first_audio_${lastFirstAudioMillis}ms")
