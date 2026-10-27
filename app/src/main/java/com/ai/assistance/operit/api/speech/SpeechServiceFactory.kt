@@ -148,6 +148,34 @@ object SpeechServiceFactory {
         }
     }
 
+    /**
+     * 借出进程内唯一的 Sherpa MNN 识别器，给通话侧直接调流式接口用。
+     * 必须配合 [releaseSherpaMnn] 归还，否则引用计数会一直挂着。
+     */
+    fun acquireSherpaMnn(context: Context): SherpaMnnSpeechProvider {
+        val appContext = context.applicationContext
+        synchronized(localLock) {
+            val existing = localEntry
+            if (existing != null && existing.type != SpeechServiceType.SHERPA_MNN) {
+                throw IllegalStateException(
+                    "Local SpeechService already active: ${existing.type}. " +
+                        "Cannot borrow Sherpa MNN before releasing it."
+                )
+            }
+            if (existing != null) {
+                existing.refCount += 1
+                return existing.service as SherpaMnnSpeechProvider
+            }
+            val service = SherpaMnnSpeechProvider(appContext)
+            localEntry = LocalEntry(type = SpeechServiceType.SHERPA_MNN, service = service, refCount = 1)
+            return service
+        }
+    }
+
+    fun releaseSherpaMnn() {
+        releaseLocalSpeechService(SpeechServiceType.SHERPA_MNN)
+    }
+
     private fun releaseLocalSpeechService(type: SpeechServiceType) {
         val toShutdown: SpeechService?
         synchronized(localLock) {
