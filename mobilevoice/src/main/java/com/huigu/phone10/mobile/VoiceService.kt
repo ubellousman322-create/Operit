@@ -313,7 +313,11 @@ class VoiceService : Service() {
                 var id = -1L
                 try {
                     id = asr.start()
-                    if (id < 0) return@withContext ""
+                    // 本地引擎起不来（模型没下载等）：直接退回云端识别，别让这一轮变哑。
+                    if (id < 0) {
+                        VoiceDiagnostics.record("stt_local_unavailable_fallback_cloud")
+                        return@withContext cloud.transcribe(pcm)
+                    }
                     asr.feed(id, pcm)
                     asr.finish(id)?.trim().orEmpty()
                 } catch (cancelled: CancellationException) { throw cancelled }
