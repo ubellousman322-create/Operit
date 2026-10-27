@@ -176,6 +176,31 @@ object SpeechServiceFactory {
         releaseLocalSpeechService(SpeechServiceType.SHERPA_MNN)
     }
 
+    /** 借出进程内唯一的 Sherpa NCNN 识别器（模型已在本机），通话结束必须归还。 */
+    fun acquireSherpaNcnn(context: Context): SherpaSpeechProvider {
+        val appContext = context.applicationContext
+        synchronized(localLock) {
+            val existing = localEntry
+            if (existing != null && existing.type != SpeechServiceType.SHERPA_NCNN) {
+                throw IllegalStateException(
+                    "Local SpeechService already active: ${existing.type}. " +
+                        "Cannot borrow Sherpa NCNN before releasing it."
+                )
+            }
+            if (existing != null) {
+                existing.refCount += 1
+                return existing.service as SherpaSpeechProvider
+            }
+            val service = SherpaSpeechProvider(appContext)
+            localEntry = LocalEntry(type = SpeechServiceType.SHERPA_NCNN, service = service, refCount = 1)
+            return service
+        }
+    }
+
+    fun releaseSherpaNcnn() {
+        releaseLocalSpeechService(SpeechServiceType.SHERPA_NCNN)
+    }
+
     private fun releaseLocalSpeechService(type: SpeechServiceType) {
         val toShutdown: SpeechService?
         synchronized(localLock) {
