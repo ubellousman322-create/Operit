@@ -719,6 +719,9 @@ class EnhancedAIService private constructor(private val context: Context) {
         initialContext: PromptHookContext,
         dispatchHooks: (PromptHookContext) -> PromptHookContext = PromptHookRegistry::dispatchPromptFinalizeHooks
     ): PromptHookContext {
+        // 通话中：记忆召回这类每轮都要打几次 HTTP 的钩子全部让路。
+        // 它们只影响「想起什么」，不影响「她是谁」，开场那一次已经召回过。
+        if (VoiceCallSession.isActive()) return initialContext
         return dispatchHooks(initialContext)
     }
 
