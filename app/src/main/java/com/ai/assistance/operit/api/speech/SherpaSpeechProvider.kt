@@ -126,6 +126,47 @@ class SherpaSpeechProvider(private val context: Context) : SpeechService {
         }
     }
 
+    // ---- 供耳畔通话侧使用的流式接口 ----
+    // sherpa-ncnn 没有独立流对象，状态全在 recognizer 里，所以只适合串行使用：
+    // 通话开麦时 Operit 自己的语音输入本来就是停的。
+    suspend fun openVoiceStream(): Boolean {
+        if (!isInitialized.value && !initialize()) return false
+        val rec = recognizer ?: return false
+        runCatching { rec.reset(false) }
+        return true
+    }
+
+    fun feedVoiceStream(pcm: ByteArray) {
+        val rec = recognizer ?: return
+        if (pcm.size < 2) return
+        val count = pcm.size / 2
+        val samples = FloatArray(count) { index ->
+            val lo = pcm[index * 2].toInt() and 0xFF
+            val hi = pcm[index * 2 + 1].toInt()
+            (lo or (hi shl 8)).toShort() / 32768.0f
+        }
+        runCatching {
+            rec.acceptSamples(samples)
+            while (rec.isReady()) rec.decode()
+        }
+    }
+
+    suspend fun closeVoiceStream(): String? {
+        val rec = recognizer ?: return null
+        runCatching {
+            // 补 0.3 秒静音，逼出最后几个字
+            rec.acceptSamples(FloatArray(16000 / 3))
+            while (rec.isReady()) rec.decode()
+        }
+        val text = runCatching { rec.text }.getOrNull()
+        runCatching { rec.reset(false) }
+        return text?.ifBlank { null }
+    }
+
+    fun cancelVoiceStream() {
+        runCatching { recognizer?.reset(false) }
+    }
+
     private fun createRecognizer() {
         val localModelDir: File
         try {
