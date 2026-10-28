@@ -30,6 +30,8 @@ class VoiceConversation(
     private val firstClauseTts: Boolean = false,
     private val onSpeechSegment: (String) -> Unit = {},
     private val coherentTts: Boolean = false,
+    /** 识别出来的「我说的话」，只给通话页显示，不进朗读。 */
+    private val onUserText: (String) -> Unit = {},
 ) {
     @Volatile private var active: Job? = null
     @Volatile private var voiceInterruptionEnabled = true
@@ -119,6 +121,7 @@ class VoiceConversation(
                 }
                 val text = transcript.text.trim()
                 if (text.isEmpty()) { pendingPcm = byteArrayOf(); report("没有识别到文字，继续聆听。" ); return@launch }
+                deliverCaption { onUserText(text) }
                 var unavailable = false
                 if (judge != null) {
                     report("正在判断是否说完…")
