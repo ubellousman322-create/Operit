@@ -345,7 +345,9 @@ class MainActivity : ComponentActivity() {
             ErpanCallScreen(
                 settings = saved,
                 state = state,
-                avatar = OperitLocalVoice.host?.callAvatar() ?: avatar,
+                // 通话页以前优先用 Operit 那边的角色头像，跟耳畔首页自己挑的那张对不上。
+                // 耳畔设了就以它为准，没设才退到角色头像。
+                avatar = avatar ?: OperitLocalVoice.host?.callAvatar(),
                 onEnd = {
                     state.pendingDraft?.let { VoiceService.cancelPendingDraft(it.id) }
                     stopService(Intent(this@MainActivity, VoiceService::class.java))
