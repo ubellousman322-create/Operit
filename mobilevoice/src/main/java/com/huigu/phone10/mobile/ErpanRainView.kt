@@ -289,7 +289,7 @@ internal class ErpanRainView(context: Context) : View(context) {
                     b.x - b.rx * 1.06f, b.y - b.ry * 1.06f,
                     b.x + b.rx * 1.06f, b.y + b.ry * 1.06f
                 )
-                runCatching { c.drawBitmap(bg, src, dst, null) }
+                runCatching { c.drawBitmap(bg, src, dst, null as Paint?) }
             }
             c.restore()
 
@@ -358,7 +358,7 @@ internal class ErpanRainView(context: Context) : View(context) {
         val d = this.d
         canvas.save()
         canvas.scale(d, d)
-        still?.let { canvas.drawBitmap(it, null, dst.set(0f, 0f, wDp, hDp), null) }
+        still?.let { canvas.drawBitmap(it, null, dst.set(0f, 0f, wDp, hDp), null as Paint?) }
         drawSplashes(canvas)
         canvas.restore()
         if (live) postInvalidateOnAnimation()
