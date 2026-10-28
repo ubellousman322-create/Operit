@@ -30,8 +30,13 @@ data class MobileSettings(
     val allowIncoming: Boolean = true,
     /** 通话专用提示词：只在通话时贴到系统提示末尾，随语音方案一起保存。 */
     val callPrompt: String? = null,
-    /** 通话页那扇窗的配色：mist / cyan / warm。 */
-    val callTheme: String = "mist",
+    /**
+     * 通话页那扇窗的配色：mist / cyan / warm。
+     * 必须可空：Gson 从旧存档读的时候这个字段不存在，会直接给 null；
+     * data class 的 copy() 对非空参数有 null 检查，null 一进去就是 NPE，
+     * 然后整份配置被判成“无法解密”。空着就当 mist。
+     */
+    val callTheme: String? = null,
 )
 
 /** User-owned credentials stay encrypted in this app's non-backup storage. */
