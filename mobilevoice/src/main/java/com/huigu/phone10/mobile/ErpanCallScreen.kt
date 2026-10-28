@@ -160,11 +160,6 @@ internal fun ErpanCallScreen(
                 Modifier.fillMaxWidth().padding(bottom = 44.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                CallKey("免提", !speaker, false) {
-                    speaker = !speaker
-                    runCatching { audio.isSpeakerphoneOn = speaker }
-                }
-                CallKey(if (state.micEnabled) "静音" else "已静音", !state.micEnabled, false, onMic)
                 CallKey("挂断", false, true) {
                     runCatching { audio.isSpeakerphoneOn = false }
                     playCue(context, R.raw.call_hangup)
