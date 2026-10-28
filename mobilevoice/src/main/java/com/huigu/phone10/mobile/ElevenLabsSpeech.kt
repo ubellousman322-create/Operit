@@ -47,8 +47,17 @@ internal class ElevenLabsSpeech(private val config: SpeechConfig, private val so
                     else -> "ElevenLabs 连接失败，请检查网络与账号；本轮不会自动重播。"
                 })
             }
-            override fun onClosing(webSocket: WebSocket, code: Int, reason: String) = fail()
-            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) = fail()
+            override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+                android.util.Log.d("VoiceDiag", "eleven_closing code=$code")
+                // 说完最后一块音频后服务端会主动收线，这不算错误。
+                if (code == 1000 || code == 1001 || code == 1005) events.close()
+                else fail("ElevenLabs 连接被中断（$code），本轮不会自动重播。")
+                runCatching { webSocket.close(1000, null) }
+            }
+            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                android.util.Log.d("VoiceDiag", "eleven_closed code=$code")
+                events.close()
+            }
         }
         var socket: WebSocket? = null
         var input: Job? = null
@@ -94,7 +103,15 @@ internal class ElevenLabsSpeech(private val config: SpeechConfig, private val so
             }
             var carry: Byte? = null
             var total = 0L
-            for (raw in events) {
+            var sawFinal = false
+            while (true) {
+                // 收到 isFinal 只代表“这一段结束”，不是全部结束；
+                // 之后还要把后面的音频收完，所以给它一个 10 秒的宽限窗口。
+                val next = if (sawFinal) {
+                    withTimeoutOrNull(10_000) { events.receiveCatching() } ?: break
+                } else events.receiveCatching()
+                if (next.isClosed) break
+                val raw = next.getOrNull() ?: break
                 ensureActive()
                 val json = JsonParser.parseString(raw).asJsonObject
                 android.util.Log.d("VoiceDiag", "eleven_msg keys=${json.keySet().joinToString(",")} len=${raw.length}")
@@ -110,20 +127,14 @@ internal class ElevenLabsSpeech(private val config: SpeechConfig, private val so
                 }
                 if (json["isFinal"]?.asBoolean == true) {
                     android.util.Log.d("VoiceDiag", "eleven_final inputFinished=${inputFinished.get()} total=$total carry=${carry != null}")
-                    if (!inputFinished.get()) {
-                        // Text is still being fed but the server already sent a final frame.
-                        // The old require() threw here and the whole reply stopped after the
-                        // first word or two. Treat it as a segment boundary and keep waiting.
-                        VoiceDiagnostics.record("eleven_final_before_input_done_kb_" + (total / 1024))
-                        continue
-                    }
-                    // 最后一块是奇数个字节时只丢掉半个采样，绝不能因此把整段播放判死。
-                    carry = null
-                    if (total <= 0) throw SpeechApiException("ElevenLabs 没有返回音频。")
-                    return@coroutineScope
+                    sawFinal = true
                 }
             }
-            throw SpeechApiException("ElevenLabs 缺少结束事件。")
+            // 最后一块是奇数个字节时只丢掉半个采样，绝不能因此把整段播放判死。
+            if (total <= 0) throw SpeechApiException("ElevenLabs 没有返回音频。")
+            if (!sawFinal) throw SpeechApiException("ElevenLabs 缺少结束事件。")
+            android.util.Log.d("VoiceDiag", "eleven_done total=$total carry=${carry != null}")
+            return@coroutineScope
         } finally { input?.cancel(); events.cancel(); socket?.cancel() }
     }
 }
