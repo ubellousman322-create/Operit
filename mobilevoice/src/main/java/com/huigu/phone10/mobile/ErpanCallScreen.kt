@@ -55,6 +55,15 @@ internal fun ErpanCallScreen(
     onMic: () -> Unit,
 ) {
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    // 首声耗时不一定能从服务状态里及时传到这一层，直接盯诊断对象做兜底。
+    var diagFirstMillis by remember { mutableStateOf(0L) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val measured = VoiceDiagnostics.lastFirstAudioMillis
+            if (measured > 0) diagFirstMillis = measured
+            delay(300)
+        }
+    }
     // 服务还没给出开始时间（刚进这一页）就先按打开的时刻算，计时不会空着。
     val openedAt = remember { System.currentTimeMillis() }
     val context = LocalContext.current
@@ -128,9 +137,10 @@ internal fun ErpanCallScreen(
                 fontSize = 17.sp
             )
             Spacer(Modifier.height(36.dp))
-            if (state.firstAudioMillis > 0 || state.underruns > 0) {
+            val shownFirst = if (state.firstAudioMillis > 0) state.firstAudioMillis else diagFirstMillis
+            if (shownFirst > 0 || state.underruns > 0) {
                 val diagnostic = buildString {
-                    if (state.firstAudioMillis > 0) append("首声 ${state.firstAudioMillis} ms")
+                    if (shownFirst > 0) append("首声 ${shownFirst} ms")
                     if (state.underruns > 0) {
                         if (isNotEmpty()) append(" · ")
                         append("断音 ${state.underruns} 次")
