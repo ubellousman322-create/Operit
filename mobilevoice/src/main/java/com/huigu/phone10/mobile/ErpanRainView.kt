@@ -365,8 +365,11 @@ internal class ErpanRainView(context: Context) : View(context) {
         canvas.save()
         canvas.scale(d, d)
         val full = still
+        dst.set(0f, 0f, wDp, hDp)
+        // 背景单独一张，是为了大珠子做折射取样；贴的时候也得先贴它，
+        // 否则只剩水膜和水珠，底下露出的是别的页面的底色。
+        background?.let { canvas.drawBitmap(it, null, dst, null as Paint?) }
         if (full != null) {
-            dst.set(0f, 0f, wDp, hDp)
             canvas.drawBitmap(full, null, dst, null as Paint?)
         }
         drawSplashes(canvas)
