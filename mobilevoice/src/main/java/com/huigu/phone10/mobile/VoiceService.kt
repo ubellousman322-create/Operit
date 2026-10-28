@@ -19,6 +19,8 @@ data class VoiceState(val running: Boolean = false, val message: String = "麦�
     val captionsVisible: Boolean = false, val listenOnly: Boolean = false,
     val pendingDraft: PendingVoiceDraft? = null,
     val caption: String = "",
+    // 我上一句话的转写。她下次开口之前一直挂在那儿，不参与朗读。
+    val myCaption: String = "",
     val startedAt: Long = 0L,
     // 上一轮「说完话 → 手机里出第一个音」的实测毫秒数，-1 表示还没测到。
     val firstAudioMillis: Long = -1L,
@@ -390,6 +392,8 @@ class VoiceService : Service() {
                 if (!captionAligned || spokenCaptions.text.isEmpty()) renderCaptions()
             }, onSpeechSegment = { text ->
                 if (captionAligned) { spokenCaptions.append(text); renderCaptions() }
+            }, onUserText = { text ->
+                mutableState.value = mutableState.value.copy(myCaption = text)
             }).also {
                 it.setVoiceInterruptionEnabled(!config.disableVoiceInterruption)
                 it.setMicrophoneEnabled(false)
