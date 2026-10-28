@@ -192,13 +192,24 @@ internal fun ErpanCallScreen(
                 Spacer(Modifier.height(12.dp))
             }
 
-            // 她那句话：整句先占好位置，每个字在自己原位从模糊偏下浮上来。
-            Box(
+            // 两行，各管各的：我的转写只被我下一次开口替换，
+            // 她的话只被她下一次回复替换，互不覆盖。
+            Column(
                 Modifier
                     .fillMaxWidth()
-                    .height(150.dp),
-                contentAlignment = Alignment.BottomCenter
+                    .height(186.dp),
+                verticalArrangement = Arrangement.Bottom,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                if (state.myCaption.isNotBlank()) {
+                    FloatingLine(
+                        text = state.myCaption,
+                        color = ink2,
+                        fontSize = 14.5.sp,
+                        lineHeight = 24.sp
+                    )
+                    Spacer(Modifier.height(14.dp))
+                }
                 FloatingLine(
                     text = state.caption.ifBlank { state.message },
                     color = ink,
@@ -358,14 +369,18 @@ private fun FloatingLine(
     lineHeight: TextUnit,
 ) {
     var revealed by remember { mutableStateOf(0) }
+    var last by remember { mutableStateOf("") }
     LaunchedEffect(text) {
-        revealed = 0
-        if (text.isEmpty()) return@LaunchedEffect
-        for (i in text.indices) {
-            val ch = text[i]
+        // 同一句在流式增长时接着往下浮。每来一个字就把整句重播一遍，
+        // 会看着像在闪。
+        val sameLine = text.startsWith(last) || last.startsWith(text)
+        if (!sameLine) revealed = 0
+        last = text
+        while (revealed < text.length) {
+            val ch = text[revealed]
             // 标点后面停得久一点，读起来才像话。
             delay(if (ch in "，。！？、；：…—") 190L else 70L)
-            revealed = i + 1
+            revealed += 1
         }
     }
 
