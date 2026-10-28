@@ -39,10 +39,12 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         VoiceDiagnostics.record("activity_foreground")
+        VoiceService.setUiForeground(true)
     }
 
     override fun onStop() {
         VoiceDiagnostics.record("activity_background")
+        VoiceService.setUiForeground(false)
         super.onStop()
     }
 
