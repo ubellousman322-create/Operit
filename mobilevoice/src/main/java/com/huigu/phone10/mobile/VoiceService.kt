@@ -160,9 +160,20 @@ class VoiceService : Service() {
             else if (!mic && !changing && message.startsWith("正在聆听"))
             "麦克风已关闭 · 点悬浮球可再开麦" else message
         // caption 和 startedAt 也要带过去 —— 不带的话每次状态更新都会把通话计时清零。
-        mutableState.value = VoiceState(true, status, mic, changing, mutableState.value.overlayVisible,
-            mutableState.value.captionsVisible, config.listenOnly, mutableState.value.pendingDraft,
-            mutableState.value.caption, mutableState.value.startedAt)
+        // 全部用命名参数：以后 VoiceState 再添字段，这里也不会错位。
+        mutableState.value = VoiceState(
+            running = true,
+            message = status,
+            micEnabled = mic,
+            changing = changing,
+            overlayVisible = mutableState.value.overlayVisible,
+            captionsVisible = mutableState.value.captionsVisible,
+            listenOnly = config.listenOnly,
+            pendingDraft = mutableState.value.pendingDraft,
+            caption = mutableState.value.caption,
+            myCaption = mutableState.value.myCaption,
+            startedAt = mutableState.value.startedAt
+        )
         overlay?.update(Phone10MicrophoneState(mic, changing, pendingReview = mutableState.value.pendingDraft != null))
         renderCaptions()
     }
