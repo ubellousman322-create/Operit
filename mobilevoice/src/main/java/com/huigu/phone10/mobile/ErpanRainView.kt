@@ -8,6 +8,7 @@ import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RadialGradient
+import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader
 import android.view.View
@@ -53,7 +54,7 @@ internal class ErpanRainView(context: Context) : View(context) {
         strokeCap = Paint.Cap.ROUND
     }
     private val clipPath = Path()
-    private val src = RectF()
+    private val src = Rect()
     private val dst = RectF()
 
     private var seed = SEED
@@ -284,7 +285,12 @@ internal class ErpanRainView(context: Context) : View(context) {
             val sw = (b.rx * 2f) / zoom * d
             val sh = (b.ry * 2f) / zoom * d
             if (sw > 0.4f && sh > 0.4f) {
-                src.set(b.x * d - sw / 2f, b.y * d - sh / 2f, b.x * d + sw / 2f, b.y * d + sh / 2f)
+                src.set(
+                    (b.x * d - sw / 2f).toInt(),
+                    (b.y * d - sh / 2f).toInt(),
+                    (b.x * d + sw / 2f).toInt(),
+                    (b.y * d + sh / 2f).toInt()
+                )
                 dst.set(
                     b.x - b.rx * 1.06f, b.y - b.ry * 1.06f,
                     b.x + b.rx * 1.06f, b.y + b.ry * 1.06f
@@ -358,7 +364,11 @@ internal class ErpanRainView(context: Context) : View(context) {
         val d = this.d
         canvas.save()
         canvas.scale(d, d)
-        still?.let { canvas.drawBitmap(it, null, dst.set(0f, 0f, wDp, hDp), null as Paint?) }
+        val full = still
+        if (full != null) {
+            dst.set(0f, 0f, wDp, hDp)
+            canvas.drawBitmap(full, null, dst, null as Paint?)
+        }
         drawSplashes(canvas)
         canvas.restore()
         if (live) postInvalidateOnAnimation()
