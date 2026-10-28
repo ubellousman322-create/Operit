@@ -357,6 +357,14 @@ class MainActivity : ComponentActivity() {
                 onMic = {
                     startService(Intent(this@MainActivity, VoiceService::class.java).setAction(VoiceService.TOGGLE))
                 },
+                // 通话里换配色：立刻生效，顺手记进设置，下次进来还是这扇窗。
+                onThemeChange = { key ->
+                    val next = saved.copy(callTheme = key)
+                    saved = next
+                    scope.launch {
+                        withContext(Dispatchers.IO) { runCatching { store.save(next) } }
+                    }
+                },
             )
         } else when (page) {
             "appearance" -> ErpanAppearance(appearanceDraft, avatar, notice, busy,
