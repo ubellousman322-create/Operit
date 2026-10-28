@@ -122,8 +122,10 @@ class VoiceService : Service() {
             audio = getSystemService(AUDIO_SERVICE) as AudioManager
             setState(if (config.listenOnly) "正在连接只听回复…" else "正在开麦…", changing = true)
             foreground()
-            setOverlay(config.overlayEnabled)
-            setCaptions(config.captionsEnabled)
+            if (!uiForeground) {
+                setOverlay(config.overlayEnabled)
+                setCaptions(config.captionsEnabled)
+            }
             if (config.listenOnly) {
                 beginSession()
                 val flow = requireNotNull(conversation)
@@ -216,6 +218,15 @@ class VoiceService : Service() {
         }
     }
 
+    private fun applyOverlayVisibility() {
+        if (uiForeground) {
+            overlay?.hide()
+            captionOverlay?.hide()
+        } else {
+            setOverlay(config.overlayEnabled)
+            setCaptions(config.captionsEnabled)
+        }
+    }
     private fun setOverlay(enabled: Boolean) {
         if (!enabled || config.listenOnly) { overlay?.hide(); return }
         val view = overlay ?: Phone10MicOverlay(this, {
@@ -636,6 +647,14 @@ class VoiceService : Service() {
     companion object {
         private var latestSynthesisOwner: Any? = null
         private var activeService: VoiceService? = null
+        /** 耳畔自己的界面是否在前台。前台时全屏页已经显示了头像和字幕，悬浮窗就多余。 */
+        @Volatile internal var uiForeground = false
+            private set
+        internal fun setUiForeground(value: Boolean) {
+            if (uiForeground == value) return
+            uiForeground = value
+            activeService?.takeIf { it.started }?.applyOverlayVisibility()
+        }
         fun editPendingDraft(id: String, text: String): Boolean =
             activeService?.takeIf { it.started }?.conversation?.editDraft(id, text) == true
         fun sendPendingDraft(id: String): Boolean =
