@@ -334,6 +334,7 @@ class VoiceService : Service() {
             config.smartEndpoint && !config.confirmBeforeSend) CloudEndJudge(requireNotNull(config.endJudge)) else null
         wakeLock = (getSystemService(POWER_SERVICE) as PowerManager)
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Phone10Mobile:call").also { it.acquire() }
+        VoiceDiagnostics.record("tts_provider_" + config.speech.effectiveTtsProvider)
         VoiceConversation(child, transcribeUtterance,
             { text, chunk -> o.reply(config.chatId, text, chunk) },
             { text -> play { output -> cloud.speak(text, output::configure, output::write) } },
