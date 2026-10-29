@@ -21,6 +21,8 @@ data class VoiceState(val running: Boolean = false, val message: String = "麦�
     val caption: String = "",
     // 我上一句话的转写。她下次开口之前一直挂在那儿，不参与朗读。
     val myCaption: String = "",
+    // 她在想：话说完了，但第一个字还没到。界面靠这个让光晕跳快一点。
+    val replying: Boolean = false,
     val startedAt: Long = 0L,
     // 上一轮「说完话 → 手机里出第一个音」的实测毫秒数，-1 表示还没测到。
     val firstAudioMillis: Long = -1L,
@@ -172,6 +174,7 @@ class VoiceService : Service() {
             pendingDraft = mutableState.value.pendingDraft,
             caption = mutableState.value.caption,
             myCaption = mutableState.value.myCaption,
+            replying = mutableState.value.replying,
             startedAt = mutableState.value.startedAt
         )
         overlay?.update(Phone10MicrophoneState(mic, changing, pendingReview = mutableState.value.pendingDraft != null))
@@ -394,12 +397,14 @@ class VoiceService : Service() {
                 captionFilter = SpeechText(preserveSpacing = true, stripCaptionTags = true)
                 captionAligned = config.speech.sentenceHttpTts || config.speech.clientSegmentedTts
                 captionOverlay?.resetPlayback()
+                mutableState.value = mutableState.value.copy(replying = true)
                 renderCaptions()
             }, onReplyDelta = { delta ->
                 // Subtitles show only what is going to be spoken: chains of thought,
                 // tool blocks and status markup never reach the caption layer.
                 captionBuffer.append((captionFilter.push(delta) + captionFilter.flush()).joinToString(""))
-                mutableState.value = mutableState.value.copy(caption = captionBuffer.text)
+                // 第一个字到了，不再是“在想”。
+                mutableState.value = mutableState.value.copy(caption = captionBuffer.text, replying = false)
                 if (!captionAligned || spokenCaptions.text.isEmpty()) renderCaptions()
             }, onSpeechSegment = { text ->
                 if (captionAligned) { spokenCaptions.append(text); renderCaptions() }
