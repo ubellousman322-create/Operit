@@ -15,6 +15,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -194,10 +196,16 @@ internal fun ErpanCallScreen(
 
             // 两行，各管各的：我的转写只被我下一次开口替换，
             // 她的话只被她下一次回复替换，互不覆盖。
+            val captionScroll = rememberScrollState()
+            LaunchedEffect(state.myCaption, state.caption) {
+                // 新的一句来了就贴到底。想往上回看可以划，但下一句一到会自己回来。
+                captionScroll.animateScrollTo(captionScroll.maxValue)
+            }
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .height(186.dp),
+                    .height(186.dp)
+                    .verticalScroll(captionScroll),
                 verticalArrangement = Arrangement.Bottom,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
