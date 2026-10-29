@@ -34,7 +34,8 @@ class PcmRecorder(context: Context) {
     @SuppressLint("MissingPermission") // Foreground owner checks RECORD_AUDIO before invoking run.
     suspend fun run(onSpeechStart: () -> Unit, onUtterance: (ByteArray) -> Unit, onReady: () -> Unit = {},
                     acceptInput: () -> Boolean = { true },
-                    onFrame: (ByteArray) -> Unit = {}) = withContext(Dispatchers.IO) {
+                    onFrame: (ByteArray) -> Unit = {},
+                    shouldKeepListening: () -> Boolean = { false }) = withContext(Dispatchers.IO) {
         check(started.compareAndSet(false, true)) { "录音已启动。" }
         try {
             // Segmentation below owns minimum speech and trailing silence exactly once.
@@ -69,7 +70,8 @@ class PcmRecorder(context: Context) {
                     filled += count
                     if (filled == frame.size) {
                         val speech = vad.isSpeech(frame)
-                        if (!closed.get()) segmenter.accept(frame, speech, onSpeechStart, onUtterance, acceptInput(), onFrame)
+                        if (!closed.get()) segmenter.accept(frame, speech, onSpeechStart, onUtterance, acceptInput(), onFrame,
+                            shouldKeepListening)
                         filled = 0
                     }
                 }
