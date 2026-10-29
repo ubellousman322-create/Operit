@@ -139,7 +139,13 @@ class VoiceConversation(
                     onDraftChanged(review?.visible())
                     return@launch
                 }
-                sendToChat(transcript.forChat(), unavailable)
+                val rhythm = rhythmOf(recording, text.length)
+                sendToChat(transcript.forChat(), rhythm, unavailable)
+                // 算完这一句才计入基线，不然它自己会把自己拉平。
+                if (rhythm != null && rhythm.meanRms > 0.0) {
+                    levelSum += rhythm.meanRms
+                    levelSamples++
+                }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (failure: TurnFailure) {
                 currentCoroutineContext().ensureActive()
@@ -203,9 +209,11 @@ class VoiceConversation(
         else -> "正在聆听 · 智能结束判断"
     }
 
-    private suspend fun sendToChat(text: String, unavailable: Boolean = false) {
+    private suspend fun sendToChat(text: String, rhythm: Rhythm? = null, unavailable: Boolean = false) {
         report(if (unavailable) "智能判断不可用，已按静音提交；等待 Operit 回复…" else "等待 Operit 回复…")
-        val speechFailure = streamReply(text)
+        // 把“她是怎么说的”跟内容一起发出去。只给测出来的数，不给结论。
+        val speechFailure = streamReply(if (rhythm == null) text else text + "
+" + describeRhythm(rhythm))
         report(if (speechFailure == null) listeningStatus()
             else "回复已完成，本条朗读未完成 · ${listeningStatus()}")
     }
@@ -319,6 +327,77 @@ class VoiceConversation(
             if (speechFailure == null) diagnose("tts_job_complete")
             speechFailure
         } finally { timer.cancel(); queue.cancel() }
+    }
+
+    /** 一句话的说话状态。只放量得出来的东西，不写判断。 */
+    private data class Rhythm(val chars: Int, val seconds: Double, val pauses: Int,
+                              val longestPauseMs: Int, val meanRms: Double)
+
+    /**
+     * 从这段音频里量出语速和停顿。
+     *
+     * 不碰模型：每帧 32 毫秒（1024 字节），算一次有效值，低于阈值算静音。
+     * 连续 12 帧（约 0.38 秒）静音算一次停顿——真实说话里短于这个的只是换气。
+     */
+    private fun rhythmOf(pcm: ByteArray, chars: Int): Rhythm? {
+        val frameBytes = 1024
+        val frames = pcm.size / frameBytes
+        if (frames < 8 || chars < 2) return null
+        var runs = 0
+        var current = 0
+        var longest = 0
+        var levelSum = 0.0
+        var levelFrames = 0
+        var offset = 0
+        while (offset + frameBytes <= pcm.size) {
+            var sum = 0.0
+            var j = offset
+            val end = offset + frameBytes
+            while (j + 1 < end) {
+                val raw = (pcm[j].toInt() and 0xFF) or (pcm[j + 1].toInt() shl 8)
+                val sample = raw.toShort().toInt().toDouble()
+                sum += sample * sample
+                j += 2
+            }
+            val rms = kotlin.math.sqrt(sum / (frameBytes / 2))
+            if (rms >= 1000.0) {
+                if (current >= 12) { runs++; if (current > longest) longest = current }
+                current = 0
+                levelSum += rms
+                levelFrames++
+            } else current++
+            offset += frameBytes
+        }
+        if (current >= 12) { runs++; if (current > longest) longest = current }
+        val mean = if (levelFrames > 0) levelSum / levelFrames else 0.0
+        return Rhythm(chars, frames * 0.032, runs, longest * 32, mean)
+    }
+
+    // 这通电话里她说话的平均响度。第一句没有基线，从第二句起才能比。
+    private var levelSum = 0.0
+    private var levelSamples = 0
+
+    /** 把测量结果写成一句话。中文语速平常大约每秒四到六个字。 */
+    private fun describeRhythm(r: Rhythm): String {
+        val perSecond = r.chars / r.seconds
+        val pace = when {
+            perSecond >= 6.5 -> "偏快"
+            perSecond <= 3.5 -> "偏慢"
+            else -> "正常"
+        }
+        val seconds = (r.seconds * 10).toInt() / 10.0
+        val pause = if (r.pauses == 0) "中间没停"
+            else "中间停了 ${r.pauses} 次" + if (r.longestPauseMs >= 300) "，最长一次约 ${(r.longestPauseMs / 100) / 10.0} 秒" else ""
+        // 响度只跟自己比：麦克风增益每台机器不同，绝对值没有意义。
+        val level = if (levelSamples > 0 && r.meanRms > 0.0) {
+            val base = levelSum / levelSamples
+            if (base <= 0.0) null else when {
+                r.meanRms < base * 0.72 -> "，声音比这通电话的平均轻"
+                r.meanRms > base * 1.35 -> "，声音比这通电话的平均重"
+                else -> null
+            }
+        } else null
+        return "（她这句话：${r.chars} 个字，说了 $seconds 秒，语速$pace，$pause${level.orEmpty()}）"
     }
 
     private fun deliverCaption(action: () -> Unit) {
