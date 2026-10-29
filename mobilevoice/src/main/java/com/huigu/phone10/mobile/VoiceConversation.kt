@@ -329,27 +329,37 @@ class VoiceConversation(
         } finally { timer.cancel(); queue.cancel() }
     }
 
-    /** 一句话的说话状态。只放量得出来的东西，不写判断。 */
-    private data class Rhythm(val chars: Int, val seconds: Double, val pauses: Int,
-                              val longestPauseMs: Int, val meanRms: Double)
+    /** 一句话的说话状态。全部是量出来的数，没有一句判断。 */
+    private data class Rhythm(
+        val chars: Int,
+        val speakSeconds: Double,   // 只算真正发声的时间，不含停顿
+        val pauses: Int,
+        val longestPauseMs: Int,
+        val meanRms: Double,
+        val pitchSpread: Double,    // 基频的标准差除以均值：语调平不平
+        val endingDrop: Double,     // 句尾比句中低多少赫兹，负的就是往下沉
+    )
+
+    // 这通电话里她说话的平均响度。第一句没有基线，从第二句起才能比。
+    private var levelSum = 0.0
+    private var levelSamples = 0
 
     /**
-     * 从这段音频里量出语速和停顿。
+     * 从这段音频里量出语速、停顿、响度和音高。
      *
-     * 不碰模型：每帧 32 毫秒（1024 字节），算一次有效值，低于阈值算静音。
-     * 连续 12 帧（约 0.38 秒）静音算一次停顿——真实说话里短于这个的只是换气。
+     * 门槛不写死：先算每帧能量，取最安静那十分之一当噪声底，再乘三。
+     * 每台手机的麦克风增益差好几倍，写死一个数在这台准，到那台全错。
+     *
+     * 说话时间要扣掉停顿。不扣的话，越犹豫越显得慢，语速和停顿两项会互相污染。
      */
     private fun rhythmOf(pcm: ByteArray, chars: Int): Rhythm? {
         val frameBytes = 1024
         val frames = pcm.size / frameBytes
         if (frames < 8 || chars < 2) return null
-        var runs = 0
-        var current = 0
-        var longest = 0
-        var levelSum = 0.0
-        var levelFrames = 0
+
+        val levels = DoubleArray(frames)
         var offset = 0
-        while (offset + frameBytes <= pcm.size) {
+        for (f in 0 until frames) {
             var sum = 0.0
             var j = offset
             val end = offset + frameBytes
@@ -359,45 +369,141 @@ class VoiceConversation(
                 sum += sample * sample
                 j += 2
             }
-            val rms = kotlin.math.sqrt(sum / (frameBytes / 2))
-            if (rms >= 1000.0) {
-                if (current >= 12) { runs++; if (current > longest) longest = current }
-                current = 0
-                levelSum += rms
-                levelFrames++
-            } else current++
+            levels[f] = kotlin.math.sqrt(sum / (frameBytes / 2))
             offset += frameBytes
         }
+
+        // 门槛自己学
+        val sorted = levels.sortedArray()
+        val noise = sorted[(frames * 0.10).toInt().coerceIn(0, frames - 1)]
+        val gate = maxOf(noise * 3.0, 300.0)
+
+        var runs = 0
+        var current = 0
+        var longest = 0
+        var levelAcc = 0.0
+        var levelFrames = 0
+        for (f in 0 until frames) {
+            if (levels[f] >= gate) {
+                if (current >= 12) { runs++; if (current > longest) longest = current }
+                current = 0
+                levelAcc += levels[f]
+                levelFrames++
+            } else current++
+        }
         if (current >= 12) { runs++; if (current > longest) longest = current }
-        val mean = if (levelFrames > 0) levelSum / levelFrames else 0.0
-        return Rhythm(chars, frames * 0.032, runs, longest * 32, mean)
+
+        // 头尾的静音不算说话时间
+        var head = 0
+        while (head < frames && levels[head] < gate) head++
+        var tail = 0
+        while (tail < frames && levels[frames - 1 - tail] < gate) tail++
+        val voiced = (frames - head - tail).coerceAtLeast(1)
+
+        // 音高：每三帧取一次，省算力
+        val pitches = ArrayList<Double>(voiced / 3 + 1)
+        var f = head
+        while (f < frames - tail) {
+            if (levels[f] >= gate) {
+                val hz = pitchAt(pcm, f * frameBytes)
+                if (hz > 0.0) pitches.add(hz)
+            }
+            f += 3
+        }
+        var spread = 0.0
+        var drop = 0.0
+        if (pitches.size >= 6) {
+            val pitchMean = pitches.sum() / pitches.size
+            if (pitchMean > 0.0) {
+                var variance = 0.0
+                for (p in pitches) variance += (p - pitchMean) * (p - pitchMean)
+                spread = kotlin.math.sqrt(variance / pitches.size) / pitchMean
+                val cut = pitches.size * 3 / 4
+                var headSum = 0.0
+                for (i in 0 until cut) headSum += pitches[i]
+                var tailSum = 0.0
+                for (i in cut until pitches.size) tailSum += pitches[i]
+                drop = tailSum / (pitches.size - cut) - headSum / cut
+            }
+        }
+
+        val meanLevel = if (levelFrames > 0) levelAcc / levelFrames else 0.0
+        return Rhythm(chars, voiced * 0.032, runs, longest * 32, meanLevel, spread, drop)
     }
 
-    // 这通电话里她说话的平均响度。第一句没有基线，从第二句起才能比。
-    private var levelSum = 0.0
-    private var levelSamples = 0
-
-    /** 把测量结果写成一句话。中文语速平常大约每秒四到六个字。 */
-    private fun describeRhythm(r: Rhythm): String {
-        val perSecond = r.chars / r.seconds
-        val pace = when {
-            perSecond >= 6.5 -> "偏快"
-            perSecond <= 3.5 -> "偏慢"
-            else -> "正常"
+    /**
+     * 一帧的基频。自相关找周期，40 到 200 个采样，对应 80 到 400 赫兹。
+     * 先减掉直流分量，不然一个恒定的偏移会把相关性压死。
+     */
+    private fun pitchAt(pcm: ByteArray, start: Int): Double {
+        val n = 400
+        if (start < 0 || start + (n + 200) * 2 > pcm.size) return 0.0
+        val x = DoubleArray(n)
+        var sum = 0.0
+        for (i in 0 until n) {
+            val raw = (pcm[start + i * 2].toInt() and 0xFF) or (pcm[start + i * 2 + 1].toInt() shl 8)
+            val v = raw.toShort().toDouble()
+            x[i] = v
+            sum += v
         }
-        val seconds = (r.seconds * 10).toInt() / 10.0
-        val pause = if (r.pauses == 0) "中间没停"
-            else "中间停了 ${r.pauses} 次" + if (r.longestPauseMs >= 300) "，最长一次约 ${(r.longestPauseMs / 100) / 10.0} 秒" else ""
+        val mean = sum / n
+        for (i in 0 until n) x[i] -= mean
+
+        var bestLag = 0
+        var best = 0.0
+        for (lag in 40..200) {
+            var acc = 0.0
+            var i = 0
+            while (i + lag < n) {
+                acc += x[i] * x[i + lag]
+                i++
+            }
+            if (acc > best) { best = acc; bestLag = lag }
+        }
+        if (bestLag == 0 || best <= 0.0) return 0.0
+        return 16_000.0 / bestLag
+    }
+
+    /** 把测量结果写成一句话。中文平常说话大约每秒四到六个字。 */
+    private fun describeRhythm(r: Rhythm): String {
+        val perSecond = r.chars / r.speakSeconds
+        val pace = when {
+            perSecond >= 7.0 -> "偏快"
+            perSecond <= 3.5 -> "偏慢"
+            else -> null
+        }
+        val pause = when {
+            r.pauses == 0 -> null
+            r.longestPauseMs >= 300 -> "停${r.pauses}次·最长${(r.longestPauseMs / 100) / 10.0}秒"
+            else -> "停${r.pauses}次"
+        }
         // 响度只跟自己比：麦克风增益每台机器不同，绝对值没有意义。
         val level = if (levelSamples > 0 && r.meanRms > 0.0) {
             val base = levelSum / levelSamples
-            if (base <= 0.0) null else when {
-                r.meanRms < base * 0.72 -> "，声音比这通电话的平均轻"
-                r.meanRms > base * 1.35 -> "，声音比这通电话的平均重"
+            when {
+                base <= 0.0 -> null
+                r.meanRms < base * 0.72 -> "偏轻"
+                r.meanRms > base * 1.35 -> "偏重"
                 else -> null
             }
         } else null
-        return "（她这句话：${r.chars} 个字，说了 $seconds 秒，语速$pace，$pause${level.orEmpty()}）"
+        val tone = when {
+            r.pitchSpread <= 0.0 -> null
+            r.pitchSpread < 0.08 -> "语调平"
+            r.pitchSpread > 0.20 -> "起伏大"
+            else -> null
+        }
+        val ending = when {
+            r.pitchSpread <= 0.0 -> null
+            r.endingDrop < -8.0 -> "句尾下沉"
+            r.endingDrop > 8.0 -> "句尾上扬"
+            else -> null
+        }
+        val parts = listOfNotNull(
+            "${r.chars}字/${(r.speakSeconds * 10).toInt() / 10.0}秒",
+            pace, pause, level, tone, ending
+        )
+        return "（" + parts.joinToString("，") + "）"
     }
 
     private fun deliverCaption(action: () -> Unit) {
