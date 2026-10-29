@@ -109,7 +109,7 @@ internal fun ErpanCallScreen(
     val seconds = ((now - base) / 1000L).toInt().coerceAtLeast(0)
 
     // 她在想的时候，光晕跳得快一点，计时先藏起来——那几秒不是在通话，是在等。
-    val thinking = state.changing
+    val thinking = state.changing || state.replying
 
     Box(Modifier.fillMaxSize()) {
         // 最底下那层玻璃和水珠。
