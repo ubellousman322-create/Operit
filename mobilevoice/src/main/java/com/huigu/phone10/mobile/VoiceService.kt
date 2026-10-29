@@ -412,6 +412,21 @@ class VoiceService : Service() {
             }
     }
 
+    /**
+     * 这句话是不是明显还没说完。
+     *
+     * 只看结尾：已经落在句号问号上的，就是完了；停在连接词、助词上的，多半还有
+     * 下半句。宁可多等一程，也别把人一句话切成两截。
+     */
+    private fun halfSpoken(text: String): Boolean {
+        if (text.isEmpty()) return true
+        if (text.last() in "。！？!?") return false
+        val tails = arrayOf("然后", "就是", "那个", "这个", "因为", "但是", "所以", "而且", "还有",
+            "如果", "虽然", "因为", "不过", "并且", "或者", "比如", "的时候", "之后", "的话",
+            "一样", "什么", "怎么", "的", "了", "在", "是", "把", "被", "跟", "和", "对")
+        return tails.any { text.endsWith(it) }
+    }
+
     private suspend fun beginCapture() {
         mutableState.value = mutableState.value.copy(startedAt = System.currentTimeMillis())
         val child = requireNotNull(callScope)
@@ -441,6 +456,13 @@ class VoiceService : Service() {
                     // 录音线程上直接喂：每 32ms 一块，一块就在本地解一块。
                     val id = streamSession.get()
                     if (id >= 0) localAsr?.feed(id, frame)
+                }, shouldKeepListening = {
+                    // 已经停下来了，但多半还有下半句 —— 再多等一程。
+                    val id = streamSession.get()
+                    val heard = runCatching {
+                        if (id >= 0) localAsr?.partial(id).orEmpty().trim() else ""
+                    }.getOrDefault("")
+                    heard.isEmpty() || halfSpoken(heard)
                 })
             } catch (cancelled: CancellationException) { ready.cancel(); throw cancelled }
             catch (error: Exception) {
