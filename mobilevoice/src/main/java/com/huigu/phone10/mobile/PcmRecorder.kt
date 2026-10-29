@@ -106,9 +106,12 @@ internal class UtteranceSegmenter {
     private var silenceFrames = 0
     private var failed = false
     private var waitingForSilence = false
+    // 已经因为「好像没说完」多等过一程，就不要无限往后拖。
+    private var extended = false
 
     fun accept(frame: ByteArray, speech: Boolean, onStart: () -> Unit, onUtterance: (ByteArray) -> Unit,
-               acceptInput: Boolean = true, onFrame: (ByteArray) -> Unit = {}) {
+               acceptInput: Boolean = true, onFrame: (ByteArray) -> Unit = {},
+               shouldKeepListening: () -> Boolean = { false }) {
         check(!failed) { "录音已停止。" }
         require(frame.size == 1024) { "录音帧大小无效。" }
         if (!acceptInput) {
@@ -141,11 +144,19 @@ internal class UtteranceSegmenter {
             throw UtteranceTooLongException()
         }
         if (silenceFrames >= 18) { // 18 * 32 ms = 576 ms, the first complete frame after 550 ms.
+            // 停在半句话上（"然后""就是"、或者还没听出几个字）就再多等一程。
+            // 正常说完的话走不到这里，所以不拖慢大多数人。
+            if (!extended && shouldKeepListening()) {
+                extended = true
+                silenceFrames = 0
+                return
+            }
             val pcm = utterance.toByteArray()
             utterance.reset()
             active = false
             speechFrames = 0
             silenceFrames = 0
+            extended = false
             onUtterance(pcm)
         }
     }
