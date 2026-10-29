@@ -178,22 +178,6 @@ internal fun ErpanCallScreen(
 
             Spacer(Modifier.weight(1f))
 
-            val shownFirst = if (state.firstAudioMillis > 0) state.firstAudioMillis else diagFirstMillis
-            if (shownFirst > 0 || state.underruns > 0) {
-                Text(
-                    buildString {
-                        if (shownFirst > 0) append("首声 $shownFirst ms")
-                        if (state.underruns > 0) {
-                            if (isNotEmpty()) append(" · ")
-                            append("断音 ${state.underruns} 次")
-                        }
-                    },
-                    color = ink3.copy(alpha = 0.55f),
-                    fontSize = 10.sp
-                )
-                Spacer(Modifier.height(12.dp))
-            }
-
             // 两行，各管各的：我的转写只被我下一次开口替换，
             // 她的话只被她下一次回复替换，互不覆盖。
             val captionScroll = rememberScrollState()
