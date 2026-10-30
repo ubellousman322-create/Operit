@@ -212,8 +212,7 @@ class VoiceConversation(
     private suspend fun sendToChat(text: String, rhythm: Rhythm? = null, unavailable: Boolean = false) {
         report(if (unavailable) "智能判断不可用，已按静音提交；等待 Operit 回复…" else "等待 Operit 回复…")
         // 把“她是怎么说的”跟内容一起发出去。只给测出来的数，不给结论。
-        val speechFailure = streamReply(if (rhythm == null) text else text + "
-" + describeRhythm(rhythm))
+        val speechFailure = streamReply(if (rhythm == null) text else text + "\n" + describeRhythm(rhythm))
         report(if (speechFailure == null) listeningStatus()
             else "回复已完成，本条朗读未完成 · ${listeningStatus()}")
     }
