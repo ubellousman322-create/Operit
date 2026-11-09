@@ -116,7 +116,16 @@ internal fun ThemePresetManagerDialog(
                 try {
                     val imported = ThemePackageImporter.read(context, uri)
                     val savedName = imported.name.ifBlank { "导入的主题" }
-                    activePromptManager.saveThemePreset(savedName, imported.values)
+                    // 主题包只带视觉相关的项。应用预设时会按“预设里没有就清掉”的规则覆盖，
+                    // 所以先拿当前主题做底，包里有的才覆盖，其余（头像、字体、标题等）原样保留。
+                    val merged =
+                        ThemePreferenceValues(
+                            strings = currentValues.strings + imported.values.strings,
+                            booleans = currentValues.booleans + imported.values.booleans,
+                            ints = currentValues.ints + imported.values.ints,
+                            floats = currentValues.floats + imported.values.floats,
+                        )
+                    activePromptManager.saveThemePreset(savedName, merged)
                     presets = activePromptManager.listThemePresets()
                     Toast.makeText(
                             context,
