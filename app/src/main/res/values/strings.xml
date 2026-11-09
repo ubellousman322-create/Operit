@@ -8470,6 +8470,10 @@
     <string name="theme_preset_confirm">确定</string>
     <string name="theme_preset_close">关闭</string>
     <string name="theme_preset_apply_note">应用后，当前角色正在编辑的主题会被这一套覆盖。</string>
+    <string name="theme_preset_import">从文件导入主题包</string>
+    <string name="theme_preset_import_hint">选一个 .zip 主题包，里面要有 theme.json 和图片。导入后只加进列表，不会自动套用。</string>
+    <string name="theme_preset_imported">已导入主题：%1$s</string>
+    <string name="theme_preset_import_failed">导入失败，这个文件里没有可读取的主题配置</string>
     <!-- 窗口级模型选择 -->
     <string name="chat_model_scope_local_only">只改本窗口</string>
     <string name="chat_model_scope_local_only_desc">不改角色卡，只影响当前对话</string>
