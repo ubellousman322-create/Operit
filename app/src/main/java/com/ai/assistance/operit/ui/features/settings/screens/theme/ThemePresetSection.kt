@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.model.ActivePrompt
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
+import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.data.preferences.ThemePreferenceValues
 import com.ai.assistance.operit.data.preferences.ThemePresetSummary
 import kotlinx.coroutines.launch
@@ -125,6 +126,14 @@ internal fun ThemePresetManagerDialog(
                             ints = currentValues.ints + imported.values.ints,
                             floats = currentValues.floats + imported.values.floats,
                         )
+                    AppLogger.d(
+                        "ThemeImport",
+                        "import name=${imported.name}" +
+                            " pkg(s=${imported.values.strings.size},b=${imported.values.booleans.size},i=${imported.values.ints.size},f=${imported.values.floats.size})" +
+                            " pkgPrimary=${imported.values.ints["custom_primary_color"]}" +
+                            " mergedPrimary=${merged.ints["custom_primary_color"]}" +
+                            " merged(s=${merged.strings.size},b=${merged.booleans.size},i=${merged.ints.size},f=${merged.floats.size})",
+                    )
                     activePromptManager.saveThemePreset(savedName, merged)
                     presets = activePromptManager.listThemePresets()
                     Toast.makeText(
