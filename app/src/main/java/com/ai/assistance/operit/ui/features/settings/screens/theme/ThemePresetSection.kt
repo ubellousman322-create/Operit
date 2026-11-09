@@ -1,6 +1,9 @@
 package com.ai.assistance.operit.ui.features.settings.screens.theme
 
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -101,6 +104,38 @@ internal fun ThemePresetManagerDialog(
     var newName by remember { mutableStateOf("") }
     var renameTarget by remember { mutableStateOf<ThemePresetSummary?>(null) }
     var busy by remember { mutableStateOf(false) }
+
+    val importLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) {
+                uri: Uri? ->
+            if (uri == null) {
+                return@rememberLauncherForActivityResult
+            }
+            busy = true
+            scope.launch {
+                try {
+                    val imported = ThemePackageImporter.read(context, uri)
+                    val savedName = imported.name.ifBlank { "导入的主题" }
+                    activePromptManager.saveThemePreset(savedName, imported.values)
+                    presets = activePromptManager.listThemePresets()
+                    Toast.makeText(
+                            context,
+                            context.getString(R.string.theme_preset_imported, savedName),
+                            Toast.LENGTH_SHORT,
+                        )
+                        .show()
+                } catch (e: Exception) {
+                    Toast.makeText(
+                            context,
+                            context.getString(R.string.theme_preset_import_failed),
+                            Toast.LENGTH_LONG,
+                        )
+                        .show()
+                } finally {
+                    busy = false
+                }
+            }
+        }
 
     LaunchedEffect(Unit) {
         presets = activePromptManager.listThemePresets()
@@ -237,6 +272,18 @@ internal fun ThemePresetManagerDialog(
                 ) {
                     Text(stringResource(R.string.theme_preset_save_current))
                 }
+
+                TextButton(
+                    enabled = !busy,
+                    onClick = { importLauncher.launch(arrayOf("*/*")) },
+                ) {
+                    Text(stringResource(R.string.theme_preset_import))
+                }
+                Text(
+                    text = stringResource(R.string.theme_preset_import_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
 
                 Text(
                     text = stringResource(R.string.theme_preset_apply_note),
