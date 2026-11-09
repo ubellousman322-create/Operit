@@ -25,6 +25,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import com.ai.assistance.operit.data.db.ObjectBoxManager
+import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.LocaleUtils.LanguageCodes
 
 private val Context.userPreferencesDataStore: DataStore<Preferences> by
@@ -1315,11 +1316,21 @@ class UserPreferencesManager private constructor(private val context: Context) {
 
     suspend fun applyThemePresetToPrompt(presetId: String, target: ActivePrompt) {
         context.userPreferencesDataStore.edit { preferences ->
+            val sourcePrefix = getThemePresetPrefix(presetId)
+            val targetPrefix = themePrefixForPrompt(target)
+            val sourcePrimary = preferences[intPreferencesKey("${sourcePrefix}custom_primary_color")]
+            val beforePrimary = preferences[intPreferencesKey("${targetPrefix}custom_primary_color")]
             copyThemeValues(
                 preferences = preferences,
-                sourcePrefix = getThemePresetPrefix(presetId),
-                targetPrefix = themePrefixForPrompt(target),
+                sourcePrefix = sourcePrefix,
+                targetPrefix = targetPrefix,
                 clearMissingTargetValues = true,
+            )
+            val afterPrimary = preferences[intPreferencesKey("${targetPrefix}custom_primary_color")]
+            AppLogger.d(
+                "ThemeImport",
+                "apply preset=$presetId srcPrimary=$sourcePrimary target=$targetPrefix" +
+                    " before=$beforePrimary after=$afterPrimary",
             )
         }
     }
