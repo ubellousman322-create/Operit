@@ -143,6 +143,7 @@ internal object ThemePackageImporter {
             ints["custom_primary_color"] = root.optInt("primary", 0)
         }
 
+        var backgroundFile: File? = null
         val copiedByDigest = HashMap<String, File>()
         root.optJSONObject("images")?.let { block ->
             block.keys().forEach { key ->
@@ -170,6 +171,43 @@ internal object ThemePackageImporter {
                         target
                     }
                 strings[key] = Uri.fromFile(internalFile).toString()
+                if (key == "background_image_uri") {
+                    backgroundFile = internalFile
+                }
+            }
+        }
+
+        // 包里只有一个主色，而且往往是给大色块挑的浅色。
+        // 直接当 primary 用，按钮文字会糊在白底上（三个包的对比度只有 3.57 / 3.28 / 1.33）。
+        // 所以按 WCAG 压暗到达标，副色和侧边栏底色都由它推。
+        val dark = root.optBoolean("dark", false)
+        val rawPrimary = root.optInt("primary", 0xFFFFFBFE.toInt())
+        val rawSecondary =
+            ints["custom_secondary_color"] ?: ThemePackageColors.deriveSecondary(rawPrimary)
+        val readable = ThemePackageColors.resolveReadableColors(rawPrimary, rawSecondary, dark)
+
+        strings["theme_mode"] = if (dark) "dark" else "light"
+        booleans["use_system_theme"] = false
+        booleans["use_custom_colors"] = true
+        ints["custom_primary_color"] = readable.first
+        ints["custom_secondary_color"] = readable.second
+        booleans["use_custom_navigation_drawer_background_color"] = true
+        ints["custom_navigation_drawer_background_color"] =
+            ThemePackageColors.deriveSidebarColor(rawPrimary, dark)
+
+        val hasBackground = !strings["background_image_uri"].isNullOrBlank()
+        booleans["use_background_image"] = hasBackground
+        booleans["navigation_drawer_water_glass"] = true
+        booleans["navigation_drawer_button_liquid_glass"] = true
+
+        // 顶栏透明时标题压在背景图上，颜色得按图亮度定，不能按主色定；
+        // 宿主的 app_bar_content_color_mode 取值是反的：light 是白字，dark 是黑字。
+        if (hasBackground && booleans["toolbar_transparent"] == true) {
+            val lightImage =
+                backgroundFile?.let { file -> ThemePackageColors.backgroundIsLight(file.absolutePath) }
+            if (lightImage != null) {
+                booleans["force_app_bar_content_color_enabled"] = true
+                strings["app_bar_content_color_mode"] = if (lightImage) "dark" else "light"
             }
         }
 
