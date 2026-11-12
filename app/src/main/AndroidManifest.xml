@@ -204,7 +204,7 @@
             android:name=".ui.main.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:configChanges="orientation|keyboardHidden|screenSize|screenLayout"
+            android:configChanges="orientation|keyboardHidden|screenSize|screenLayout|smallestScreenSize|density"
             android:windowSoftInputMode="adjustPan"
             android:theme="@style/Theme.Operit"
             android:launchMode="singleTask">
