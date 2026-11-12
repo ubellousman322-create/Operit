@@ -484,7 +484,7 @@ open class ClaudeProvider(
             schema.put("required", required)
         }
         
-        return schema
+        return ToolSchemaCompat.sanitize(schema)
     }
     
     /**
