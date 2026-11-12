@@ -115,7 +115,6 @@
 
         <activity
             android:name=".core.tools.defaultTool.websession.browser.WebSessionPermissionRequestActivity"
-            android:excludeFromRecents="true"
             android:exported="false"
             android:finishOnTaskLaunch="true"
             android:noHistory="true"
@@ -123,7 +122,6 @@
 
         <activity
             android:name=".core.tools.defaultTool.websession.userscript.install.UserscriptImportPickerActivity"
-            android:excludeFromRecents="true"
             android:exported="false"
             android:finishOnTaskLaunch="true"
             android:noHistory="true"
@@ -249,7 +247,6 @@
         <!-- Standard ASSIST entry for system assistant pickers -->
         <activity
             android:name=".services.assistant.OperitAssistActivity"
-            android:excludeFromRecents="true"
             android:exported="true"
             android:finishOnTaskLaunch="true"
             android:noHistory="true"
@@ -297,7 +294,6 @@
         <activity
             android:name=".core.tools.system.ScreenCaptureActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
-            android:excludeFromRecents="true"
             android:exported="false" />
         
         <!-- Floating Chat Service -->
@@ -418,7 +414,6 @@
         <activity
             android:name=".widget.ToolPkgDesktopWidgetConfigActivity"
             android:exported="true"
-            android:excludeFromRecents="true"
             android:label="@string/toolpkg_widget_picker_title"
             android:theme="@style/Theme.Operit">
             <intent-filter>
