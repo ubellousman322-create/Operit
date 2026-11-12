@@ -1377,7 +1377,7 @@ open class OpenAIProvider(
         // OpenAI-compatible validators expect `required` to keep its array type even when empty.
         schema.put("required", required)
 
-        return schema
+        return ToolSchemaCompat.sanitize(schema)
     }
 
     /**
