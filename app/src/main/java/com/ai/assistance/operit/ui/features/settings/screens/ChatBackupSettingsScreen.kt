@@ -68,8 +68,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.model.ChatHistory
-import com.ai.assistance.operit.data.model.ImportStrategy
-import com.ai.assistance.operit.data.model.MemorySpace
 import com.ai.assistance.operit.data.backup.OperitBackupDirs
 import com.ai.assistance.operit.data.backup.RawSnapshotBackupManager
 import com.ai.assistance.operit.data.backup.RoomDatabaseBackupManager
@@ -80,7 +78,6 @@ import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
-import com.ai.assistance.operit.data.repository.MemoryRepository
 import com.ai.assistance.operit.data.converter.ExportFormat
 import com.ai.assistance.operit.data.converter.ChatFormat
 import com.ai.assistance.operit.ui.features.settings.components.BackupFilesStatisticsCard
@@ -92,8 +89,6 @@ import com.ai.assistance.operit.ui.features.settings.components.DeleteConfirmati
 import com.ai.assistance.operit.ui.features.settings.components.ExportFormatDialog
 import com.ai.assistance.operit.ui.features.settings.components.FaqCard
 import com.ai.assistance.operit.ui.features.settings.components.ImportFormatDialog
-import com.ai.assistance.operit.ui.features.settings.components.MemoryImportStrategyDialog
-import com.ai.assistance.operit.ui.features.settings.components.MemoryOperation
 import com.ai.assistance.operit.ui.features.settings.components.ModelConfigExportWarningDialog
 import com.ai.assistance.operit.ui.features.settings.components.ModelConfigManagementCard
 import com.ai.assistance.operit.ui.features.settings.components.ModelConfigOperation
@@ -101,7 +96,6 @@ import com.ai.assistance.operit.ui.features.settings.components.ManagementButton
 import com.ai.assistance.operit.ui.features.settings.components.OperationProgressView
 import com.ai.assistance.operit.ui.features.settings.components.OperationResultCard
 import com.ai.assistance.operit.ui.features.settings.components.OverviewCard
-import com.ai.assistance.operit.ui.features.settings.components.ProfileSelectionDialog
 import com.ai.assistance.operit.ui.features.settings.components.RoomDbBackupListItem
 import com.ai.assistance.operit.ui.features.settings.components.SectionHeader
 import com.ai.assistance.operit.ui.features.settings.components.CharacterCardOperation
@@ -148,14 +142,10 @@ fun ChatBackupSettingsScreen() {
     val userPreferencesManager = remember { UserPreferencesManager.getInstance(context) }
     val characterCardManager = remember { CharacterCardManager.getInstance(context) }
     val modelConfigManager = remember { ModelConfigManager(context) }
-    val activeProfileId by userPreferencesManager.activeMemorySpaceIdFlow.collectAsState(initial = "default")
-    var memoryRepo by remember { mutableStateOf<MemoryRepository?>(null) }
 
     var totalChatCount by remember { mutableStateOf(0) }
     var chatHistories by remember { mutableStateOf<List<ChatHistory>>(emptyList()) }
     var totalCharacterCardCount by remember { mutableStateOf(0) }
-    var totalMemoryCount by remember { mutableStateOf(0) }
-    var totalMemoryLinkCount by remember { mutableStateOf(0) }
     var totalModelConfigCount by remember { mutableStateOf(0) }
     var operationState by remember { mutableStateOf(ChatHistoryOperation.IDLE) }
     var operationMessage by remember { mutableStateOf("") }
@@ -165,8 +155,6 @@ fun ChatBackupSettingsScreen() {
     var longTextExportTotalCharacters by remember { mutableStateOf(0L) }
     var characterCardOperationState by remember { mutableStateOf(CharacterCardOperation.IDLE) }
     var characterCardOperationMessage by remember { mutableStateOf("") }
-    var memoryOperationState by remember { mutableStateOf(MemoryOperation.IDLE) }
-    var memoryOperationMessage by remember { mutableStateOf("") }
     var modelConfigOperationState by remember { mutableStateOf(ModelConfigOperation.IDLE) }
     var modelConfigOperationMessage by remember { mutableStateOf("") }
     var roomDbBackupOperationState by remember { mutableStateOf(RoomDatabaseBackupOperation.IDLE) }
@@ -178,8 +166,6 @@ fun ChatBackupSettingsScreen() {
     var pendingRawSnapshotRestoreUri by remember { mutableStateOf<Uri?>(null) }
     var showRawSnapshotRestoreConfirmDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-    var showMemoryImportStrategyDialog by remember { mutableStateOf(false) }
-    var pendingMemoryImportUri by remember { mutableStateOf<Uri?>(null) }
     var pendingRoomDbRestoreUri by remember { mutableStateOf<Uri?>(null) }
     var pendingRoomDbRestoreFile by remember { mutableStateOf<File?>(null) }
     var showRoomDbRestoreConfirmDialog by remember { mutableStateOf(false) }
@@ -206,13 +192,6 @@ fun ChatBackupSettingsScreen() {
         initial = RoomDatabaseBackupPreferences.DEFAULT_MAX_BACKUP_COUNT
     )
 
-    val profileIds by userPreferencesManager.memorySpaceListFlow.collectAsState(initial = listOf("default"))
-    var allProfiles by remember { mutableStateOf<List<MemorySpace>>(emptyList()) }
-    var selectedExportProfileId by remember { mutableStateOf(activeProfileId) }
-    var selectedImportProfileId by remember { mutableStateOf(activeProfileId) }
-    var showExportProfileDialog by remember { mutableStateOf(false) }
-    var showImportProfileDialog by remember { mutableStateOf(false) }
-
     // 导出格式选择
     var showChatExportSelectionDialog by remember { mutableStateOf(false) }
     var selectedExportChatIds by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -223,23 +202,6 @@ fun ChatBackupSettingsScreen() {
     var showImportFormatDialog by remember { mutableStateOf(false) }
     var selectedImportFormat by remember { mutableStateOf(ChatFormat.OPERIT) }
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
-
-    LaunchedEffect(activeProfileId) {
-        memoryRepo = MemoryRepository(context, activeProfileId)
-        selectedExportProfileId = activeProfileId
-        selectedImportProfileId = activeProfileId
-    }
-
-    LaunchedEffect(profileIds) {
-        val profiles = profileIds.mapNotNull { profileId ->
-            try {
-                userPreferencesManager.getMemorySpaceFlow(profileId).first()
-            } catch (_: Exception) {
-                null
-            }
-        }
-        allProfiles = profiles
-    }
 
     LaunchedEffect(Unit) {
         chatHistoryManager.chatHistoriesFlow.collect { histories ->
@@ -252,15 +214,6 @@ fun ChatBackupSettingsScreen() {
     LaunchedEffect(Unit) {
         characterCardManager.characterCardListFlow.collect { cardIds ->
             totalCharacterCardCount = cardIds.size
-        }
-    }
-
-    LaunchedEffect(memoryRepo) {
-        memoryRepo?.let { repo ->
-            val memories = repo.searchMemories("*")
-            totalMemoryCount = memories.count { !it.isDocumentNode }
-            val graph = repo.getMemoryGraph()
-            totalMemoryLinkCount = graph.edges.size
         }
     }
 
@@ -413,18 +366,6 @@ fun ChatBackupSettingsScreen() {
             }
         }
 
-    val memoryFilePickerLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.StartActivityForResult()
-        ) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                result.data?.data?.let { uri ->
-                    pendingMemoryImportUri = uri
-                    showImportProfileDialog = true
-                }
-            }
-        }
-
     val modelConfigFilePickerLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.StartActivityForResult()
@@ -471,10 +412,6 @@ fun ChatBackupSettingsScreen() {
                 }
             }
         }
-
-    val activeProfileName =
-        allProfiles.find { it.id == activeProfileId }?.name
-            ?: stringResource(R.string.default_profile_name)
 
     LazyColumn(
         modifier = Modifier
@@ -1101,121 +1038,6 @@ fun ChatBackupSettingsScreen() {
         )
     }
 
-    if (showMemoryImportStrategyDialog) {
-        MemoryImportStrategyDialog(
-            onDismiss = {
-                showMemoryImportStrategyDialog = false
-                pendingMemoryImportUri = null
-            },
-            onConfirm = { strategy ->
-                showMemoryImportStrategyDialog = false
-                val uri = pendingMemoryImportUri
-                pendingMemoryImportUri = null
-
-                if (uri != null) {
-                    scope.launch {
-                        memoryOperationState = MemoryOperation.IMPORTING
-                        try {
-                            val importRepo = MemoryRepository(context, selectedImportProfileId)
-                            val result = importMemoriesFromUri(context, importRepo, uri, strategy)
-                            memoryOperationState = MemoryOperation.IMPORTED
-                            val profileName = allProfiles.find { it.id == selectedImportProfileId }?.name
-                                ?: selectedImportProfileId
-                            memoryOperationMessage = context.getString(
-                                R.string.backup_memory_import_result_success,
-                                profileName,
-                                result.newMemories,
-                                result.updatedMemories,
-                                result.skippedMemories,
-                                result.newLinks
-                            )
-
-                            if (selectedImportProfileId == activeProfileId) {
-                                val repo = memoryRepo
-                                if (repo != null) {
-                                    val memories = repo.searchMemories("")
-                                    totalMemoryCount = memories.count { !it.isDocumentNode }
-                                    val graph = repo.getMemoryGraph()
-                                    totalMemoryLinkCount = graph.edges.size
-                                }
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            memoryOperationState = MemoryOperation.FAILED
-                            memoryOperationMessage = context.getString(
-                                R.string.backup_import_failed_with_reason,
-                                e.localizedMessage ?: e.toString()
-                            )
-                        }
-                    }
-                }
-            }
-        )
-    }
-
-    if (showExportProfileDialog) {
-        ProfileSelectionDialog(
-            title = stringResource(R.string.select_export_profile),
-            profiles = allProfiles,
-            selectedProfileId = selectedExportProfileId,
-            onProfileSelected = { selectedExportProfileId = it },
-            onDismiss = { showExportProfileDialog = false },
-            onConfirm = {
-                showExportProfileDialog = false
-                scope.launch {
-                    memoryOperationState = MemoryOperation.EXPORTING
-                    try {
-                        val exportRepo = MemoryRepository(context, selectedExportProfileId)
-                        val filePath = exportMemories(context, exportRepo)
-                        if (filePath != null) {
-                            memoryOperationState = MemoryOperation.EXPORTED
-                            val profileName = allProfiles.find { it.id == selectedExportProfileId }?.name
-                                ?: selectedExportProfileId
-                            val memories = exportRepo.searchMemories("")
-                            val memoryCount = memories.count { !it.isDocumentNode }
-                            val graph = exportRepo.getMemoryGraph()
-                            val linkCount = graph.edges.size
-                            memoryOperationMessage = context.getString(
-                                R.string.backup_memory_export_result_success,
-                                profileName,
-                                memoryCount,
-                                linkCount,
-                                filePath
-                            )
-                        } else {
-                            memoryOperationState = MemoryOperation.FAILED
-                            memoryOperationMessage =
-                                context.getString(R.string.backup_export_failed_create_file)
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        memoryOperationState = MemoryOperation.FAILED
-                        memoryOperationMessage = context.getString(
-                            R.string.backup_export_failed_with_reason,
-                            e.localizedMessage ?: e.toString()
-                        )
-                    }
-                }
-            }
-        )
-    }
-
-    if (showImportProfileDialog) {
-        ProfileSelectionDialog(
-            title = stringResource(R.string.select_import_profile),
-            profiles = allProfiles,
-            selectedProfileId = selectedImportProfileId,
-            onProfileSelected = { selectedImportProfileId = it },
-            onDismiss = {
-                showImportProfileDialog = false
-                pendingMemoryImportUri = null
-            },
-            onConfirm = {
-                showImportProfileDialog = false
-                showMemoryImportStrategyDialog = true
-            }
-        )
-    }
 
     if (showChatExportSelectionDialog) {
         ChatHistoryExportSelectionDialog(
@@ -1589,40 +1411,3 @@ private suspend fun deleteAllChatHistories(context: Context): DeleteAllChatsResu
         }
     }
 
-private suspend fun exportMemories(_context: Context, memoryRepository: MemoryRepository): String? =
-    withContext(Dispatchers.IO) {
-        try {
-            val jsonString = memoryRepository.exportMemoriesToJson()
-
-            val exportDir = OperitBackupDirs.memoryDir()
-
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault())
-            val timestamp = dateFormat.format(Date())
-            val exportFile = File(exportDir, "memory_backup_$timestamp.json")
-
-            exportFile.writeText(jsonString)
-
-            return@withContext exportFile.absolutePath
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return@withContext null
-        }
-    }
-
-private suspend fun importMemoriesFromUri(
-    context: Context,
-    memoryRepository: MemoryRepository,
-    uri: Uri,
-    strategy: ImportStrategy
-) = withContext(Dispatchers.IO) {
-    val inputStream = context.contentResolver.openInputStream(uri)
-        ?: throw Exception(context.getString(R.string.backup_open_file_failed))
-    val jsonString = inputStream.bufferedReader().use { it.readText() }
-    inputStream.close()
-
-    if (jsonString.isBlank()) {
-        throw Exception(context.getString(R.string.backup_import_file_empty))
-    }
-
-    memoryRepository.importMemoriesFromJson(jsonString, strategy)
-}
