@@ -889,7 +889,8 @@ object SystemToolPrompts {
     data class ManageableToolPrompt(
         val categoryName: String,
         val name: String,
-        val description: String
+        val description: String,
+        val defaultEnabled: Boolean = true
     )
 
     private fun applyToolOrder(
@@ -906,15 +907,66 @@ object SystemToolPrompts {
         }
     }
 
+    // ==================== 日常聊天默认关闭的工具 ====================
+    // 这些工具的实现、注册、权限全部保留，只是一个默认关掉的开关。
+    // 需要的时候在工具面板里打开即可，改代码不需要重新构建。
+
+    // 整类默认关闭
+    private val defaultDisabledCategories =
+        setOf(
+            "Tasker 工具",
+            "Tasker Tools",
+            "工作流工具",
+            "Workflow Tools",
+            "对话工具",
+            "Chat Tools",
+            "内部 UI 工具",
+            "Internal UI Tools",
+            "软件设置工具",
+            "Software Settings Tools",
+            "FFmpeg 工具",
+            "FFmpeg Tools",
+        )
+
+    // 按前缀默认关闭（音乐、浏览器自动化、蓝牙）
+    private val defaultDisabledPrefixes = listOf("music_", "browser_", "bluetooth_")
+
+    // 逐个默认关闭
+    private val defaultDisabledTools =
+        setOf(
+            "send_broadcast",
+            "close_all_virtual_displays",
+            "modify_system_setting",
+            "get_system_setting",
+            "install_app",
+            "uninstall_app",
+            "stop_app",
+            "get_app_usage_time",
+            "get_device_location",
+            "multipart_request",
+            "manage_cookies",
+        )
+
+    /** 没存过用户选择时，这个工具是否默认开启。 */
+    fun isToolEnabledByDefault(categoryName: String, toolName: String): Boolean {
+        if (categoryName in defaultDisabledCategories) return false
+        if (defaultDisabledPrefixes.any { prefix -> toolName.startsWith(prefix) }) return false
+        // 蓝牙工具命名不统一：bluetooth_connect 是前缀，request_enable_bluetooth 不是
+        if (toolName.contains("bluetooth")) return false
+        if (toolName in defaultDisabledTools) return false
+        return true
+    }
+
     private fun applyToolVisibility(
         categories: List<SystemToolPromptCategory>,
         toolVisibility: Map<String, Boolean>
     ): List<SystemToolPromptCategory> {
-        if (toolVisibility.isEmpty()) return categories
         return categories.mapNotNull { category ->
-            val visibleTools = category.tools.filter { tool ->
-                toolVisibility[tool.name] ?: true
-            }
+            val visibleTools =
+                category.tools.filter { tool ->
+                    toolVisibility[tool.name]
+                        ?: isToolEnabledByDefault(category.categoryName, tool.name)
+                }
             if (visibleTools.isEmpty()) {
                 null
             } else {
@@ -943,7 +995,9 @@ object SystemToolPrompts {
                     ManageableToolPrompt(
                         categoryName = category.categoryName,
                         name = tool.name,
-                        description = tool.description
+                        description = tool.description,
+                        defaultEnabled =
+                            isToolEnabledByDefault(category.categoryName, tool.name)
                     )
                 }
             }
