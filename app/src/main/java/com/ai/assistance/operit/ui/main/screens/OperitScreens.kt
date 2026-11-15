@@ -66,7 +66,6 @@ import com.ai.assistance.operit.ui.features.settings.screens.SpeechServicesSetti
 import com.ai.assistance.operit.ui.features.settings.screens.ThemeSettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.ToolPermissionSettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.MnnModelDownloadScreen
-import com.ai.assistance.operit.ui.features.settings.screens.UserPreferencesSettingsScreen
 import com.ai.assistance.operit.ui.features.tokenstats.TokenUsageStatisticsScreen
 import com.ai.assistance.operit.ui.features.token.TokenConfigWebViewScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.AppPermissionsToolScreen
@@ -649,7 +648,6 @@ sealed class Screen(
                 onGestureConsumed: (Boolean) -> Unit
         ) {
             SettingsScreen(
-                    navigateToUserPreferences = { navigateTo(UserPreferencesSettings) },
                     navigateToToolPermissions = { navigateTo(ToolPermission) },
                     navigateToGitHubAccount = { navigateTo(GitHubAccount) },
                     navigateToModelConfig = { navigateTo(ModelConfig) },
@@ -754,25 +752,6 @@ sealed class Screen(
                 onGestureConsumed: (Boolean) -> Unit
         ) {
             TokenConfigWebViewScreen(onNavigateBack = onGoBack)
-        }
-    }
-
-    // Secondary screens - Settings
-    data object UserPreferencesSettings :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.settings_user_preferences) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            UserPreferencesSettingsScreen(
-                onNavigateBack = onGoBack,
-            )
         }
     }
 
@@ -1519,7 +1498,6 @@ sealed class Screen(
                     groupId = groupId,
                     onOpen = { key ->
                         when (key) {
-                            "user_preferences" -> navigateTo(UserPreferencesSettings)
                             "language" -> navigateTo(LanguageSettings)
                             "theme" -> navigateTo(ThemeSettings)
                             "global_display" -> navigateTo(GlobalDisplaySettings)
