@@ -243,7 +243,6 @@ fun DataManagementCard(
 }
 
 @OptIn(ExperimentalLayoutApi::class)
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ModelConfigManagementCard(
     totalConfigCount: Int,
