@@ -41,36 +41,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import coil.compose.rememberAsyncImagePainter
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.chat.library.ChatMemoryRebuildManager
-import com.ai.assistance.operit.api.chat.library.ChatMemoryRebuildTimeScope
-import com.ai.assistance.operit.api.chat.library.ChatMemoryWindowPlanner
 import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.data.model.CharacterCard
 import com.ai.assistance.operit.data.model.CharacterCardChatStats
 import com.ai.assistance.operit.data.model.CharacterGroupCard
 import com.ai.assistance.operit.data.model.CharacterGroupChatStats
-import com.ai.assistance.operit.data.model.ImportStrategy
-import com.ai.assistance.operit.data.model.MemorySpace
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.CharacterGroupCardManager
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
-import com.ai.assistance.operit.data.repository.MemoryRepository
 import com.ai.assistance.operit.ui.features.settings.components.CharacterCardAssignDialog
 import com.ai.assistance.operit.ui.features.settings.components.CharacterGroupAssignDialog
-import java.time.LocalDate
 import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import java.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -88,14 +75,11 @@ data class UnboundWorkspaceInfo(
 fun ChatHistorySettingsScreen() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val memoryRebuildManager = remember { ChatMemoryRebuildManager.getInstance(context) }
-    val memoryRebuildProgress by memoryRebuildManager.progress.collectAsState()
 
     val chatHistoryManager = remember { ChatHistoryManager.getInstance(context) }
     val characterCardManager = remember { CharacterCardManager.getInstance(context) }
     val characterGroupCardManager = remember { CharacterGroupCardManager.getInstance(context) }
     val userPreferencesManager = remember { UserPreferencesManager.getInstance(context) }
-    val activeProfileId by userPreferencesManager.activeMemorySpaceIdFlow.collectAsState(initial = "default")
 
     val characterCardStatsState by chatHistoryManager.characterCardStatsFlow
         .collectAsState(initial = null as List<CharacterCardChatStats>?)
@@ -237,23 +221,6 @@ fun ChatHistorySettingsScreen() {
         }
     }
 
-    val profileIds by userPreferencesManager.memorySpaceListFlow.collectAsState(initial = listOf("default"))
-    var allProfiles by remember { mutableStateOf<List<MemorySpace>>(emptyList()) }
-    
-    LaunchedEffect(profileIds) {
-        val profiles = profileIds.mapNotNull { profileId ->
-            try {
-                userPreferencesManager.getMemorySpaceFlow(profileId).first()
-            } catch (_: Exception) {
-                null
-            }
-        }
-        allProfiles = profiles
-    }
-    
-    val activeProfileName =
-        allProfiles.find { it.id == activeProfileId }?.name ?: context.getString(R.string.default_profile_name)
-
     var showAssignCharacterDialog by remember { mutableStateOf(false) }
     var pendingAssignStat by remember { mutableStateOf<CharacterCardChatStats?>(null) }
     var selectedCharacterCardId by remember { mutableStateOf<String?>(null) }
@@ -285,7 +252,6 @@ fun ChatHistorySettingsScreen() {
             item {
                 ChatManagementOverviewCard(
                     totalChatCount = totalChatCount,
-                    activeProfileName = activeProfileName
                 )
             }
             item {
@@ -315,8 +281,6 @@ fun ChatHistorySettingsScreen() {
                     chatHistories = chatHistories,
                     characterCards = availableCharacterCards,
                     characterGroups = availableCharacterGroups,
-                    memoryRebuildManager = memoryRebuildManager,
-                    memoryRebuildProgress = memoryRebuildProgress,
                     onApply = { selectedIds, targetCharacterName, targetCharacterGroupId, targetGroupName, shouldUnbindCharacterCard, shouldUnbindCharacterGroup ->
                         if (selectedIds.isEmpty()) {
                             Toast.makeText(context, context.getString(R.string.please_select_chats_first), Toast.LENGTH_SHORT).show()
@@ -741,7 +705,6 @@ fun ChatHistorySettingsScreen() {
 @Composable
 private fun ChatManagementOverviewCard(
     totalChatCount: Int,
-    activeProfileName: String
 ) {
     val context = LocalContext.current
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -753,11 +716,6 @@ private fun ChatManagementOverviewCard(
             Text(
                     text = context.getString(R.string.chat_history_overview),
                     style = MaterialTheme.typography.titleLarge
-                )
-                Text(
-                    text = context.getString(R.string.current_config_label, activeProfileName),
-                style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             StatChip(
@@ -1194,8 +1152,6 @@ private fun ChatHistoryBatchSelectorCard(
     chatHistories: List<ChatHistory>,
     characterCards: List<CharacterCard>,
     characterGroups: List<CharacterGroupCard>,
-    memoryRebuildManager: ChatMemoryRebuildManager,
-    memoryRebuildProgress: ChatMemoryRebuildManager.Progress,
     onApply: suspend (
         selectedChatIds: List<String>,
         targetCharacterCardName: String?,
@@ -1221,19 +1177,6 @@ private fun ChatHistoryBatchSelectorCard(
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showSelectedChatActionsDialog by remember { mutableStateOf(false) }
     var showBatchManagementSheet by remember { mutableStateOf(false) }
-    var memoryWindowSizeMenuExpanded by remember { mutableStateOf(false) }
-    var selectedMemoryWindowSize by remember {
-        mutableIntStateOf(ChatMemoryWindowPlanner.DEFAULT_WINDOW_MESSAGE_COUNT)
-    }
-    var showMemoryRebuildConfirmDialog by remember { mutableStateOf(false) }
-    var memoryTimeScopeMode by remember { mutableStateOf(MemoryRebuildTimeScopeMode.ENTIRE) }
-    var memoryRangeStartDate by remember { mutableStateOf<LocalDate?>(null) }
-    var memoryRangeEndDate by remember { mutableStateOf<LocalDate?>(null) }
-    var showMemoryDateRangePicker by remember { mutableStateOf(false) }
-    val memoryDateFormatter = remember {
-        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-    }
-
     val normalizedQuery = searchQuery.trim()
     val characterGroupNameById = remember(characterGroups) {
         characterGroups.associate { it.id to it.name }
@@ -1292,9 +1235,7 @@ private fun ChatHistoryBatchSelectorCard(
     }
 
     val hasSelection = selectedChatIds.isNotEmpty()
-    val isMemoryRebuildRunning =
-        memoryRebuildProgress.status == ChatMemoryRebuildManager.Status.PREPARING ||
-            memoryRebuildProgress.status == ChatMemoryRebuildManager.Status.RUNNING
+    val isMemoryRebuildRunning = false
     val hasTargetSelection = targetIsUnbind || !selectedTargetName.isNullOrBlank()
     val hasTargetGroupSelection = targetGroupIsUnbind || !selectedTargetGroupId.isNullOrBlank()
     val hasTargetGroup = targetGroupName.isNotBlank()
@@ -1410,89 +1351,6 @@ private fun ChatHistoryBatchSelectorCard(
                         )
                         if (index < filteredHistories.lastIndex) {
                             HorizontalDivider(color = MaterialTheme.colorScheme.surface, thickness = 1.dp)
-                        }
-                    }
-                }
-            }
-
-            if (memoryRebuildProgress.status != ChatMemoryRebuildManager.Status.IDLE) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    when (memoryRebuildProgress.status) {
-                        ChatMemoryRebuildManager.Status.PREPARING -> {
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                            Text(
-                                text = stringResource(R.string.chat_memory_rebuild_preparing),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        ChatMemoryRebuildManager.Status.RUNNING -> {
-                            LinearProgressIndicator(
-                                progress = { memoryRebuildProgress.fraction.coerceIn(0f, 1f) },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Text(
-                                text = context.getString(
-                                    R.string.chat_memory_rebuild_progress,
-                                    memoryRebuildProgress.currentChatTitle,
-                                    memoryRebuildProgress.completedWindows + 1,
-                                    memoryRebuildProgress.totalWindows,
-                                    memoryRebuildProgress.processedSourceMessages,
-                                    memoryRebuildProgress.totalSourceMessages,
-                                    memoryRebuildProgress.failedWindows
-                                ),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        ChatMemoryRebuildManager.Status.COMPLETED -> {
-                            Text(
-                                text = context.getString(
-                                    R.string.chat_memory_rebuild_completed,
-                                    memoryRebuildProgress.completedChats,
-                                    memoryRebuildProgress.completedWindows,
-                                    memoryRebuildProgress.failedWindows
-                                ),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-
-                        ChatMemoryRebuildManager.Status.CANCELLED -> {
-                            Text(
-                                text = context.getString(
-                                    R.string.chat_memory_rebuild_cancelled,
-                                    memoryRebuildProgress.completedWindows,
-                                    memoryRebuildProgress.totalWindows
-                                ),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        ChatMemoryRebuildManager.Status.FAILED -> {
-                            Text(
-                                text = context.getString(
-                                    R.string.chat_memory_rebuild_failed,
-                                    memoryRebuildProgress.errorMessage
-                                ),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-
-                        ChatMemoryRebuildManager.Status.IDLE -> Unit
-                    }
-                    if (isMemoryRebuildRunning) {
-                        OutlinedButton(
-                            onClick = memoryRebuildManager::cancel,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.chat_memory_rebuild_cancel))
                         }
                     }
                 }
@@ -1809,21 +1667,6 @@ private fun ChatHistoryBatchSelectorCard(
                                 showBatchManagementSheet = true
                             }
                 )
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.chat_memory_rebuild_title)) },
-                    supportingContent = { Text(stringResource(R.string.chat_memory_rebuild_subtitle)) },
-                    leadingContent = { Icon(Icons.Default.Memory, contentDescription = null) },
-                    trailingContent = {
-                        Icon(Icons.Default.ChevronRight, contentDescription = null)
-                    },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                showSelectedChatActionsDialog = false
-                                showMemoryRebuildConfirmDialog = true
-                            }
-                )
             }
         }
     }
@@ -1909,313 +1752,7 @@ private fun ChatHistoryBatchSelectorCard(
         )
     }
 
-    if (showMemoryRebuildConfirmDialog && !showMemoryDateRangePicker) {
-        val rangeStart = memoryRangeStartDate
-        val rangeEnd = memoryRangeEndDate
-        val hasCompleteRange = rangeStart != null && rangeEnd != null
-        val canConfirmMemoryRebuild =
-            when (memoryTimeScopeMode) {
-                MemoryRebuildTimeScopeMode.ENTIRE -> true
-                MemoryRebuildTimeScopeMode.RANGE -> hasCompleteRange
-            }
-        AlertDialog(
-            onDismissRequest = { showMemoryRebuildConfirmDialog = false },
-            title = { Text(stringResource(R.string.chat_memory_rebuild_confirm_title)) },
-            text = {
-                Column(
-                    modifier = Modifier.verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    ExposedDropdownMenuBox(
-                        expanded = memoryWindowSizeMenuExpanded,
-                        onExpandedChange = { memoryWindowSizeMenuExpanded = it }
-                    ) {
-                        OutlinedTextField(
-                            value = context.getString(
-                                R.string.chat_memory_rebuild_window_size_value,
-                                selectedMemoryWindowSize
-                            ),
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(stringResource(R.string.chat_memory_rebuild_window_size)) },
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(
-                                    expanded = memoryWindowSizeMenuExpanded
-                                )
-                            },
-                            modifier = Modifier.menuAnchor().fillMaxWidth(),
-                            colors = ExposedDropdownMenuDefaults.textFieldColors()
-                        )
-                        ExposedDropdownMenu(
-                            expanded = memoryWindowSizeMenuExpanded,
-                            onDismissRequest = { memoryWindowSizeMenuExpanded = false }
-                        ) {
-                            memoryWindowMessageCounts.forEach { size ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            context.getString(
-                                                R.string.chat_memory_rebuild_window_size_value,
-                                                size
-                                            )
-                                        )
-                                    },
-                                    onClick = {
-                                        selectedMemoryWindowSize = size
-                                        memoryWindowSizeMenuExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    Text(
-                        text = stringResource(R.string.chat_memory_rebuild_time_scope),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(
-                            selected = memoryTimeScopeMode == MemoryRebuildTimeScopeMode.ENTIRE,
-                            onClick = { memoryTimeScopeMode = MemoryRebuildTimeScopeMode.ENTIRE },
-                            label = { Text(stringResource(R.string.chat_memory_rebuild_time_scope_all)) },
-                            modifier = Modifier.weight(1f)
-                        )
-                        FilterChip(
-                            selected = memoryTimeScopeMode == MemoryRebuildTimeScopeMode.RANGE,
-                            onClick = {
-                                memoryTimeScopeMode = MemoryRebuildTimeScopeMode.RANGE
-                                showMemoryDateRangePicker = true
-                            },
-                            label = { Text(stringResource(R.string.chat_memory_rebuild_time_scope_range)) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    if (memoryTimeScopeMode == MemoryRebuildTimeScopeMode.RANGE) {
-                    if (memoryTimeScopeMode == MemoryRebuildTimeScopeMode.RANGE) {
-                        val rangeLabel =
-                            if (rangeStart != null && rangeEnd != null) {
-                                context.getString(
-                                    R.string.chat_memory_rebuild_time_scope_value,
-                                    rangeStart.format(memoryDateFormatter),
-                                    rangeEnd.format(memoryDateFormatter)
-                                )
-                            } else {
-                                context.getString(R.string.chat_memory_rebuild_time_scope_pick)
-                            }
-                        OutlinedButton(
-                            onClick = { showMemoryDateRangePicker = true },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                Icons.Default.DateRange,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(rangeLabel)
-                        }
-                    }
-                    }
-                    when {
-                        memoryTimeScopeMode == MemoryRebuildTimeScopeMode.RANGE &&
-                            rangeStart != null &&
-                            rangeEnd != null -> {
-                            Text(
-                                context.getString(
-                                    R.string.chat_memory_rebuild_confirm_message_range,
-                                    selectedChatIds.size,
-                                    rangeStart.format(memoryDateFormatter),
-                                    rangeEnd.format(memoryDateFormatter),
-                                    selectedMemoryWindowSize
-                                )
-                            )
-                        }
-                        memoryTimeScopeMode == MemoryRebuildTimeScopeMode.ENTIRE -> {
-                            Text(
-                                context.getString(
-                                    R.string.chat_memory_rebuild_confirm_message,
-                                    selectedChatIds.size,
-                                    selectedMemoryWindowSize
-                                )
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = canConfirmMemoryRebuild,
-                    onClick = {
-                        val timeScope =
-                            when (memoryTimeScopeMode) {
-                                MemoryRebuildTimeScopeMode.ENTIRE ->
-                                    ChatMemoryRebuildTimeScope.EntireChat
-                                MemoryRebuildTimeScopeMode.RANGE -> {
-                                    val start = memoryRangeStartDate
-                                    val end = memoryRangeEndDate
-                                    if (start == null || end == null) {
-                                        return@TextButton
-                                    }
-                                    ChatMemoryRebuildTimeScope.inclusiveDates(
-                                        start,
-                                        end,
-                                        ZoneId.systemDefault()
-                                    )
-                                }
-                            }
-                        memoryRebuildManager.start(
-                            chatIds = selectedChatIds.toList(),
-                            windowMessageCount = selectedMemoryWindowSize,
-                            timeScope = timeScope
-                        )
-                        showMemoryRebuildConfirmDialog = false
-                    }
-                ) {
-                    Text(stringResource(R.string.chat_memory_rebuild_confirm_action))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showMemoryRebuildConfirmDialog = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
-    }
 
-    if (showMemoryDateRangePicker) {
-        ChatMemoryRebuildDateRangeDialog(
-            initialStart = memoryRangeStartDate,
-            initialEnd = memoryRangeEndDate,
-            onConfirm = { start, end ->
-                memoryRangeStartDate = start
-                memoryRangeEndDate = end
-                memoryTimeScopeMode = MemoryRebuildTimeScopeMode.RANGE
-                showMemoryDateRangePicker = false
-            },
-            onDismiss = { showMemoryDateRangePicker = false }
-        )
-    }
-}
-
-private enum class MemoryRebuildTimeScopeMode {
-    ENTIRE,
-    RANGE
-}
-
-private val memoryWindowMessageCounts = listOf(16, 24, 32, 48)
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ChatMemoryRebuildDateRangeDialog(
-    initialStart: LocalDate?,
-    initialEnd: LocalDate?,
-    onConfirm: (LocalDate, LocalDate) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val pickerState = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = initialStart
-            ?.atStartOfDay(ZoneOffset.UTC)
-            ?.toInstant()
-            ?.toEpochMilli(),
-        initialSelectedEndDateMillis = initialEnd
-            ?.atStartOfDay(ZoneOffset.UTC)
-            ?.toInstant()
-            ?.toEpochMilli()
-    )
-    val headlineFormatter = remember { DateTimeFormatter.ofPattern("yyyy/MM/dd") }
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(
-            shape = MaterialTheme.shapes.extraLarge,
-            tonalElevation = 6.dp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .fillMaxHeight(0.85f)
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                DateRangePicker(
-                    state = pickerState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    title = {
-                        Text(
-                            text = stringResource(R.string.chat_memory_rebuild_date_range_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(start = 24.dp, top = 16.dp, end = 24.dp)
-                        )
-                    },
-                    headline = {
-                        Text(
-                            text = formatMemoryDateRangeHeadline(
-                                pickerState.selectedStartDateMillis,
-                                pickerState.selectedEndDateMillis,
-                                headlineFormatter
-                            ),
-                            style = MaterialTheme.typography.headlineSmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 24.dp, end = 24.dp, bottom = 12.dp)
-                        )
-                    },
-                    showModeToggle = false
-                )
-                HorizontalDivider()
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                    TextButton(
-                        enabled =
-                            pickerState.selectedStartDateMillis != null &&
-                                pickerState.selectedEndDateMillis != null,
-                        onClick = {
-                            val startMs = pickerState.selectedStartDateMillis ?: return@TextButton
-                            val endMs = pickerState.selectedEndDateMillis ?: return@TextButton
-                            val start =
-                                ChatMemoryRebuildTimeScope.utcMidnightMillisToLocalDate(startMs)
-                            val end =
-                                ChatMemoryRebuildTimeScope.utcMidnightMillisToLocalDate(endMs)
-                            if (end.isBefore(start)) {
-                                return@TextButton
-                            }
-                            onConfirm(start, end)
-                        }
-                    ) {
-                        Text(stringResource(R.string.chat_memory_rebuild_date_range_confirm))
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun formatMemoryDateRangeHeadline(
-    startMillis: Long?,
-    endMillis: Long?,
-    formatter: DateTimeFormatter
-): String {
-    if (startMillis == null) {
-        return ""
-    }
-    val start =
-        ChatMemoryRebuildTimeScope.utcMidnightMillisToLocalDate(startMillis).format(formatter)
-    if (endMillis == null) {
-        return start
-    }
-    val end = ChatMemoryRebuildTimeScope.utcMidnightMillisToLocalDate(endMillis).format(formatter)
-    return "$start – $end"
 }
 
 @Composable
