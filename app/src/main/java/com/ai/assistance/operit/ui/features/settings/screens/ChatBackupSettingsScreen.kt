@@ -93,8 +93,6 @@ import com.ai.assistance.operit.ui.features.settings.components.ExportFormatDial
 import com.ai.assistance.operit.ui.features.settings.components.FaqCard
 import com.ai.assistance.operit.ui.features.settings.components.ImportFormatDialog
 import com.ai.assistance.operit.ui.features.settings.components.MemoryImportStrategyDialog
-import com.ai.assistance.operit.ui.features.settings.components.MemoryManagementCard
-import com.ai.assistance.operit.ui.features.settings.components.MemoryOperation
 import com.ai.assistance.operit.ui.features.settings.components.ModelConfigExportWarningDialog
 import com.ai.assistance.operit.ui.features.settings.components.ModelConfigManagementCard
 import com.ai.assistance.operit.ui.features.settings.components.ModelConfigOperation
@@ -487,16 +485,12 @@ fun ChatBackupSettingsScreen() {
             OverviewCard(
                 totalChatCount = totalChatCount,
                 totalCharacterCardCount = totalCharacterCardCount,
-                totalMemoryCount = totalMemoryCount,
-                totalLinkCount = totalMemoryLinkCount,
-                activeProfileName = activeProfileName
             )
         }
         item {
             BackupFilesStatisticsCard(
                 chatBackupCount = chatBackupFileCount,
                 characterCardBackupCount = characterCardBackupFileCount,
-                memoryBackupCount = memoryBackupFileCount,
                 modelConfigBackupCount = modelConfigBackupFileCount,
                 roomDbBackupCount = roomDbBackupFileCount,
                 isScanning = isScanning,
@@ -621,22 +615,6 @@ fun ChatBackupSettingsScreen() {
                         type = "application/json"
                     }
                     characterCardFilePickerLauncher.launch(intent)
-                }
-            )
-        }
-        item {
-            MemoryManagementCard(
-                totalMemoryCount = totalMemoryCount,
-                totalLinkCount = totalMemoryLinkCount,
-                operationState = memoryOperationState,
-                operationMessage = memoryOperationMessage,
-                onExport = { showExportProfileDialog = true },
-                onImport = {
-                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                        addCategory(Intent.CATEGORY_OPENABLE)
-                        type = "application/json"
-                    }
-                    memoryFilePickerLauncher.launch(intent)
                 }
             )
         }
