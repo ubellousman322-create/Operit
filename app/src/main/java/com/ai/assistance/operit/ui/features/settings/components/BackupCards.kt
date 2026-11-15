@@ -45,9 +45,6 @@ import com.ai.assistance.operit.R
 fun OverviewCard(
     totalChatCount: Int,
     totalCharacterCardCount: Int,
-    totalMemoryCount: Int,
-    totalLinkCount: Int,
-    activeProfileName: String
 ) {
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -58,11 +55,6 @@ fun OverviewCard(
                 Text(
                     text = stringResource(R.string.backup_data_overview),
                     style = MaterialTheme.typography.titleLarge
-                )
-                Text(
-                    text = stringResource(R.string.backup_current_profile, activeProfileName),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -80,16 +72,6 @@ fun OverviewCard(
                     title = "$totalCharacterCardCount",
                     subtitle = stringResource(R.string.backup_character_card_count)
                 )
-                StatChip(
-                    icon = Icons.Default.Psychology,
-                    title = "$totalMemoryCount",
-                    subtitle = stringResource(R.string.backup_memory_count)
-                )
-                StatChip(
-                    icon = Icons.Default.Link,
-                    title = "$totalLinkCount",
-                    subtitle = stringResource(R.string.backup_memory_link_count)
-                )
             }
         }
     }
@@ -100,7 +82,6 @@ fun OverviewCard(
 fun BackupFilesStatisticsCard(
     chatBackupCount: Int,
     characterCardBackupCount: Int,
-    memoryBackupCount: Int,
     modelConfigBackupCount: Int,
     roomDbBackupCount: Int,
     isScanning: Boolean,
@@ -165,12 +146,6 @@ fun BackupFilesStatisticsCard(
                     count = characterCardBackupCount,
                     label = stringResource(R.string.backup_character_card_files),
                     color = MaterialTheme.colorScheme.primary
-                )
-                BackupFileStatItem(
-                    icon = Icons.Default.Psychology,
-                    count = memoryBackupCount,
-                    label = stringResource(R.string.backup_memory_files),
-                    color = MaterialTheme.colorScheme.secondary
                 )
                 BackupFileStatItem(
                     icon = Icons.Default.Settings,
