@@ -70,7 +70,8 @@ fun ToolPromptManagerDialog(
     var collapsedCategories by remember { mutableStateOf(emptySet<String>()) }
     var localVisibility by remember(toolPromptVisibility) { mutableStateOf(toolPromptVisibility) }
 
-    fun isOn(name: String): Boolean = localVisibility[name] ?: true
+    fun isOn(tool: SystemToolPrompts.ManageableToolPrompt): Boolean =
+        localVisibility[tool.name] ?: tool.defaultEnabled
 
     fun commit(updates: Map<String, Boolean>) {
         if (updates.isEmpty()) return
@@ -99,7 +100,7 @@ fun ToolPromptManagerDialog(
         }
 
     val lazyListState = rememberLazyListState()
-    val enabledTotal = allTools.count { isOn(it.name) }
+    val enabledTotal = allTools.count { isOn(it) }
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -181,7 +182,7 @@ fun ToolPromptManagerDialog(
                 visibleGroups.forEach { entry ->
                     val categoryName = entry.first
                     val tools = entry.second
-                    val enabledCount = tools.count { isOn(it.name) }
+                    val enabledCount = tools.count { isOn(it) }
                     val collapsed = !searching && collapsedCategories.contains(categoryName)
 
                     item(key = "header:$categoryName") {
@@ -246,7 +247,7 @@ fun ToolPromptManagerDialog(
                                     overflow = TextOverflow.Ellipsis,
                                 )
                                 Switch(
-                                    checked = isOn(tool.name),
+                                    checked = isOn(tool),
                                     onCheckedChange = { checked ->
                                         commit(mapOf(tool.name to checked))
                                     },
