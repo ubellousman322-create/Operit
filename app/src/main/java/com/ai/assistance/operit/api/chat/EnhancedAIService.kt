@@ -84,7 +84,6 @@ import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.CharacterCardToolAccessResolver
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.preferences.preferencesManager
-import com.ai.assistance.operit.data.repository.MemoryAutoSaveCandidateRepository
 import com.ai.assistance.operit.core.config.SystemToolPrompts
 import com.ai.assistance.operit.data.model.ToolPrompt
 import com.ai.assistance.operit.data.model.ToolParameterSchema
@@ -520,7 +519,6 @@ class EnhancedAIService private constructor(private val context: Context) {
     private var lastReplyContent: String? = null
 
     init {
-        com.ai.assistance.operit.api.chat.library.MemoryLibrary.initialize(context)
         initScope.launch {
             runCatching {
                 ensureInitialized()
@@ -3164,33 +3162,8 @@ class EnhancedAIService private constructor(private val context: Context) {
         onSuccess: (suspend () -> Unit)? = null,
         onError: (suspend (Exception) -> Unit)? = null
     ) {
-        AppLogger.d(TAG, "手动触发记忆更新...")
-        toolProcessingScope.launch {
-            try {
-                val memoryService = multiServiceManager.getServiceForFunction(FunctionType.MEMORY)
-                com.ai.assistance.operit.api.chat.library.MemoryLibrary.saveMemoryAsync(
-                    context = context,
-                    toolHandler = toolHandler,
-                    conversationHistory = conversationHistory,
-                    content = lastContent,
-                    aiService = memoryService,
-                    profileIdOverride = memorySpaceIdOverride,
-                    onSuccess = {
-                        AppLogger.d(TAG, "手动记忆更新成功")
-                        onSuccess?.invoke()
-                    },
-                    onError = { e ->
-                        AppLogger.e(TAG, "手动记忆更新失败", e)
-                        onError?.invoke(e)
-                    }
-                )
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "手动记忆更新初始化失败", e)
-                onError?.invoke(e)
-            }
-        }
+        // 本地记忆库已移除，保留入口以免破坏调用方
+        toolProcessingScope.launch { onSuccess?.invoke() }
     }
 
     /**
