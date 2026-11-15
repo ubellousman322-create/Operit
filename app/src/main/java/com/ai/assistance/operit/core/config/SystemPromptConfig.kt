@@ -114,9 +114,6 @@ PACKAGE SYSTEM
         )
     }
 
-    private fun getMemoryToolsEn(toolVisibility: Map<String, Boolean>): String {
-        return SystemToolPrompts.generateMemoryToolsPromptEn(toolVisibility)
-    }
 
     private suspend fun getAvailableToolsCn(
         chatId: String?,
@@ -154,9 +151,6 @@ PACKAGE SYSTEM
         )
     }
 
-    private fun getMemoryToolsCn(toolVisibility: Map<String, Boolean>): String {
-        return SystemToolPrompts.generateMemoryToolsPromptCn(toolVisibility)
-    }
 
 
     /** Base system prompt template used by the enhanced AI service */
