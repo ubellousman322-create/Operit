@@ -354,8 +354,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     // 添加模型建议对话框状态
     var showModelSuggestionDialog by remember { mutableStateOf(false) }
     
-    // 添加记忆文件夹选择对话框状态
-    var showMemoryFolderDialog by remember { mutableStateOf(false) }
 
     // 当模型名称加载后，检查是否为建议更换的模型
     LaunchedEffect(modelName) {
@@ -1114,9 +1112,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                                         characterCardBoundChatModelIndex,
                                 characterCardBoundMemoryProfileId =
                                         characterCardBoundMemoryProfileId,
-                                onShowMemoryFolderDialog = {
-                                    showMemoryFolderDialog = true
-                                },
                                 onRequestAutoScrollToBottom = requestAutoScrollToBottom,
                         )
                     }
@@ -1435,14 +1430,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
         }
     }
     
-    // 记忆文件夹选择对话框
-    MemoryFolderSelectionDialog(
-        visible = showMemoryFolderDialog,
-        onDismiss = { showMemoryFolderDialog = false },
-        onConfirm = { selectedFolders ->
-            actualViewModel.captureMemoryFolders(selectedFolders)
-        }
-    )
 }
 
 @Composable
@@ -1485,7 +1472,6 @@ private fun ChatInputBottomBar(
     characterCardBoundChatModelConfigId: String?,
     characterCardBoundChatModelIndex: Int,
     characterCardBoundMemoryProfileId: String?,
-    onShowMemoryFolderDialog: () -> Unit,
     onRequestAutoScrollToBottom: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -1863,7 +1849,6 @@ private fun ChatInputBottomBar(
                 onAttachScreenContent = actualViewModel::captureScreenContent,
                 onAttachNotifications = actualViewModel::captureNotifications,
                 onAttachLocation = actualViewModel::captureLocation,
-                onAttachMemory = onShowMemoryFolderDialog,
                 onAttachPackage = actualViewModel::attachPackage,
                 onTakePhoto = actualViewModel::handleTakenPhoto,
                 hasBackgroundImage = hasBackgroundImage,
@@ -1965,7 +1950,6 @@ private fun ChatInputBottomBar(
                 onAttachScreenContent = actualViewModel::captureScreenContent,
                 onAttachNotifications = actualViewModel::captureNotifications,
                 onAttachLocation = actualViewModel::captureLocation,
-                onAttachMemory = onShowMemoryFolderDialog,
                 onAttachPackage = actualViewModel::attachPackage,
                 onOpenFavorites = onOpenFavorites,
                 onTakePhoto = actualViewModel::handleTakenPhoto,
