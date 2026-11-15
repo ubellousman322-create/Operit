@@ -927,11 +927,15 @@ object SystemToolPrompts {
         useEnglish: Boolean,
         toolOrder: List<String> = emptyList()
     ): List<ManageableToolPrompt> {
-        val baseCategories = if (useEnglish) {
-            listOf(basicTools, fileSystemTools, httpTools, memoryTools, obMemoryTools)
-        } else {
-            listOf(basicToolsCn, fileSystemToolsCn, httpToolsCn, memoryToolsCn, obMemoryToolsCn)
-        }
+        // 覆盖实际参与工具提示词构建的全部分类：
+        // 主类（可用 / 文件 / HTTP / OB 记忆）+ SystemToolPromptsInternal 的 12 个拓展分类。
+        // 之前只挂了 5 个基础分类，Internal 那 146 个工具完全没有开关，永远默认开启。
+        val baseCategories: List<SystemToolPromptCategory> =
+            if (useEnglish) {
+                getAIAllCategoriesEn() + internalToolCategoriesEn + listOf(memoryTools)
+            } else {
+                getAIAllCategoriesCn() + internalToolCategoriesCn + listOf(memoryToolsCn)
+            }
 
         val result = baseCategories
             .flatMap { category ->
