@@ -45,7 +45,6 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.converter.ChatFormat
 import com.ai.assistance.operit.data.converter.ExportFormat
 import com.ai.assistance.operit.data.model.ChatHistory
-import com.ai.assistance.operit.data.model.MemorySpace
 
 @Composable
 fun DeleteConfirmationDialog(
