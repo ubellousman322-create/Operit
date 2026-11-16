@@ -1,4 +1,6 @@
 package com.ai.assistance.operit.ui.features.settings.screens
+import com.ai.assistance.operit.ui.features.chat.components.style.input.common.ToolPromptManagerDialog
+import com.ai.assistance.operit.data.preferences.ApiPreferences
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -65,6 +67,9 @@ fun SettingsScreen(
         var patSuffixDraft by remember { mutableStateOf(PatPreferences.getUserPatSuffix(context)) }
 
         val isGitHubLoggedIn = githubAuth.isLoggedInFlow.collectAsState(initial = false).value
+        val apiPreferences = remember { ApiPreferences.getInstance(context) }
+        var showToolPromptManager by remember { mutableStateOf(false) }
+        val toolVisibilityMap by apiPreferences.toolPromptVisibilityFlow.collectAsState(initial = emptyMap<String, Boolean>())
         val gitHubUser = githubAuth.userInfoFlow.collectAsState(initial = null).value
         // 创建和记住滚动状态，设置为上次保存的位置
         val scrollState = rememberScrollState(SettingsScreenScrollPosition.value)
@@ -260,6 +265,21 @@ fun SettingsScreen(
                                 subtitle = stringResource(id = R.string.settings_system_prompts_subtitle),
                                 icon = Icons.Default.ChatBubble,
                                 onClick = navigateToModelPrompts
+                        )
+                        CompactSettingsItem(
+                                title = "工具开关",
+                                subtitle = "选择哪些工具对 AI 可见。关掉的不占提示词，也不出现在工具列表里",
+                                icon = Icons.Default.Build,
+                                onClick = { showToolPromptManager = true }
+                        )
+                        ToolPromptManagerDialog(
+                                visible = showToolPromptManager,
+                                toolPromptVisibility = toolVisibilityMap,
+                                onSaveToolPromptVisibilityMap = { map ->
+                                        scope.launch { apiPreferences.saveToolPromptVisibilityMap(map) }
+                                },
+                                onDismissRequest = { showToolPromptManager = false },
+                                onManagePackagesClick = { showToolPromptManager = false },
                         )
                         // 新增：Waifu模式设置
                         CompactSettingsItem(
