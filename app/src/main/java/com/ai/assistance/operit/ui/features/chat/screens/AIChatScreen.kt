@@ -1048,9 +1048,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                                     onToggleDisableUserPreferenceDescription = {
                                         actualViewModel.toggleDisableUserPreferenceDescription()
                                     },
-                                    onManualMemoryUpdate = {
-                                        actualViewModel.manuallyUpdateMemory()
-                                    },
                                     characterCardBoundChatModelConfigId = characterCardBoundChatModelConfigId,
                                     characterCardBoundChatModelIndex = characterCardBoundChatModelIndex,
                                     characterCardBoundMemoryProfileId = characterCardBoundMemoryProfileId
@@ -1897,7 +1894,6 @@ private fun ChatInputBottomBar(
                 onSaveToolPromptVisibilityMap = actualViewModel::saveToolPromptVisibilityMap,
                 toolOrder = toolPromptOrder,
                 onSaveToolOrder = actualViewModel::saveToolPromptOrder,
-                onManualMemoryUpdate = actualViewModel::manuallyUpdateMemory,
                 onNavigateToModelConfig = onNavigateToModelConfig,
                 characterCardBoundChatModelConfigId = characterCardBoundChatModelConfigId,
                 characterCardBoundChatModelIndex = characterCardBoundChatModelIndex,
