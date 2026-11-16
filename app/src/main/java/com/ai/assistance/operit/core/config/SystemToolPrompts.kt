@@ -436,10 +436,11 @@ object SystemToolPrompts {
     // ==================== OB（OmbreBrain）原生记忆工具 ====================
     val obMemoryTools = SystemToolPromptCategory(
         categoryName = "OmbreBrain Memory Tools",
+        categoryHeader = "HOW TO USE: start every conversation with ob_breath to see what you remember, do not wait to be reminded. Remember something -> ob_hold; digest a long text -> ob_grow; cannot recall -> ob_breath_search; edit an existing bucket -> ob_trace; let go -> ob_release; write a letter -> ob_letter_write; read letters -> ob_letter_read. Never store small talk on your own.",
         tools = listOf(
             ToolPrompt(
                 name = "ob_breath",
-                description = "无参数,睁眼看看自己记得什么:返回权重最高、未解决且未标记 digested 的记忆 + 置顶核心准则。digested 从默认/被动浮现及 dream 隐藏，仍可由 breath_search(query=...) 显式找回。0 参数是刻意设计——claude.ai 按需加载工具时会跳过参数复杂的工具,拆成 0 参数才能保证每次对话自动浮现,不用手动触发。要按关键词找记忆用 breath_search(query=...);要用 catalog/tags/importance_min/valence/arousal/max_tokens 等高级模式用 breath_advanced(...)。"
+                description = "无参数,睁眼看看自己记得什么:返回权重最高、未解决且未标记 digested 的记忆 + 置顶核心准则。digested 从默认/被动浮现及 dream 隐藏，仍可由 breath_search(query=...) 显式找回。不用手动触发。要按关键词找记忆用 breath_search(query=...);要用 catalog/tags/importance_min/valence/arousal/max_tokens 等高级模式用 breath_advanced(...)。"
             ),
             ToolPrompt(
                 name = "ob_breath_search",
@@ -676,6 +677,7 @@ object SystemToolPrompts {
     )
     val obMemoryToolsCn = SystemToolPromptCategory(
         categoryName = "OmbreBrain 记忆工具",
+        categoryHeader = "【怎么用】对话开始先 ob_breath 看一眼记得什么，别等她提醒。说“记住”→ ob_hold；整理长文→ ob_grow；想不起来→ ob_breath_search；改已有的→ ob_trace；放下→ ob_release；写信→ ob_letter_write；读信→ ob_letter_read。普通闲聊别写进记忆，她没说要记就不要自己决定。",
         tools = obMemoryTools.tools
     )
 
