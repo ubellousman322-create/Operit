@@ -672,32 +672,6 @@ fun ChatScreenContent(
                                 DropdownMenuItem(
                                     text = {
                                         Text(
-                                            stringResource(R.string.add_selected_to_memory),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontSize = 13.sp
-                                        )
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Default.CheckCircle,
-                                            contentDescription = stringResource(R.string.add_selected_to_memory),
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    },
-                                    enabled = selectedMessageIndices.isNotEmpty(),
-                                    modifier = Modifier.height(36.dp),
-                                    onClick = {
-                                        showMultiSelectActionsMenu = false
-                                        val selectedMessages = selectedMessageIndices
-                                            .mapNotNull { index -> chatHistory.getOrNull(index) }
-                                            .sortedBy { it.timestamp }
-                                        actualViewModel.enqueueSelectedMessagesForMemoryAutoSave(selectedMessages)
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
                                             stringResource(R.string.share_selected),
                                             style = MaterialTheme.typography.bodyMedium,
                                             fontSize = 13.sp
