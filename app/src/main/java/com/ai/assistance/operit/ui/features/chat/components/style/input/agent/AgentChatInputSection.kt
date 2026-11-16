@@ -255,7 +255,6 @@ fun AgentChatInputSection(
     val showTokenLimitDialog = remember { mutableStateOf(false) }
     val showFullscreenInput = remember { mutableStateOf(false) }
     val showModelSelectorPopup = remember { mutableStateOf(false) }
-    val showExtraSettingsPopup = remember { mutableStateOf(false) }
     var showCharacterCardBindingSwitchConfirm by remember { mutableStateOf(false) }
     var pendingCharacterCardModelSelection by remember { mutableStateOf<Pair<String, Int>?>(null) }
     val context = LocalContext.current
@@ -546,7 +545,6 @@ fun AgentChatInputSection(
     }
 
     val onModelSelectorClick = {
-        showExtraSettingsPopup.value = false
         showModelSelectorPopup.value = !showModelSelectorPopup.value
     }
 
@@ -855,7 +853,6 @@ fun AgentChatInputSection(
                                         enabled = true,
                                         onClick = {
                                             showModelSelectorPopup.value = false
-                                            showExtraSettingsPopup.value = false
                                             setShowAttachmentPanel(!showAttachmentPanel)
                                         },
                                     ),
@@ -882,7 +879,6 @@ fun AgentChatInputSection(
                                         enabled = true,
                                         onClick = {
                                             showModelSelectorPopup.value = false
-                                            showExtraSettingsPopup.value = false
                                             setShowAttachmentPanel(false)
                                             setShowEmojiPanel(!showEmojiPanel)
                                         },
@@ -1186,7 +1182,6 @@ fun AgentChatInputSection(
                                                 enabled = true,
                                                 onClick = {
                                                     showModelSelectorPopup.value = false
-                                                    showExtraSettingsPopup.value = false
                                                     setShowAttachmentPanel(!showAttachmentPanel)
                                                 },
                                             ),
@@ -1213,7 +1208,6 @@ fun AgentChatInputSection(
                                                 enabled = true,
                                                 onClick = {
                                                     showModelSelectorPopup.value = false
-                                                    showExtraSettingsPopup.value = false
                                                     setShowAttachmentPanel(false)
                                                     setShowEmojiPanel(!showEmojiPanel)
                                                 },
@@ -1447,30 +1441,6 @@ fun AgentChatInputSection(
                 onDismiss = { showModelSelectorPopup.value = false },
             )
 
-            AgentExtraSettingsPopup(
-                visible = showExtraSettingsPopup.value,
-                popupContainerColor = popupContainerColor,
-                currentChatId = currentChatId,
-                featureStates = featureStates,
-                onToggleFeature = onToggleFeature,
-                inputMenuRuntime = inputMenuRuntime,
-                isAutoReadEnabled = isAutoReadEnabled,
-                onToggleAutoRead = onToggleAutoRead,
-                permissionLevel = permissionLevel,
-                onSetPermissionLevel = onSetPermissionLevel,
-                enableTools = enableTools,
-                onToggleTools = onToggleTools,
-                disableStreamOutput = disableStreamOutput,
-                onToggleDisableStreamOutput = onToggleDisableStreamOutput,
-                disableUserPreferenceDescription = disableUserPreferenceDescription,
-                onToggleDisableUserPreferenceDescription = onToggleDisableUserPreferenceDescription,
-                toolPromptVisibility = toolPromptVisibility,
-                onSaveToolPromptVisibilityMap = onSaveToolPromptVisibilityMap,
-                toolOrder = toolOrder,
-                onSaveToolOrder = onSaveToolOrder,
-                onNavigateToPackageManager = onNavigateToPackageManager,
-                onDismiss = { showExtraSettingsPopup.value = false },
-            )
 
             AttachmentSelectorPopupPanel(
                 visible = showAttachmentPanel,
@@ -2398,227 +2368,6 @@ private fun AgentModelSelectorItem(
                     text = stringResource(R.string.manage_config),
                     color = MaterialTheme.colorScheme.primary,
                     fontSize = 13.sp,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun AgentExtraSettingsPopup(
-    visible: Boolean,
-    popupContainerColor: Color,
-    currentChatId: String?,
-    featureStates: Map<String, Boolean>,
-    onToggleFeature: (String) -> Unit,
-    inputMenuRuntime: String,
-    isAutoReadEnabled: Boolean,
-    onToggleAutoRead: () -> Unit,
-    permissionLevel: PermissionLevel,
-    onSetPermissionLevel: (PermissionLevel) -> Unit,
-    enableTools: Boolean,
-    onToggleTools: () -> Unit,
-    disableStreamOutput: Boolean,
-    onToggleDisableStreamOutput: () -> Unit,
-    disableUserPreferenceDescription: Boolean,
-    onToggleDisableUserPreferenceDescription: () -> Unit,
-    toolPromptVisibility: Map<String, Boolean>,
-    onSaveToolPromptVisibilityMap: (Map<String, Boolean>) -> Unit,
-    toolOrder: List<String> = emptyList(),
-    onSaveToolOrder: (List<String>) -> Unit = {},
-    onNavigateToPackageManager: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    if (!visible) return
-
-    var showToolPermissionDropdown by remember { mutableStateOf(false) }
-    var showBehaviorDropdown by remember { mutableStateOf(false) }
-    var showPluginDropdown by remember { mutableStateOf(false) }
-    var showToolPromptManagerDialog by remember { mutableStateOf(false) }
-    var infoPopupContent by remember { mutableStateOf<Pair<String, String>?>(null) }
-    val context = LocalContext.current
-    val inputMenuToggles = InputMenuTogglePluginRegistry.changeVersion.collectAsState().value.let {
-        InputMenuTogglePluginRegistry.createToggles(
-            params = InputMenuToggleHookParams(
-                context = context,
-                chatId = currentChatId,
-                featureStates = featureStates,
-                onToggleFeature = onToggleFeature,
-                runtime = inputMenuRuntime
-            )
-        )
-    }
-    val inputMenuTogglesBySlot = inputMenuToggles.groupBy { toggle -> InputMenuToggleSlots.normalize(toggle.slot) }
-    val defaultInputMenuToggles = inputMenuTogglesBySlot[InputMenuToggleSlots.DEFAULT].orEmpty()
-    val pluginInputMenuToggles =
-        inputMenuTogglesBySlot[InputMenuToggleSlots.GENERAL].orEmpty() + defaultInputMenuToggles
-    val scope = rememberCoroutineScope()
-
-    Popup(
-        alignment = Alignment.TopStart,
-        onDismissRequest = onDismiss,
-        properties =
-            PopupProperties(
-                focusable = true,
-                dismissOnBackPress = true,
-                dismissOnClickOutside = false,
-            ),
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onDismiss,
-                    ),
-            contentAlignment = Alignment.BottomEnd,
-        ) {
-            val extraShape = RoundedCornerShape(16.dp)
-            val extraLiquid = isLiquidGlassSupported()
-            val extraWater = !extraLiquid && isWaterGlassSupported()
-            Card(
-                modifier =
-                    Modifier
-                        .padding(bottom = 44.dp, end = 12.dp)
-                        .width(300.dp)
-                        .heightIn(max = 420.dp)
-                        .then(
-                            if (extraWater)
-                                Modifier.waterGlass(
-                                    enabled = true,
-                                    shape = extraShape,
-                                    containerColor = popupContainerColor,
-                                    shadowElevation = 10.dp,
-                                    borderWidth = 0.7.dp,
-                                    overlayAlphaBoost = 0.06f,
-                                )
-                            else Modifier
-                        )
-                        .then(
-                            if (extraLiquid)
-                                Modifier.liquidGlass(
-                                    enabled = true,
-                                    shape = extraShape,
-                                    containerColor = popupContainerColor,
-                                    shadowElevation = 10.dp,
-                                    borderWidth = 0.42.dp,
-                                    blurRadius = 20.dp,
-                                    overlayAlphaBoost = 0.08f,
-                                )
-                            else Modifier
-                        )
-                        .clip(extraShape)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = {},
-                        ),
-                shape = extraShape,
-                colors =
-                    CardDefaults.cardColors(
-                        containerColor =
-                            if (extraLiquid || extraWater) Color.Transparent else popupContainerColor,
-                    ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            ) {
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .verticalScroll(rememberScrollState()),
-                ) {
-
-                    inputMenuTogglesBySlot[InputMenuToggleSlots.MEMORY].orEmpty().forEach { toggle ->
-                        AgentInputMenuToggleSettingItem(
-                            toggle = toggle,
-                            onInfoClick = { title, description -> infoPopupContent = title to description },
-                        )
-                    }
-
-                    AgentToolsPermissionGroupItem(
-                        enableTools = enableTools,
-                        permissionLevel = permissionLevel,
-                        expanded = showToolPermissionDropdown,
-                        onExpandedChange = { showToolPermissionDropdown = it },
-                        onSelectPermissionLevel = { level ->
-                            if (!enableTools && level != PermissionLevel.FORBID) {
-                                onToggleTools()
-                            }
-                            if (enableTools && level == PermissionLevel.FORBID) {
-                                onToggleTools()
-                            }
-                            if (permissionLevel != level) {
-                                onSetPermissionLevel(level)
-                            }
-                        },
-                        toolSlotToggles = inputMenuTogglesBySlot[InputMenuToggleSlots.TOOLS].orEmpty(),
-                        onToggleInfoClick = { title, description -> infoPopupContent = title to description },
-                        onManageTools = { showToolPromptManagerDialog = true },
-                        onInfoClick = {
-                            infoPopupContent =
-                                context.getString(R.string.agent_menu_tools) to
-                                    context.getString(R.string.auto_approve_desc)
-                        },
-                    )
-
-                    AgentBehaviorSettingsGroupItem(
-                        disableStreamOutput = disableStreamOutput,
-                        onToggleDisableStreamOutput = onToggleDisableStreamOutput,
-                        isAutoReadEnabled = isAutoReadEnabled,
-                        onToggleAutoRead = onToggleAutoRead,
-                        expanded = showBehaviorDropdown,
-                        onExpandedChange = { showBehaviorDropdown = it },
-                        onInfoClick = {
-                            infoPopupContent =
-                                context.getString(R.string.agent_menu_behavior) to
-                                    context.getString(R.string.disable_stream_output_desc)
-                        },
-                        onDisableStreamOutputInfoClick = {
-                            infoPopupContent =
-                                context.getString(R.string.disable_stream_output) to
-                                    context.getString(R.string.disable_stream_output_desc)
-                        },
-                        onAutoReadInfoClick = {
-                            infoPopupContent =
-                                context.getString(R.string.auto_read_message) to
-                                    context.getString(R.string.auto_read_desc)
-                        },
-                    )
-
-                    AgentPluginSettingsGroupItem(
-                        toggles = pluginInputMenuToggles,
-                        expanded = showPluginDropdown,
-                        onExpandedChange = { showPluginDropdown = it },
-                        onToggleInfoClick = { title, description -> infoPopupContent = title to description },
-                        onInfoClick = {
-                            infoPopupContent =
-                                context.getString(R.string.agent_menu_plugins) to
-                                    context.getString(R.string.manage_packages)
-                        },
-                    )
-                }
-            }
-            ToolPromptManagerDialog(
-                visible = showToolPromptManagerDialog,
-                toolPromptVisibility = toolPromptVisibility,
-                toolOrder = toolOrder,
-                onSaveToolPromptVisibilityMap = onSaveToolPromptVisibilityMap,
-                onSaveToolOrder = onSaveToolOrder,
-                onDismissRequest = { showToolPromptManagerDialog = false },
-                onManagePackagesClick = {
-                    showToolPromptManagerDialog = false
-                    onDismiss()
-                    onNavigateToPackageManager()
-                },
-            )
-            infoPopupContent?.let { content ->
-                AgentInfoPopup(
-                    popupContainerColor = popupContainerColor,
-                    infoPopupContent = content,
-                    onDismiss = { infoPopupContent = null },
                 )
             }
         }
