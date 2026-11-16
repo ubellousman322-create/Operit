@@ -700,7 +700,6 @@ class MessageProcessingDelegate(
             enableSummary: Boolean = true,
             chatModelConfigIdOverride: String? = null,
             chatModelIndexOverride: Int? = null,
-            memorySpaceIdOverride: String? = null,
             suppressUserMessageInHistory: Boolean = false,
             isGroupOrchestrationTurn: Boolean = false,
             groupParticipantNamesText: String? = null,
@@ -995,7 +994,6 @@ class MessageProcessingDelegate(
                             groupParticipantNamesText = groupParticipantNamesText,
                             chatModelConfigIdOverride = chatModelConfigIdOverride,
                             chatModelIndexOverride = chatModelIndexOverride,
-                            memorySpaceIdOverride = memorySpaceIdOverride,
                             publishEstimate = false
                         )
                     }.onFailure {
@@ -1121,7 +1119,6 @@ class MessageProcessingDelegate(
                     notifyReplyOverride = turnOptions.notifyReply,
                     chatModelConfigIdOverride = chatModelConfigIdOverride,
                     chatModelIndexOverride = chatModelIndexOverride,
-                    memorySpaceIdOverride = memorySpaceIdOverride,
                     disableWarning = turnOptions.disableWarning
                 )
                 // AIMessageManager 已返回可重放的共享流，这里直接复用，避免在 viewModelScope 上再包一层。
@@ -1616,7 +1613,6 @@ class MessageProcessingDelegate(
         tokenUsageThreshold: Double,
         chatModelConfigIdOverride: String?,
         chatModelIndexOverride: Int?,
-        memorySpaceIdOverride: String?,
         groupOrchestrationMode: Boolean,
         groupParticipantNamesText: String?,
         onVariantPreviewStarted: suspend (ChatMessage) -> Unit,
@@ -1716,7 +1712,6 @@ class MessageProcessingDelegate(
                     onToolInvocation = { incrementCurrentTurnToolInvocationCount(chatId) },
                     chatModelConfigIdOverride = chatModelConfigIdOverride,
                     chatModelIndexOverride = chatModelIndexOverride,
-                    memorySpaceIdOverride = memorySpaceIdOverride,
                 )
 
             val sharedResponseStream = responseStream
