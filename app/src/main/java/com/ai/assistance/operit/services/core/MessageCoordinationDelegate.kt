@@ -79,7 +79,6 @@ class MessageCoordinationDelegate(
     private val _isSummarizing = MutableStateFlow(false)
     val isSummarizing: StateFlow<Boolean> = _isSummarizing.asStateFlow()
 
-    private val _isUpdatingMemory = MutableStateFlow(false)
 
     private val _summarizingChatId = MutableStateFlow<String?>(null)
     val summarizingChatId: StateFlow<String?> = _summarizingChatId.asStateFlow()
@@ -1458,92 +1457,6 @@ class MessageCoordinationDelegate(
         return apiConfigDelegate.resolveChatContextSettings(chatModelConfigIdOverride)
     }
 
-    /**
-     * 手动更新记忆
-     */
-    fun manuallyUpdateMemory() {
-        if (_isUpdatingMemory.value) {
-            uiStateDelegate.showToast(context.getString(R.string.chat_summarizing_memory))
-            return
-        }
-        coroutineScope.launch {
-            val currentChatId = chatHistoryDelegate.currentChatId.value
-            val runtimeHistory =
-                currentChatId?.let { chatHistoryDelegate.getRuntimeChatHistory(it) }.orEmpty()
-            saveMessagesToMemory(
-                sourceMessages = runtimeHistory,
-                currentChatId = currentChatId,
-                emptyToastMessage = context.getString(R.string.chat_history_empty_no_update)
-            )
-        }
-    }
-
-    private suspend fun saveMessagesToMemory(
-        sourceMessages: List<ChatMessage>,
-        currentChatId: String?,
-        emptyToastMessage: String,
-        lastContentOverride: String? = null
-    ) {
-        val enhancedAiService = getEnhancedAiService()
-        if (enhancedAiService == null) {
-            uiStateDelegate.showToast(context.getString(R.string.chat_ai_service_unavailable_memory))
-            return
-        }
-        if (sourceMessages.isEmpty()) {
-            uiStateDelegate.showToast(emptyToastMessage)
-            return
-        }
-
-        _isUpdatingMemory.value = true
-        uiStateDelegate.showToast(context.getString(R.string.chat_summarizing_memory))
-
-        try {
-            val history = sourceMessages.map { it.sender to it.content }
-            val lastMessageContent =
-                lastContentOverride?.takeIf { it.isNotBlank() }
-                    ?: sourceMessages.lastOrNull()?.content
-                    ?: ""
-            val roleCardId =
-                resolveRoleCardId(
-                    chatId = currentChatId,
-                    roleCardId = null
-                )
-            val memorySpaceIdOverride =
-                roleCardId?.let { resolveRoleCardMemoryProfileOverride(it) }
-
-            enhancedAiService.saveConversationToMemoryAsync(
-                conversationHistory = history,
-                lastContent = lastMessageContent,
-                memorySpaceIdOverride = memorySpaceIdOverride,
-                onSuccess = {
-                    uiStateDelegate.showToast(context.getString(R.string.chat_memory_manually_updated))
-                    _isUpdatingMemory.value = false
-                },
-                onError = { e ->
-                    AppLogger.e(TAG, "手动更新记忆失败", e)
-                    uiStateDelegate.showToast(
-                        context.getString(
-                            R.string.chat_manual_update_memory_failed,
-                            e.message ?: ""
-                        )
-                    )
-                    _isUpdatingMemory.value = false
-                }
-            )
-        } catch (e: CancellationException) {
-            _isUpdatingMemory.value = false
-            throw e
-        } catch (e: Exception) {
-            _isUpdatingMemory.value = false
-            AppLogger.e(TAG, "手动更新记忆失败", e)
-            uiStateDelegate.showToast(
-                context.getString(
-                    R.string.chat_manual_update_memory_failed,
-                    e.message ?: ""
-                )
-            )
-        }
-    }
 
     /**
      * 手动触发对话总结
