@@ -30,8 +30,6 @@ import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.preferences.CharacterCardToolAccessResolver
 import com.ai.assistance.operit.data.model.PromptFunctionType
-import com.ai.assistance.operit.data.preferences.MemorySpaceProfileDocumentRepository
-import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.core.avatar.impl.factory.AvatarModelFactoryImpl
 import com.ai.assistance.operit.data.repository.AvatarRepository
 import com.ai.assistance.operit.util.ChatMarkupRegex
@@ -77,9 +75,6 @@ class ConversationService(
     private val characterCardManager = CharacterCardManager.getInstance(context)
     private val characterCardToolAccessResolver = CharacterCardToolAccessResolver.getInstance(context)
     private val activePromptManager = ActivePromptManager.getInstance(context)
-    private val memorySpaceProfileDocumentRepository =
-        MemorySpaceProfileDocumentRepository.getInstance(context)
-    private val userPreferencesManager = UserPreferencesManager.getInstance(context)
     private val avatarRepository by lazy {
         AvatarRepository.getInstance(context, AvatarModelFactoryImpl())
     }
@@ -504,11 +499,6 @@ class ConversationService(
         conversationMutex.withLock {
             // Add system prompt if not already present
             if (!effectiveChatHistory.any { it.kind == PromptTurnKind.SYSTEM }) {
-                val effectiveMemorySpaceId =
-                    memorySpaceIdOverride?.takeIf { it.isNotBlank() }
-                        ?: userPreferencesManager.activeMemorySpaceIdFlow.first()
-                val userProfileMarkdown =
-                    memorySpaceProfileDocumentRepository.load(effectiveMemorySpaceId).trim()
                 val proxyRolePrompt =
                     proxySenderName
                         ?.takeIf { it.isNotBlank() }
@@ -610,11 +600,6 @@ class ConversationService(
                         append("\n</assistant_role>")
                     }
                     append(waifuRulesText)
-                    if (!disableUserPreferenceDescription && userProfileMarkdown.isNotEmpty()) {
-                        append("\n\n<user_profile source=\"memory-space/$effectiveMemorySpaceId/user.md\">\n")
-                        append(userProfileMarkdown)
-                        append("\n</user_profile>")
-                    }
                 }
 
                 // 替换提示词中的占位符
