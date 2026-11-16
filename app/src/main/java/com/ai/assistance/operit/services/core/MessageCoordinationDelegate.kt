@@ -37,7 +37,6 @@ import com.ai.assistance.operit.services.ChatServiceUiBridge
 import com.ai.assistance.operit.util.ChatMarkupRegex
 import com.ai.assistance.operit.util.ChatUtils
 import com.ai.assistance.operit.util.LocaleUtils
-import com.ai.assistance.operit.data.repository.MemoryAutoSaveCandidateRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -1476,60 +1475,6 @@ class MessageCoordinationDelegate(
                 currentChatId = currentChatId,
                 emptyToastMessage = context.getString(R.string.chat_history_empty_no_update)
             )
-        }
-    }
-
-    fun enqueueSelectedMessagesForMemoryAutoSave(selectedMessages: List<ChatMessage>) {
-        coroutineScope.launch {
-            val currentChatId = chatHistoryDelegate.currentChatId.value
-            val userMessages =
-                selectedMessages
-                    .sortedBy { it.timestamp }
-                    .filter { it.sender == "user" }
-                    .filter { it.content.isNotBlank() }
-
-            if (currentChatId.isNullOrBlank()) {
-                uiStateDelegate.showToast(context.getString(R.string.chat_history_empty_no_update))
-                return@launch
-            }
-            if (userMessages.isEmpty()) {
-                uiStateDelegate.showToast(
-                    context.getString(R.string.chat_selected_messages_no_user_for_memory)
-                )
-                return@launch
-            }
-
-            try {
-                val roleCardId =
-                    resolveRoleCardId(
-                        chatId = currentChatId,
-                        roleCardId = null
-                    )
-                val profileId =
-                    roleCardId?.let { resolveRoleCardMemoryProfileOverride(it) }
-                        ?: preferencesManager.activeMemorySpaceIdFlow.first()
-                MemoryAutoSaveCandidateRepository(context, profileId)
-                    .enqueueSelectedUserMessages(
-                        chatId = currentChatId,
-                        triggerMessageTimestamps = userMessages.map { it.timestamp }
-                    )
-                uiStateDelegate.showToast(
-                    context.getString(
-                        R.string.chat_selected_messages_added_to_memory_queue,
-                        userMessages.size
-                    )
-                )
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "选中消息加入自动记忆队列失败", e)
-                uiStateDelegate.showToast(
-                    context.getString(
-                        R.string.chat_selected_messages_add_to_memory_queue_failed,
-                        e.message ?: ""
-                    )
-                )
-            }
         }
     }
 
