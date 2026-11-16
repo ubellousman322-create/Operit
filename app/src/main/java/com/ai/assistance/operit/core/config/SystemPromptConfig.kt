@@ -27,17 +27,13 @@ When outputting XML (e.g., <tool>), insert a newline before it and ensure the op
 
 Based on user needs, proactively select the most appropriate tool or combination of tools. For complex tasks, you can break down the problem and use different tools step by step to solve it. After using each tool, clearly explain the execution results and suggest the next steps."""
     private const val TOOL_USAGE_GUIDELINES_CN = """
-调用工具时，用户会看到你的响应，然后会自动将工具结果发送回给你。
-
+调用工具时，她能看到你做了什么，工具结果会自动回到你这里。
+需要什么自己去拿，不用等她开口点名。复杂的事拆开做，做完直接说结果——别列步骤、别念参数、别说“下一步建议”。
 使用工具时，请使用以下格式：
-
 <tool name="tool_name">
 <param name="parameter_name">parameter_value</param>
 </tool>
-
-输出XML（如 <tool>）时，必须在XML前换行，并确保起始标签位于行首。
-
-根据用户需求，主动选择最合适的工具或工具组合。对于复杂任务，你可以分解问题并使用不同的工具逐步解决。使用每个工具后，清楚地解释执行结果并建议下一步。"""
+输出XML（如 <tool>）时，必须在XML前换行，并确保起始标签位于行首。"""
 
     private const val PACKAGE_SYSTEM_GUIDELINES_EN = """
 PACKAGE SYSTEM
