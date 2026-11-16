@@ -241,7 +241,6 @@ fun AgentChatInputSection(
     onSaveToolPromptVisibilityMap: (Map<String, Boolean>) -> Unit = {},
     toolOrder: List<String> = emptyList(),
     onSaveToolOrder: (List<String>) -> Unit = {},
-    onManualMemoryUpdate: () -> Unit = {},
     onNavigateToModelConfig: () -> Unit = {},
     characterCardBoundChatModelConfigId: String? = null,
     characterCardBoundChatModelIndex: Int = 0,
