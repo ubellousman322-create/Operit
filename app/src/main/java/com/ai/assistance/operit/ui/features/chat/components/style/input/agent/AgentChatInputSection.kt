@@ -133,7 +133,6 @@ import com.ai.assistance.operit.data.model.CharacterCardChatModelBindingMode
 import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.model.InputProcessingState
 import com.ai.assistance.operit.data.model.ModelConfigSummary
-import com.ai.assistance.operit.data.model.MemorySpace
 import com.ai.assistance.operit.data.model.getModelByIndex
 import com.ai.assistance.operit.data.model.getModelList
 import com.ai.assistance.operit.data.model.getValidModelIndex
@@ -348,8 +347,6 @@ fun AgentChatInputSection(
         functionalConfigManager.functionConfigMappingWithIndexFlow.collectAsState(initial = emptyMap())
     val configSummaries by
             modelConfigManager.configSummariesFlow.collectAsState(initial = emptyList())
-    val activeProfileId by userPreferencesManager.activeMemorySpaceIdFlow.collectAsState(initial = "default")
-    var preferenceProfiles by remember { mutableStateOf<List<MemorySpace>>(emptyList()) }
     val currentConfigMapping =
         configMappingWithIndex[FunctionType.CHAT]
             ?: FunctionConfigMapping(FunctionalConfigManager.DEFAULT_CONFIG_ID, 0)
@@ -370,19 +367,6 @@ fun AgentChatInputSection(
                 )
             } ?: currentConfigMapping
         }
-    val effectiveProfileId =
-        if (isMemorySelectionLockedByCharacterCard) {
-            characterCardBoundMemoryProfileId ?: activeProfileId
-        } else {
-            activeProfileId
-        }
-
-    LaunchedEffect(Unit) {
-        val profileIds = userPreferencesManager.memorySpaceListFlow.first()
-        preferenceProfiles =
-            profileIds.map { profileId -> userPreferencesManager.getMemorySpaceFlow(profileId).first() }
-    }
-
     val mappedModelName =
         configSummaries.find { it.id == effectiveConfigMapping.configId }?.let { config ->
             val validIndex = getValidModelIndex(config.modelName, effectiveConfigMapping.modelIndex)
@@ -565,14 +549,6 @@ fun AgentChatInputSection(
     val onModelSelectorClick = {
         showExtraSettingsPopup.value = false
         showModelSelectorPopup.value = !showModelSelectorPopup.value
-    }
-
-    val onSelectMemory: (String) -> Unit = { selectedId ->
-        scope.launch {
-            userPreferencesManager.setActiveMemorySpace(selectedId)
-            EnhancedAIService.refreshServiceForFunction(context, FunctionType.CHAT)
-            showExtraSettingsPopup.value = false
-        }
     }
 
     val showProcessingStatus =
