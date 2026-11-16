@@ -45,7 +45,7 @@ data class ToolPrompt(
                 }
                 
                 val fullDesc = parts.joinToString(", ")
-                "${param.name} ($fullDesc)"
+                if (fullDesc.isBlank() || fullDesc.equals(param.name.split('_', '-').filter { it.isNotBlank() }.joinToString(" ") { it.replaceFirstChar { c -> c.uppercaseChar() } }, ignoreCase = true)) param.name else "${param.name} ($fullDesc)"
             }
         } else {
             parameters
