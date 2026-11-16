@@ -3150,21 +3150,6 @@ class EnhancedAIService private constructor(private val context: Context) {
     }
 
 
-    /**
-     * Manually saves the current conversation to the problem library.
-     * @param conversationHistory The history of the conversation to save.
-     * @param lastContent The content of the last message in the conversation.
-     */
-    fun saveConversationToMemoryAsync(
-        conversationHistory: List<Pair<String, String>>,
-        lastContent: String,
-        memorySpaceIdOverride: String? = null,
-        onSuccess: (suspend () -> Unit)? = null,
-        onError: (suspend (Exception) -> Unit)? = null
-    ) {
-        // 本地记忆库已移除，保留入口以免破坏调用方
-        toolProcessingScope.launch { onSuccess?.invoke() }
-    }
 
     /**
      * 使用识图模型分析图片
