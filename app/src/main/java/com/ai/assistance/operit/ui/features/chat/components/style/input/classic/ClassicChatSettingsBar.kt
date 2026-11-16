@@ -53,7 +53,6 @@ import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityControl
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMapping
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMappingRegistry
-import com.ai.assistance.operit.api.chat.library.MemoryAutoSaveScheduler
 import com.ai.assistance.operit.data.model.CharacterCardChatModelBindingMode
 import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.model.ModelConfigSummary
@@ -63,7 +62,6 @@ import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.model.ActivePrompt
 import com.ai.assistance.operit.data.preferences.FunctionalConfigManager
 import com.ai.assistance.operit.data.preferences.FunctionConfigMapping
-import com.ai.assistance.operit.data.preferences.MemorySearchSettingsPreferences
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
 import com.ai.assistance.operit.data.preferences.ChatModelOverrideManager
 import com.ai.assistance.operit.data.model.PromptFunctionType
@@ -71,7 +69,6 @@ import com.ai.assistance.operit.data.model.getModelByIndex
 import com.ai.assistance.operit.data.model.getModelList
 import com.ai.assistance.operit.data.model.getValidModelIndex
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
-import com.ai.assistance.operit.data.repository.MemoryAutoSaveCandidateRepository
 import com.ai.assistance.operit.ui.common.icons.MaterialIconNameResolver
 import com.ai.assistance.operit.ui.common.icons.providerLogoColorFilter
 import com.ai.assistance.operit.ui.common.icons.rememberProviderLogoPainter
@@ -278,19 +275,6 @@ fun ClassicChatSettingsBar(
             stringResource(R.string.agent_menu_behavior_streaming)
         }
 
-    val buildMemoryAutoSaveDetail: suspend () -> String = {
-        val pendingCandidateCount =
-            MemoryAutoSaveCandidateRepository(context, effectiveCurrentProfileId).countPendingAndFailedCandidates()
-        val minutesUntilNextSave =
-            MemoryAutoSaveScheduler.getInstance()?.getMinutesUntilNextRun(effectiveCurrentProfileId)
-                ?: MemorySearchSettingsPreferences(context, effectiveCurrentProfileId).loadAutoSaveIntervalMinutes().toLong()
-        context.getString(
-            R.string.memory_auto_update_runtime_status,
-            pendingCandidateCount,
-            minutesUntilNextSave
-        )
-    }
-
     val onSelectModel: (String, Int) -> Unit = { selectedId, modelIndex ->
         val scopedChatId = currentChatId
         if (chatLocalModelOnly && !scopedChatId.isNullOrBlank()) {
@@ -454,43 +438,6 @@ fun ClassicChatSettingsBar(
                                     }
                                 )
                             }
-                            SettingItem(
-                                title = stringResource(R.string.memory_auto_update),
-                                    icon =
-                                            if (enableMemoryAutoUpdate) Icons.Rounded.Save
-                                            else Icons.Outlined.Save,
-                                    iconTint =
-                                            if (enableMemoryAutoUpdate)
-                                                    MaterialTheme.colorScheme.primary
-                                            else
-                                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                                            alpha = 0.7f
-                                                    ),
-                                isChecked = enableMemoryAutoUpdate,
-                                onToggle = onToggleMemoryAutoUpdate,
-                                onInfoClick = {
-                                    scope.launch {
-                                        infoPopupContent =
-                                            context.getString(R.string.memory_auto_update) to
-                                                buildMemoryAutoSaveDetail()
-                                    }
-                                    showMenu = false
-                                }
-                            )
-                            ActionSettingItem(
-                                title = stringResource(R.string.manual_memory_update),
-                                icon = Icons.Outlined.Save,
-                                iconTint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                onClick = {
-                                    onManualMemoryUpdate()
-                                    showMenu = false
-                                },
-                                onInfoClick = {
-                                    infoPopupContent =
-                                        context.getString(R.string.manual_memory_update) to context.getString(R.string.manual_memory_update_desc)
-                                    showMenu = false
-                                }
-                            )
                             SettingItem(
                                 title = stringResource(R.string.disable_user_preference_description),
                                 icon =
