@@ -124,7 +124,6 @@ fun ClassicChatSettingsBar(
     onToggleDisableStreamOutput: () -> Unit,
     disableUserPreferenceDescription: Boolean,
     onToggleDisableUserPreferenceDescription: () -> Unit,
-    onManualMemoryUpdate: () -> Unit,
     characterCardBoundChatModelConfigId: String? = null,
     characterCardBoundChatModelIndex: Int = 0,
     characterCardBoundMemoryProfileId: String? = null
