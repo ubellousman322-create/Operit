@@ -368,7 +368,6 @@ object AIMessageManager {
         notifyReplyOverride: Boolean? = null,
         chatModelConfigIdOverride: String? = null,
         chatModelIndexOverride: Int? = null,
-        memorySpaceIdOverride: String? = null,
         disableWarning: Boolean = false
     ): SharedStream<String> {
         val totalStartTime = messageTimingNow()
@@ -504,7 +503,6 @@ object AIMessageManager {
                     notifyReplyOverride = notifyReplyOverride,
                     chatModelConfigIdOverride = chatModelConfigIdOverride,
                     chatModelIndexOverride = chatModelIndexOverride,
-                    memorySpaceIdOverride = memorySpaceIdOverride,
                     stream = enableStream,
                     disableWarning = disableWarning
                 )
@@ -549,7 +547,6 @@ object AIMessageManager {
         proxySenderName: String? = null,
         chatModelConfigIdOverride: String? = null,
         chatModelIndexOverride: Int? = null,
-        memorySpaceIdOverride: String? = null,
         publishEstimate: Boolean = true
     ): Long {
         val memory =
@@ -579,7 +576,6 @@ object AIMessageManager {
                 proxySenderName = proxySenderName,
                 chatModelConfigIdOverride = chatModelConfigIdOverride,
                 chatModelIndexOverride = chatModelIndexOverride,
-                memorySpaceIdOverride = memorySpaceIdOverride,
                 publishEstimate = publishEstimate
             )
         return windowSize
