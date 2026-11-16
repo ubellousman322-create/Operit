@@ -55,7 +55,6 @@ import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMapping
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMappingRegistry
 import com.ai.assistance.operit.api.chat.library.MemoryAutoSaveScheduler
 import com.ai.assistance.operit.data.model.CharacterCardChatModelBindingMode
-import com.ai.assistance.operit.data.model.CharacterCardMemoryProfileBindingMode
 import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.model.ModelConfigSummary
 import com.ai.assistance.operit.data.model.MemorySpace
@@ -80,7 +79,6 @@ import com.ai.assistance.operit.ui.features.chat.components.style.input.common.I
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.InputMenuToggleDefinition
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.InputMenuTogglePluginRegistry
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.InputMenuToggleSlots
-import com.ai.assistance.operit.ui.features.chat.components.style.input.common.CharacterCardMemoryBindingSwitchConfirmDialog
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.CharacterCardModelBindingSwitchConfirmDialog
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.ChatModelScopeToggleItem
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.rememberChatScopedModelOverride
@@ -152,8 +150,6 @@ fun ClassicChatSettingsBar(
     var showToolPromptManagerDialog by remember { mutableStateOf(false) }
     var showCharacterCardBindingSwitchConfirm by remember { mutableStateOf(false) }
     var pendingCharacterCardModelSelection by remember { mutableStateOf<Pair<String, Int>?>(null) }
-    var showCharacterCardMemoryBindingSwitchConfirm by remember { mutableStateOf(false) }
-    var pendingCharacterCardMemorySelection by remember { mutableStateOf<String?>(null) }
 
     // 将模型选择逻辑封装到组件内部
     val context = LocalContext.current
@@ -326,21 +322,10 @@ fun ClassicChatSettingsBar(
     }
 
     val onSelectMemory: (String) -> Unit = { selectedId ->
-        if (isMemorySelectionLockedByCharacterCard) {
-            val isSameSelection = selectedId == effectiveCurrentProfileId
-            if (isSameSelection) {
-                showMemoryDropdown = false
-            } else {
-                pendingCharacterCardMemorySelection = selectedId
-                showMemoryDropdown = false
-                showCharacterCardMemoryBindingSwitchConfirm = true
-            }
-        } else {
-            scope.launch {
-                userPreferencesManager.setActiveMemorySpace(selectedId)
-                // 用户偏好和记忆库绑定，可能影响AI行为，所以刷新服务
-                EnhancedAIService.refreshServiceForFunction(context, FunctionType.CHAT)
-            }
+        scope.launch {
+            userPreferencesManager.setActiveMemorySpace(selectedId)
+            // 用户偏好和记忆库绑定，可能影响AI行为，所以刷新服务
+            EnhancedAIService.refreshServiceForFunction(context, FunctionType.CHAT)
         }
     }
 
@@ -375,40 +360,6 @@ fun ClassicChatSettingsBar(
         onDismiss = {
             showCharacterCardBindingSwitchConfirm = false
             pendingCharacterCardModelSelection = null
-        }
-    )
-
-    CharacterCardMemoryBindingSwitchConfirmDialog(
-        visible = showCharacterCardMemoryBindingSwitchConfirm,
-        onConfirm = {
-            val profileId = pendingCharacterCardMemorySelection
-            if (profileId.isNullOrBlank()) {
-                showCharacterCardMemoryBindingSwitchConfirm = false
-                return@CharacterCardMemoryBindingSwitchConfirmDialog
-            }
-            scope.launch {
-                val activePrompt = activePromptManager.getActivePrompt()
-                val activeCard = when (activePrompt) {
-                    is ActivePrompt.CharacterCard -> characterCardManager.getCharacterCard(activePrompt.id)
-                    is ActivePrompt.CharacterGroup -> null
-                }
-                if (activeCard != null) {
-                    characterCardManager.updateCharacterCard(
-                        activeCard.copy(
-                            memoryProfileBindingMode = CharacterCardMemoryProfileBindingMode.FIXED_PROFILE,
-                            memoryProfileId = profileId,
-                        )
-                    )
-                    EnhancedAIService.refreshServiceForFunction(context, FunctionType.CHAT)
-                }
-                showMemoryDropdown = false
-                showCharacterCardMemoryBindingSwitchConfirm = false
-                pendingCharacterCardMemorySelection = null
-            }
-        },
-        onDismiss = {
-            showCharacterCardMemoryBindingSwitchConfirm = false
-            pendingCharacterCardMemorySelection = null
         }
     )
 
