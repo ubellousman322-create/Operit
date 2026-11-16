@@ -56,7 +56,6 @@ import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMappingRegis
 import com.ai.assistance.operit.data.model.CharacterCardChatModelBindingMode
 import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.model.ModelConfigSummary
-import com.ai.assistance.operit.data.model.MemorySpace
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.model.ActivePrompt
@@ -193,21 +192,6 @@ fun ClassicChatSettingsBar(
     // 获取上下文长度设置，用于显示在 MaxMode 描述中
     // 新增：用户偏好（记忆）选择逻辑
     val userPreferencesManager = remember { UserPreferencesManager.getInstance(context) }
-    val activeProfileId by
-            userPreferencesManager.activeMemorySpaceIdFlow.collectAsState(initial = "default")
-    var preferenceProfiles by remember { mutableStateOf<List<MemorySpace>>(emptyList()) }
-    val effectiveCurrentProfileId =
-        if (isMemorySelectionLockedByCharacterCard) {
-            characterCardBoundMemoryProfileId ?: activeProfileId
-        } else {
-            activeProfileId
-        }
-    LaunchedEffect(Unit) {
-        val profileIds = userPreferencesManager.memorySpaceListFlow.first()
-        preferenceProfiles =
-                profileIds.map { id -> userPreferencesManager.getMemorySpaceFlow(id).first() }
-    }
-    
     // 获取聊天设置按钮右边距设置
     val chatSettingsBarRightMargin by
             userPreferencesManager.chatSettingsButtonEndPadding.collectAsState(initial = 2f)
@@ -227,8 +211,7 @@ fun ClassicChatSettingsBar(
     val generalInputMenuToggles = inputMenuTogglesBySlot[InputMenuToggleSlots.GENERAL].orEmpty()
     val pluginToggleCount = generalInputMenuToggles.size + defaultInputMenuToggles.size
     val pluginEnabledCount = (generalInputMenuToggles + defaultInputMenuToggles).count { it.isChecked }
-    val currentProfileName =
-        preferenceProfiles.find { it.id == effectiveCurrentProfileId }?.name ?: stringResource(R.string.not_selected)
+    val currentProfileName = ""
     val currentConfig = configSummaries.find { it.id == effectiveCurrentConfigMapping.configId }
     val currentModelName =
         currentConfig?.let { config ->
@@ -302,14 +285,6 @@ fun ClassicChatSettingsBar(
                 functionalConfigManager.setConfigForFunction(FunctionType.CHAT, selectedId, modelIndex)
                 EnhancedAIService.refreshServiceForFunction(context, FunctionType.CHAT)
             }
-        }
-    }
-
-    val onSelectMemory: (String) -> Unit = { selectedId ->
-        scope.launch {
-            userPreferencesManager.setActiveMemorySpace(selectedId)
-            // 用户偏好和记忆库绑定，可能影响AI行为，所以刷新服务
-            EnhancedAIService.refreshServiceForFunction(context, FunctionType.CHAT)
         }
     }
 
