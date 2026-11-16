@@ -3194,9 +3194,6 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         _replyToMessage.value = null
     }
 
-    fun manuallyUpdateMemory() {
-        messageCoordinationDelegate.manuallyUpdateMemory()
-    }
 
     fun manuallySummarizeConversation() {
         messageCoordinationDelegate.manuallySummarizeConversation()
