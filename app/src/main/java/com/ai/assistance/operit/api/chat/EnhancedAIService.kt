@@ -349,7 +349,6 @@ class EnhancedAIService private constructor(private val context: Context) {
         var notifyReplyOverride: Boolean? = null,
         var chatModelConfigIdOverride: String? = null,
         var chatModelIndexOverride: Int? = null,
-        var memorySpaceIdOverride: String? = null,
         var stream: Boolean = true,
         var disableWarning: Boolean = false
     )
@@ -798,7 +797,6 @@ class EnhancedAIService private constructor(private val context: Context) {
         isSubTask: Boolean = false,
         chatModelConfigIdOverride: String? = null,
         chatModelIndexOverride: Int? = null,
-        memorySpaceIdOverride: String? = null,
         stream: Boolean = true,
         publishEstimate: Boolean = true
     ): Long {
@@ -824,7 +822,6 @@ class EnhancedAIService private constructor(private val context: Context) {
                 isSubTask = isSubTask,
                 functionType = functionType,
                 modelConfig = modelConfig,
-                memorySpaceIdOverride = memorySpaceIdOverride,
                 dispatchHistoryHooks = PromptHookRegistry::dispatchPromptEstimateHistoryHooks,
                 dispatchSystemPromptComposeHooks = ::bypassPromptHooks,
                 dispatchToolPromptComposeHooks = ::bypassPromptHooks
@@ -941,7 +938,6 @@ class EnhancedAIService private constructor(private val context: Context) {
         val notifyReplyOverride = options.notifyReplyOverride
         val chatModelConfigIdOverride = options.chatModelConfigIdOverride
         val chatModelIndexOverride = options.chatModelIndexOverride
-        val memorySpaceIdOverride = options.memorySpaceIdOverride
         val stream = options.stream
         val disableWarning = options.disableWarning
         val onNonFatalError: suspend (error: String) -> Unit = { error ->
@@ -1027,7 +1023,6 @@ class EnhancedAIService private constructor(private val context: Context) {
                                     isSubTask,
                                     functionType,
                                     modelSnapshot.config,
-                                    memorySpaceIdOverride
                             )
                     val tAfterPrepareHistory = messageTimingNow()
                     AppLogger.d(TAG, "sendMessage本地耗时: prepareConversationHistory=${tAfterPrepareHistory - startTime}ms")
@@ -1319,7 +1314,6 @@ class EnhancedAIService private constructor(private val context: Context) {
                                 notifyReplyOverride,
                                 chatModelConfigIdOverride,
                                 chatModelIndexOverride,
-                                memorySpaceIdOverride,
                                 stream,
                                 enableGroupOrchestrationHint,
                                 disableWarning
@@ -1744,7 +1738,6 @@ class EnhancedAIService private constructor(private val context: Context) {
             notifyReplyOverride: Boolean? = null,
             chatModelConfigIdOverride: String? = null,
             chatModelIndexOverride: Int? = null,
-            memorySpaceIdOverride: String? = null,
             stream: Boolean = true,
             enableGroupOrchestrationHint: Boolean = false,
             disableWarning: Boolean = false
@@ -1771,7 +1764,6 @@ class EnhancedAIService private constructor(private val context: Context) {
                     isSubTask = isSubTask,
                     chatId = chatId,
                     notifyReplyOverride = notifyReplyOverride,
-                    memorySpaceIdOverride = memorySpaceIdOverride
                 )
                 return
             }
@@ -1796,7 +1788,6 @@ class EnhancedAIService private constructor(private val context: Context) {
                         characterName = characterName,
                         avatarUri = avatarUri,
                         notifyReplyOverride = notifyReplyOverride,
-                        memorySpaceIdOverride = memorySpaceIdOverride
                     )
                     return
                 }
@@ -1839,7 +1830,6 @@ class EnhancedAIService private constructor(private val context: Context) {
                         notifyReplyOverride = notifyReplyOverride,
                         chatModelConfigIdOverride = chatModelConfigIdOverride,
                         chatModelIndexOverride = chatModelIndexOverride,
-                        memorySpaceIdOverride = memorySpaceIdOverride,
                         stream = stream,
                         enableGroupOrchestrationHint = enableGroupOrchestrationHint,
                         toolResultOverrideMessage = pureThinkingWarning,
@@ -1914,7 +1904,6 @@ class EnhancedAIService private constructor(private val context: Context) {
                         characterName = characterName,
                         avatarUri = avatarUri,
                         notifyReplyOverride = notifyReplyOverride,
-                        memorySpaceIdOverride = memorySpaceIdOverride
                     )
                     return
                 }
@@ -1952,7 +1941,6 @@ class EnhancedAIService private constructor(private val context: Context) {
                         notifyReplyOverride = notifyReplyOverride,
                         chatModelConfigIdOverride = chatModelConfigIdOverride,
                         chatModelIndexOverride = chatModelIndexOverride,
-                        memorySpaceIdOverride = memorySpaceIdOverride,
                         stream = stream,
                         enableGroupOrchestrationHint = enableGroupOrchestrationHint,
                         toolResultOverrideMessage = warningStatus,
@@ -1989,7 +1977,6 @@ class EnhancedAIService private constructor(private val context: Context) {
                         notifyReplyOverride,
                         chatModelConfigIdOverride,
                         chatModelIndexOverride,
-                        memorySpaceIdOverride,
                         stream = stream,
                         enableGroupOrchestrationHint = enableGroupOrchestrationHint,
                         disableWarning = disableWarning
@@ -2007,7 +1994,6 @@ class EnhancedAIService private constructor(private val context: Context) {
                 characterName = characterName,
                 avatarUri = avatarUri,
                 notifyReplyOverride = notifyReplyOverride,
-                memorySpaceIdOverride = memorySpaceIdOverride
             )
             logMessageTiming(
                 stage = "enhanced.processStreamCompletion.complete",
@@ -2033,7 +2019,6 @@ class EnhancedAIService private constructor(private val context: Context) {
         characterName: String? = null,
         avatarUri: String? = null,
         notifyReplyOverride: Boolean? = null,
-        memorySpaceIdOverride: String? = null
     ) {
         // Mark conversation as complete
         context.isConversationActive.set(false)
@@ -2080,7 +2065,6 @@ class EnhancedAIService private constructor(private val context: Context) {
         notifyReplyOverride: Boolean? = null,
         chatModelConfigIdOverride: String? = null,
         chatModelIndexOverride: Int? = null,
-        memorySpaceIdOverride: String? = null,
         stream: Boolean = true,
         enableGroupOrchestrationHint: Boolean = false,
         toolResultOverrideMessage: String? = null,
@@ -2125,7 +2109,7 @@ class EnhancedAIService private constructor(private val context: Context) {
                     toolBatch.results, context, functionType, promptFunctionType, collector, enableThinking,
                     enableMemoryAutoUpdate, onNonFatalError, onTokenLimitExceeded, maxTokens, tokenUsageThreshold, isSubTask,
                     characterName, avatarUri, roleCardId, chatId, onToolInvocation, notifyReplyOverride,
-                    chatModelConfigIdOverride, chatModelIndexOverride, memorySpaceIdOverride, stream, enableGroupOrchestrationHint,
+                    chatModelConfigIdOverride, chatModelIndexOverride, stream, enableGroupOrchestrationHint,
                     toolResultMessageOverride = toolBatch.message,
                     disableWarning = disableWarning
                 )
@@ -2152,7 +2136,6 @@ class EnhancedAIService private constructor(private val context: Context) {
                     notifyReplyOverride = notifyReplyOverride,
                     chatModelConfigIdOverride = chatModelConfigIdOverride,
                     chatModelIndexOverride = chatModelIndexOverride,
-                    memorySpaceIdOverride = memorySpaceIdOverride,
                     stream = stream,
                     enableGroupOrchestrationHint = enableGroupOrchestrationHint,
                     toolResultMessageOverride = toolResultOverrideMessage,
@@ -2200,7 +2183,6 @@ class EnhancedAIService private constructor(private val context: Context) {
             notifyReplyOverride: Boolean? = null,
             chatModelConfigIdOverride: String? = null,
             chatModelIndexOverride: Int? = null,
-            memorySpaceIdOverride: String? = null,
             stream: Boolean = true,
             enableGroupOrchestrationHint: Boolean = false,
             toolResultMessageOverride: String? = null,
@@ -2465,7 +2447,6 @@ class EnhancedAIService private constructor(private val context: Context) {
                     notifyReplyOverride,
                     chatModelConfigIdOverride,
                     chatModelIndexOverride,
-                    memorySpaceIdOverride,
                     stream,
                     enableGroupOrchestrationHint,
                     disableWarning
@@ -2662,7 +2643,6 @@ class EnhancedAIService private constructor(private val context: Context) {
             isSubTask: Boolean = false,
             functionType: FunctionType = FunctionType.CHAT,
             modelConfig: ModelConfigData,
-            memorySpaceIdOverride: String? = null,
             dispatchHistoryHooks: (PromptHookContext) -> PromptHookContext =
                 PromptHookRegistry::dispatchPromptHistoryHooks,
             dispatchSystemPromptComposeHooks: (PromptHookContext) -> PromptHookContext =
@@ -2705,7 +2685,6 @@ class EnhancedAIService private constructor(private val context: Context) {
                 useToolCallApi,
                 chatModelHasDirectImage,
                 toolExposureMode,
-                memorySpaceIdOverride,
                 dispatchHistoryHooks,
                 dispatchSystemPromptComposeHooks,
                 dispatchToolPromptComposeHooks
