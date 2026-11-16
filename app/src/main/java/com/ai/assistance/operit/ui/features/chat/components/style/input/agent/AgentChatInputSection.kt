@@ -123,7 +123,6 @@ import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityControl
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMapping
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMappingRegistry
-import com.ai.assistance.operit.api.chat.library.MemoryAutoSaveScheduler
 import com.ai.assistance.operit.core.tools.ToolProgressBus
 import com.ai.assistance.operit.data.model.AttachmentInfo
 import com.ai.assistance.operit.data.model.ChatPaymentMarkup
@@ -146,9 +145,7 @@ import com.ai.assistance.operit.data.repository.CustomEmojiRepository
 import com.ai.assistance.operit.data.preferences.FunctionConfigMapping
 import com.ai.assistance.operit.data.preferences.FunctionalConfigManager
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
-import com.ai.assistance.operit.data.preferences.MemorySearchSettingsPreferences
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
-import com.ai.assistance.operit.data.repository.MemoryAutoSaveCandidateRepository
 import com.ai.assistance.operit.ui.common.icons.MaterialIconNameResolver
 import com.ai.assistance.operit.ui.common.animations.SimpleAnimatedVisibility
 import com.ai.assistance.operit.ui.features.chat.components.AttachmentChip
@@ -1478,15 +1475,6 @@ fun AgentChatInputSection(
             AgentExtraSettingsPopup(
                 visible = showExtraSettingsPopup.value,
                 popupContainerColor = popupContainerColor,
-                preferenceProfiles = preferenceProfiles,
-                currentProfileId = effectiveProfileId,
-                onSelectMemory = onSelectMemory,
-                onManageMemory = {
-                    showExtraSettingsPopup.value = false
-                    onNavigateToMemoryBase()
-                },
-                enableMemoryAutoUpdate = enableMemoryAutoUpdate,
-                onToggleMemoryAutoUpdate = onToggleMemoryAutoUpdate,
                 currentChatId = currentChatId,
                 featureStates = featureStates,
                 onToggleFeature = onToggleFeature,
@@ -1506,7 +1494,6 @@ fun AgentChatInputSection(
                 toolOrder = toolOrder,
                 onSaveToolOrder = onSaveToolOrder,
                 onNavigateToPackageManager = onNavigateToPackageManager,
-                onManualMemoryUpdate = onManualMemoryUpdate,
                 onDismiss = { showExtraSettingsPopup.value = false },
             )
 
@@ -2446,12 +2433,6 @@ private fun AgentModelSelectorItem(
 private fun AgentExtraSettingsPopup(
     visible: Boolean,
     popupContainerColor: Color,
-    preferenceProfiles: List<MemorySpace>,
-    currentProfileId: String,
-    onSelectMemory: (String) -> Unit,
-    onManageMemory: () -> Unit,
-    enableMemoryAutoUpdate: Boolean,
-    onToggleMemoryAutoUpdate: () -> Unit,
     currentChatId: String?,
     featureStates: Map<String, Boolean>,
     onToggleFeature: (String) -> Unit,
@@ -2471,12 +2452,10 @@ private fun AgentExtraSettingsPopup(
     toolOrder: List<String> = emptyList(),
     onSaveToolOrder: (List<String>) -> Unit = {},
     onNavigateToPackageManager: () -> Unit,
-    onManualMemoryUpdate: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     if (!visible) return
 
-    var showMemoryDropdown by remember { mutableStateOf(false) }
     var showToolPermissionDropdown by remember { mutableStateOf(false) }
     var showBehaviorDropdown by remember { mutableStateOf(false) }
     var showPluginDropdown by remember { mutableStateOf(false) }
@@ -2499,19 +2478,6 @@ private fun AgentExtraSettingsPopup(
     val pluginInputMenuToggles =
         inputMenuTogglesBySlot[InputMenuToggleSlots.GENERAL].orEmpty() + defaultInputMenuToggles
     val scope = rememberCoroutineScope()
-
-    val buildMemoryAutoSaveDetail: suspend () -> String = {
-        val pendingCandidateCount =
-            MemoryAutoSaveCandidateRepository(context, currentProfileId).countPendingAndFailedCandidates()
-        val minutesUntilNextSave =
-            MemoryAutoSaveScheduler.getInstance()?.getMinutesUntilNextRun(currentProfileId)
-                ?: MemorySearchSettingsPreferences(context, currentProfileId).loadAutoSaveIntervalMinutes().toLong()
-        context.getString(
-            R.string.memory_auto_update_runtime_status,
-            pendingCandidateCount,
-            minutesUntilNextSave
-        )
-    }
 
     Popup(
         alignment = Alignment.TopStart,
