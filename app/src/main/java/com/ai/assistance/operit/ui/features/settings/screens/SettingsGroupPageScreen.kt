@@ -50,6 +50,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.runtime.collectAsState
+import com.ai.assistance.operit.data.preferences.ApiPreferences
+import com.ai.assistance.operit.ui.features.chat.components.style.input.common.ToolPromptManagerDialog
 import com.ai.assistance.operit.data.preferences.PatPreferences
 import com.ai.assistance.operit.core.tools.defaultTool.standard.CookiePrivacyManager
 import com.ai.assistance.operit.ui.main.components.GlassActionRow
@@ -75,6 +79,9 @@ fun SettingsGroupPageScreen(
         val scope = rememberCoroutineScope()
         var showClearCookieConfirm by remember { mutableStateOf(false) }
         var showPatDialog by remember { mutableStateOf(false) }
+        var showToolPromptManager by remember { mutableStateOf(false) }
+        val apiPreferences = remember { ApiPreferences.getInstance(context) }
+        val toolVisibilityMap by apiPreferences.toolPromptVisibilityFlow.collectAsState(initial = emptyMap<String, Boolean>())
         var patSuffixDraft by remember { mutableStateOf(PatPreferences.getUserPatSuffix(context)) }
         val entries =
                 when (groupId) {
@@ -155,7 +162,12 @@ fun SettingsGroupPageScreen(
                                                 "waifu_mode",
                                                 stringResource(R.string.waifu_mode_settings),
                                                 Icons.Default.EmojiEmotions
-                                        )
+                                        ),
+                                        SettingsGroupEntry(
+                                                "tool_switch",
+                                                "工具开关",
+                                                Icons.Default.Build
+                                        ),
                                 )
                         else -> emptyList()
                 }
@@ -205,6 +217,8 @@ fun SettingsGroupPageScreen(
                                                 } else if (entry.key == "pat") {
                                                         patSuffixDraft = PatPreferences.getUserPatSuffix(context)
                                                         showPatDialog = true
+                                                } else if (entry.key == "tool_switch") {
+                                                        showToolPromptManager = true
                                                 } else {
                                                         onOpen(entry.key)
                                                 }
@@ -214,6 +228,18 @@ fun SettingsGroupPageScreen(
                         }
                 }
         }
+        if (showToolPromptManager) {
+                ToolPromptManagerDialog(
+                        visible = true,
+                        toolPromptVisibility = toolVisibilityMap,
+                        onSaveToolPromptVisibilityMap = { map ->
+                                scope.launch { apiPreferences.saveToolPromptVisibilityMap(map) }
+                        },
+                        onDismissRequest = { showToolPromptManager = false },
+                        onManagePackagesClick = { showToolPromptManager = false },
+                )
+        }
+
         if (showPatDialog) {
                 AlertDialog(
                         onDismissRequest = { showPatDialog = false },
