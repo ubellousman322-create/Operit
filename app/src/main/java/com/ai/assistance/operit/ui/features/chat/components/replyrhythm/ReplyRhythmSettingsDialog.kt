@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ai.assistance.operit.data.preferences.ReplyRhythmPreferences
+import com.ai.assistance.operit.data.preferences.ChatRhythmRule
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
 import com.ai.assistance.operit.data.preferences.ReplyWindow
 import com.ai.assistance.operit.data.preferences.ReplyWindowRepeat
@@ -85,15 +86,17 @@ fun ReplyRhythmSettingsDialog(visible: Boolean, onDismissRequest: () -> Unit) {
     var enabled by remember { mutableStateOf(false) }
     var defaultSilent by remember { mutableStateOf(false) }
     var windows by remember { mutableStateOf<List<ReplyWindow>>(emptyList()) }
-    var exemptIds by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var editing by remember { mutableStateOf<ReplyWindow?>(null) }
+    var chatRules by remember { mutableStateOf<List<ChatRhythmRule>>(emptyList()) }
+    var showChatPicker by remember { mutableStateOf(false) }
+    var editingChatId by remember { mutableStateOf<String?>(null) }
+    var editingWindow by remember { mutableStateOf<ReplyWindow?>(null) }
 
     fun reload() {
         scope.launch {
             enabled = prefs.isEnabled()
             defaultSilent = prefs.isDefaultSilent()
             windows = prefs.getWindows()
-            exemptIds = prefs.getExemptChatIds()
+            chatRules = prefs.getChatRules()
         }
     }
 
@@ -145,9 +148,9 @@ fun ReplyRhythmSettingsDialog(visible: Boolean, onDismissRequest: () -> Unit) {
                     item {
                         Column {
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("时段", style = MaterialTheme.typography.titleSmall)
+                            Text("默认规则", style = MaterialTheme.typography.titleSmall)
                             Text(
-                                    "这段时间攒着、那段时间照常回；「照常回」优先",
+                                    "没有专属规则的对话都用这一套",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -157,10 +160,10 @@ fun ReplyRhythmSettingsDialog(visible: Boolean, onDismissRequest: () -> Unit) {
                     if (windows.isEmpty()) {
                         item {
                             Text(
-                                    "还没有时段。",
+                                    "没有时段，全都正常回。",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(vertical = 8.dp),
+                                    modifier = Modifier.padding(vertical = 6.dp),
                             )
                         }
                     }
@@ -168,14 +171,14 @@ fun ReplyRhythmSettingsDialog(visible: Boolean, onDismissRequest: () -> Unit) {
                         Row(
                                 modifier =
                                         Modifier.fillMaxWidth()
-                                                .padding(vertical = 4.dp)
+                                                .padding(vertical = 3.dp)
                                                 .background(
                                                         MaterialTheme.colorScheme.surfaceVariant.copy(
                                                                 alpha = 0.4f
                                                         ),
                                                         RoundedCornerShape(12.dp),
                                                 )
-                                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                                .padding(horizontal = 12.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
@@ -215,72 +218,144 @@ fun ReplyRhythmSettingsDialog(visible: Boolean, onDismissRequest: () -> Unit) {
                         }
                     }
                     item {
-                        TextButton(onClick = { editing = ReplyWindow() }) { Text("添加时段") }
+                        TextButton(
+                                onClick = {
+                                    editingChatId = null
+                                    editingWindow = ReplyWindow()
+                                }
+                        ) { Text("添加时段") }
                     }
+
                     item {
                         Column {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("不参与静默的对话", style = MaterialTheme.typography.titleSmall)
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text("专属对话", style = MaterialTheme.typography.titleSmall)
                             Text(
-                                    "勾上的对话，什么时段都立刻回",
+                                    "单独给某个对话配规则，不跟默认走",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                         }
                     }
-                    if (chatHistories.isEmpty()) {
+                    if (chatRules.isEmpty()) {
                         item {
                             Text(
-                                    "还没有对话。",
+                                    "还没有。点下面「添加对话」。",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(vertical = 8.dp),
+                                    modifier = Modifier.padding(vertical = 6.dp),
                             )
                         }
                     }
-                    items(chatHistories) { chat ->
-                        Row(
+                    items(chatRules) { rule ->
+                        Column(
                                 modifier =
                                         Modifier.fillMaxWidth()
-                                                .clickable {
-                                                    val checked = chat.id !in exemptIds
-                                                    val next =
-                                                            if (checked) exemptIds + chat.id
-                                                            else exemptIds - chat.id
-                                                    exemptIds = next
-                                                    scope.launch {
-                                                        prefs.setChatExempt(chat.id, checked)
-                                                    }
-                                                }
-                                                .padding(vertical = 2.dp),
-                                verticalAlignment = Alignment.CenterVertically,
+                                                .padding(vertical = 4.dp)
+                                                .background(
+                                                        MaterialTheme.colorScheme.surfaceVariant.copy(
+                                                                alpha = 0.4f
+                                                        ),
+                                                        RoundedCornerShape(12.dp),
+                                                )
+                                                .padding(horizontal = 12.dp, vertical = 6.dp),
                         ) {
-                            Checkbox(
-                                    checked = chat.id in exemptIds,
-                                    onCheckedChange = { checked ->
-                                        val next =
-                                                if (checked) exemptIds + chat.id
-                                                else exemptIds - chat.id
-                                        exemptIds = next
-                                        scope.launch { prefs.setChatExempt(chat.id, checked) }
-                                    },
-                            )
-                            Text(
-                                    text = chat.title.ifBlank { "未命名对话" },
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f),
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                        text = rule.chatTitle.ifBlank { "未命名对话" },
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f),
+                                )
+                                IconButton(
+                                        onClick = {
+                                            val next = chatRules.filter { it.chatId != rule.chatId }
+                                            chatRules = next
+                                            scope.launch {
+                                                prefs.saveChatRules(next)
+                                                reload()
+                                            }
+                                        }
+                                ) {
+                                    Icon(
+                                            Icons.Default.Delete,
+                                            contentDescription = "删除",
+                                            tint = MaterialTheme.colorScheme.error,
+                                    )
+                                }
+                            }
+                            if (rule.windows.isEmpty()) {
+                                Text(
+                                        text = "没有时段，这个对话随时回",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            } else {
+                                rule.windows.forEach { window ->
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                                text =
+                                                        (if (window.type ==
+                                                                        ReplyWindowType.SILENT
+                                                                ) "攒着"
+                                                        else "照常回") +
+                                                                "  " +
+                                                                formatMinuteOfDay(window.startMinute) +
+                                                                " - " +
+                                                                formatMinuteOfDay(window.endMinute),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                modifier = Modifier.weight(1f),
+                                        )
+                                        IconButton(
+                                                onClick = {
+                                                    val next =
+                                                            chatRules.map { r ->
+                                                                if (r.chatId == rule.chatId)
+                                                                        r.copy(
+                                                                                windows =
+                                                                                        r.windows.filter {
+                                                                                            it != window
+                                                                                        }
+                                                                        )
+                                                                else r
+                                                            }
+                                                    chatRules = next
+                                                    scope.launch {
+                                                        prefs.saveChatRules(next)
+                                                        reload()
+                                                    }
+                                                },
+                                                modifier = Modifier.size(32.dp),
+                                        ) {
+                                            Icon(
+                                                    Icons.Default.Close,
+                                                    contentDescription = "删除",
+                                                    tint = MaterialTheme.colorScheme.error,
+                                                    modifier = Modifier.size(16.dp),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            TextButton(
+                                    onClick = {
+                                        editingChatId = rule.chatId
+                                        editingWindow = ReplyWindow()
+                                    }
+                            ) { Text("+ 时段") }
                         }
+                    }
+                    item {
+                        TextButton(onClick = { showChatPicker = true }) { Text("添加对话") }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                            "不在这些时段里：",
+                            "不在时段里：",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -311,18 +386,76 @@ fun ReplyRhythmSettingsDialog(visible: Boolean, onDismissRequest: () -> Unit) {
         }
     }
 
-    val current = editing
-    if (current != null) {
+    if (showChatPicker) {
+        val used = chatRules.map { it.chatId }.toSet()
+        val available = chatHistories.filter { it.id !in used }
+        AlertDialog(
+                onDismissRequest = { showChatPicker = false },
+                title = { Text("选择对话") },
+                text = {
+                    LazyColumn {
+                        if (available.isEmpty()) {
+                            item { Text("所有对话都已经加过了") }
+                        }
+                        items(available) { chat ->
+                            Text(
+                                    text = chat.title.ifBlank { "未命名对话" },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier =
+                                            Modifier.fillMaxWidth()
+                                                    .clickable {
+                                                        showChatPicker = false
+                                                        scope.launch {
+                                                            prefs.saveChatRules(
+                                                                    chatRules +
+                                                                            ChatRhythmRule(
+                                                                                    chatId = chat.id,
+                                                                                    chatTitle = chat.title
+                                                                            )
+                                                            )
+                                                            reload()
+                                                        }
+                                                    }
+                                                    .padding(vertical = 10.dp),
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showChatPicker = false }) { Text("关闭") }
+                },
+        )
+    }
+
+    val targetWindow = editingWindow
+    if (targetWindow != null) {
         ReplyWindowEditor(
-                initial = current,
-                onDismiss = { editing = null },
+                initial = targetWindow,
+                onDismiss = { editingWindow = null },
                 onConfirm = { window ->
-                    val next = windows + window
-                    windows = next
-                    editing = null
-                    scope.launch {
-                        prefs.saveWindows(next)
-                        reload()
+                    val targetChat = editingChatId
+                    editingWindow = null
+                    if (targetChat == null) {
+                        val next = windows + window
+                        windows = next
+                        scope.launch {
+                            prefs.saveWindows(next)
+                            reload()
+                        }
+                    } else {
+                        val next =
+                                chatRules.map { r ->
+                                    if (r.chatId == targetChat)
+                                            r.copy(windows = r.windows + window)
+                                    else r
+                                }
+                        chatRules = next
+                        scope.launch {
+                            prefs.saveChatRules(next)
+                            reload()
+                        }
                     }
                 },
         )
