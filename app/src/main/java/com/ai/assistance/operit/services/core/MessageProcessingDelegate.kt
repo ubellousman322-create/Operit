@@ -7,6 +7,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.core.chat.AIMessageManager
+import com.ai.assistance.operit.core.chat.ReplyRhythmManager
 import com.ai.assistance.operit.core.chat.logMessageTiming
 import com.ai.assistance.operit.core.chat.messageTimingNow
 import com.ai.assistance.operit.core.tools.AIToolHandler
@@ -703,7 +704,9 @@ class MessageProcessingDelegate(
             suppressUserMessageInHistory: Boolean = false,
             isGroupOrchestrationTurn: Boolean = false,
             groupParticipantNamesText: String? = null,
-            turnOptions: ChatTurnOptions = ChatTurnOptions()
+            turnOptions: ChatTurnOptions = ChatTurnOptions(),
+            // 回复节奏：静默窗口内强制发起请求（用于「现在就要回」与到点出队）
+            bypassReplyRhythm: Boolean = false
     ) {
         val rawMessageText = messageTextOverride ?: _userMessage.value.text
         // 群组编排模式下，允许空消息（后续成员不需要用户消息）
@@ -905,6 +908,23 @@ class MessageProcessingDelegate(
             var calculateNextWindowSize: (suspend () -> Long?)? = null
             var cancellationToPropagate: kotlinx.coroutines.CancellationException? = null
             try {
+                // 回复节奏：静默窗口内消息已落库，但不发起请求。
+                // 窗口结束或用户点「现在就要回」时，由 bypassReplyRhythm 放行。
+                if (
+                    !isAutoContinuation &&
+                    !isGroupOrchestrationTurn &&
+                    !bypassReplyRhythm &&
+                    ReplyRhythmManager.shouldHold(context)
+                ) {
+                    AppLogger.d(
+                        TAG,
+                        "sendUserMessage静默: 消息已落库本轮不请求, chatId=$activeChatId"
+                    )
+                    chatRuntime.isLoading.value = false
+                    updateGlobalLoadingState()
+                    setChatInputProcessingState(activeChatId, EnhancedInputProcessingState.Idle)
+                    return@launch
+                }
                 // if (!NetworkUtils.isNetworkAvailable(context)) {
                 //     withContext(Dispatchers.Main) { showErrorMessage("网络连接不可用") }
                 //     _isLoading.value = false
