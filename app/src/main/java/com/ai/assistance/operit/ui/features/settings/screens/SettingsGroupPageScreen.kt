@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Brightness2
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Analytics
@@ -56,6 +57,7 @@ import com.ai.assistance.operit.data.preferences.ApiPreferences
 import com.ai.assistance.operit.ui.features.chat.components.style.input.common.ToolPromptManagerDialog
 import com.ai.assistance.operit.data.preferences.PatPreferences
 import com.ai.assistance.operit.core.tools.defaultTool.standard.CookiePrivacyManager
+import com.ai.assistance.operit.ui.features.chat.components.replyrhythm.ReplyRhythmSettingsDialog
 import com.ai.assistance.operit.ui.main.components.GlassActionRow
 import com.ai.assistance.operit.ui.main.components.rememberNavigationDrawerAppearance
 import com.ai.assistance.operit.util.AppLogger
@@ -80,6 +82,7 @@ fun SettingsGroupPageScreen(
         var showClearCookieConfirm by remember { mutableStateOf(false) }
         var showPatDialog by remember { mutableStateOf(false) }
         var showToolPromptManager by remember { mutableStateOf(false) }
+        var showReplyRhythmSettings by remember { mutableStateOf(false) }
         val apiPreferences = remember { ApiPreferences.getInstance(context) }
         val toolVisibilityMap by apiPreferences.toolPromptVisibilityFlow.collectAsState(initial = emptyMap<String, Boolean>())
         var patSuffixDraft by remember { mutableStateOf(PatPreferences.getUserPatSuffix(context)) }
@@ -168,6 +171,11 @@ fun SettingsGroupPageScreen(
                                                 "工具开关",
                                                 Icons.Default.Build
                                         ),
+                                        SettingsGroupEntry(
+                                                "reply_rhythm",
+                                                "回复节奏",
+                                                Icons.Default.Brightness2
+                                        ),
                                 )
                         else -> emptyList()
                 }
@@ -219,6 +227,8 @@ fun SettingsGroupPageScreen(
                                                         showPatDialog = true
                                                 } else if (entry.key == "tool_switch") {
                                                         showToolPromptManager = true
+                                                } else if (entry.key == "reply_rhythm") {
+                                                        showReplyRhythmSettings = true
                                                 } else {
                                                         onOpen(entry.key)
                                                 }
@@ -228,6 +238,13 @@ fun SettingsGroupPageScreen(
                         }
                 }
         }
+        if (showReplyRhythmSettings) {
+                ReplyRhythmSettingsDialog(
+                        visible = true,
+                        onDismissRequest = { showReplyRhythmSettings = false },
+                )
+        }
+
         if (showToolPromptManager) {
                 ToolPromptManagerDialog(
                         visible = true,
