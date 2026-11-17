@@ -314,6 +314,20 @@ class MessageCoordinationDelegate(
      * 发送用户消息
      * 检查是否有当前对话，如果没有则自动创建新对话
      */
+    /**
+     * 回复节奏：静默窗口结束后，把攒下的消息一次性交给模型回复。
+     * 走自动续写通道，不会在聊天记录里留下额外的空用户消息。
+     */
+    fun triggerPendingReply(chatIdOverride: String? = null) {
+        sendMessageInternal(
+            promptFunctionType = PromptFunctionType.CHAT,
+            isAutoContinuation = true,
+            preferActiveRoleCard = true,
+            chatIdOverride = chatIdOverride,
+            bypassReplyRhythm = true,
+        )
+    }
+
     fun sendUserMessage(
         promptFunctionType: PromptFunctionType = PromptFunctionType.CHAT,
         roleCardIdOverride: String? = null,
@@ -324,6 +338,8 @@ class MessageCoordinationDelegate(
         chatModelIndexOverride: Int? = null,
         turnOptions: ChatTurnOptions = ChatTurnOptions(),
         preferActiveRoleCard: Boolean = false,
+        // 回复节奏：静默窗口内强制发起请求，用于「现在就要回」与窗口结束出队
+        bypassReplyRhythm: Boolean = false,
     ) {
         // 仅在没有指定 chatId 的情况下，才需要确保有当前对话
         if (chatIdOverride.isNullOrBlank() && chatHistoryDelegate.currentChatId.value == null) {
@@ -362,7 +378,8 @@ class MessageCoordinationDelegate(
                     proxySenderNameOverride = proxySenderNameOverride,
                     chatModelConfigIdOverride = chatModelConfigIdOverride,
                     chatModelIndexOverride = chatModelIndexOverride,
-                    turnOptions = turnOptions
+                    turnOptions = turnOptions,
+                    bypassReplyRhythm = bypassReplyRhythm,
                 )
             }
         } else {
@@ -376,7 +393,8 @@ class MessageCoordinationDelegate(
                 proxySenderNameOverride = proxySenderNameOverride,
                 chatModelConfigIdOverride = chatModelConfigIdOverride,
                 chatModelIndexOverride = chatModelIndexOverride,
-                turnOptions = turnOptions
+                turnOptions = turnOptions,
+                bypassReplyRhythm = bypassReplyRhythm,
             )
         }
     }
@@ -521,7 +539,8 @@ class MessageCoordinationDelegate(
         enableGroupOrchestration: Boolean = true,
         isGroupOrchestrationTurn: Boolean = false,
         groupParticipantNamesText: String? = null,
-        turnOptions: ChatTurnOptions = ChatTurnOptions()
+        turnOptions: ChatTurnOptions = ChatTurnOptions(),
+        bypassReplyRhythm: Boolean = false
     ) {
         // 如果不是自动续写，更新当前的 promptFunctionType
         if (!isAutoContinuation) {
@@ -726,7 +745,8 @@ class MessageCoordinationDelegate(
             suppressUserMessageInHistory = suppressUserMessageInHistory,
             isGroupOrchestrationTurn = isGroupOrchestrationTurn,
             groupParticipantNamesText = groupParticipantNamesText,
-            turnOptions = turnOptions
+            turnOptions = turnOptions,
+            bypassReplyRhythm = bypassReplyRhythm
         )
 
         // 只有在非续写（即用户主动发送）时才清空附件和UI状态
