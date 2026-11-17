@@ -78,6 +78,7 @@ class ReplyRhythmPreferences private constructor(private val context: Context) {
         private val KEY_WINDOWS = stringPreferencesKey("reply_rhythm_windows")
         private val KEY_MAX_BATCH = stringPreferencesKey("reply_rhythm_max_batch")
         private val KEY_MANUAL_SILENT_UNTIL = stringPreferencesKey("reply_rhythm_manual_until")
+        private val KEY_EXEMPT_CHATS = stringPreferencesKey("reply_rhythm_exempt_chats")
     }
 
     val enabledFlow: Flow<Boolean> =
@@ -104,7 +105,25 @@ class ReplyRhythmPreferences private constructor(private val context: Context) {
                 (it[KEY_MANUAL_SILENT_UNTIL] ?: "0").toLongOrNull() ?: 0L
             }
 
+    /** 不参与静默的对话 id 集合 */
+    val exemptChatIdsFlow: Flow<Set<String>> =
+            context.replyRhythmDataStore.data.map { prefs ->
+                val raw = prefs[KEY_EXEMPT_CHATS] ?: return@map emptySet()
+                runCatching { JSON.decodeFromString<Set<String>>(raw) }
+                        .getOrDefault(emptySet())
+            }
+
     suspend fun isEnabled(): Boolean = enabledFlow.first()
+
+    suspend fun getExemptChatIds(): Set<String> = exemptChatIdsFlow.first()
+
+    suspend fun setChatExempt(chatId: String, exempt: Boolean) {
+        val current = getExemptChatIds().toMutableSet()
+        if (exempt) current.add(chatId) else current.remove(chatId)
+        context.replyRhythmDataStore.edit {
+            it[KEY_EXEMPT_CHATS] = JSON.encodeToString(current.toSet())
+        }
+    }
 
     suspend fun isDefaultSilent(): Boolean = defaultSilentFlow.first()
 
