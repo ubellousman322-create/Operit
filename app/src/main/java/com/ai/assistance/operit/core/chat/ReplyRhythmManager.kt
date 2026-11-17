@@ -84,18 +84,16 @@ object ReplyRhythmManager {
         if (!prefs.isEnabled()) {
             return ReplyRhythmStatus(false, false, false, null, "")
         }
-        // 单个对话豁免：这个对话永远不攒
-        if (chatId != null && prefs.getExemptChatIds().contains(chatId)) {
-            return ReplyRhythmStatus(false, false, true, null, "")
-        }
 
         val manualUntil = prefs.getManualSilentUntil()
         if (manualUntil > System.currentTimeMillis()) {
             return ReplyRhythmStatus(true, true, false, manualUntil, "")
         }
 
-        val windows = prefs.getWindows()
-        val defaultSilent = prefs.isDefaultSilent()
+        // 专属规则优先于全局
+        val chatRule = if (chatId != null) prefs.getChatRule(chatId) else null
+        val windows = chatRule?.windows ?: prefs.getWindows()
+        val defaultSilent = chatRule?.defaultSilent ?: prefs.isDefaultSilent()
 
         val activeWindow =
                 windows.firstOrNull {
