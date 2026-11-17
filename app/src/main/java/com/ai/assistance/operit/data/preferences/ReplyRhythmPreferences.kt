@@ -54,6 +54,15 @@ data class ReplyWindow(
         get() = startMinute > endMinute
 }
 
+/** 单独给某个对话配的规则；有它就不走全局 */
+@Serializable
+data class ChatRhythmRule(
+        val chatId: String,
+        val chatTitle: String = "",
+        val windows: List<ReplyWindow> = emptyList(),
+        val defaultSilent: Boolean = false,
+)
+
 class ReplyRhythmPreferences private constructor(private val context: Context) {
 
     companion object {
@@ -78,7 +87,7 @@ class ReplyRhythmPreferences private constructor(private val context: Context) {
         private val KEY_WINDOWS = stringPreferencesKey("reply_rhythm_windows")
         private val KEY_MAX_BATCH = stringPreferencesKey("reply_rhythm_max_batch")
         private val KEY_MANUAL_SILENT_UNTIL = stringPreferencesKey("reply_rhythm_manual_until")
-        private val KEY_EXEMPT_CHATS = stringPreferencesKey("reply_rhythm_exempt_chats")
+        private val KEY_CHAT_RULES = stringPreferencesKey("reply_rhythm_chat_rules")
     }
 
     val enabledFlow: Flow<Boolean> =
@@ -105,24 +114,22 @@ class ReplyRhythmPreferences private constructor(private val context: Context) {
                 (it[KEY_MANUAL_SILENT_UNTIL] ?: "0").toLongOrNull() ?: 0L
             }
 
-    /** 不参与静默的对话 id 集合 */
-    val exemptChatIdsFlow: Flow<Set<String>> =
+    val chatRulesFlow: Flow<List<ChatRhythmRule>> =
             context.replyRhythmDataStore.data.map { prefs ->
-                val raw = prefs[KEY_EXEMPT_CHATS] ?: return@map emptySet()
-                runCatching { JSON.decodeFromString<Set<String>>(raw) }
-                        .getOrDefault(emptySet())
+                val raw = prefs[KEY_CHAT_RULES] ?: return@map emptyList()
+                runCatching { JSON.decodeFromString<List<ChatRhythmRule>>(raw) }
+                        .getOrDefault(emptyList())
             }
 
     suspend fun isEnabled(): Boolean = enabledFlow.first()
 
-    suspend fun getExemptChatIds(): Set<String> = exemptChatIdsFlow.first()
+    suspend fun getChatRules(): List<ChatRhythmRule> = chatRulesFlow.first()
 
-    suspend fun setChatExempt(chatId: String, exempt: Boolean) {
-        val current = getExemptChatIds().toMutableSet()
-        if (exempt) current.add(chatId) else current.remove(chatId)
-        context.replyRhythmDataStore.edit {
-            it[KEY_EXEMPT_CHATS] = JSON.encodeToString(current.toSet())
-        }
+    suspend fun getChatRule(chatId: String): ChatRhythmRule? =
+            getChatRules().firstOrNull { it.chatId == chatId }
+
+    suspend fun saveChatRules(rules: List<ChatRhythmRule>) {
+        context.replyRhythmDataStore.edit { it[KEY_CHAT_RULES] = JSON.encodeToString(rules) }
     }
 
     suspend fun isDefaultSilent(): Boolean = defaultSilentFlow.first()
