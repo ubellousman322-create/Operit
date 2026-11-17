@@ -25,6 +25,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -115,7 +116,7 @@ fun ReplyRhythmSettingsDialog(visible: Boolean, onDismissRequest: () -> Unit) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("启用", style = MaterialTheme.typography.bodyLarge)
                         Text(
-                                "关掉之后，所有窗口都不生效",
+                                "关掉之后，所有时段都不生效",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -133,9 +134,9 @@ fun ReplyRhythmSettingsDialog(visible: Boolean, onDismissRequest: () -> Unit) {
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("窗口", style = MaterialTheme.typography.titleSmall)
+                Text("时段", style = MaterialTheme.typography.titleSmall)
                 Text(
-                        "不在任何窗口里就正常回复；「不静默」优先级高于「静默」",
+                        "这段时间攒着、那段时间照常回，不冲突；「照常回」优先",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -145,7 +146,7 @@ fun ReplyRhythmSettingsDialog(visible: Boolean, onDismissRequest: () -> Unit) {
                     if (windows.isEmpty()) {
                         item {
                             Text(
-                                    "还没有窗口。点下面「添加窗口」。",
+                                    "还没有时段。点下面「添加时段」。",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(vertical = 16.dp),
@@ -169,8 +170,8 @@ fun ReplyRhythmSettingsDialog(visible: Boolean, onDismissRequest: () -> Unit) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                         text =
-                                                (if (window.type == ReplyWindowType.SILENT) "静默"
-                                                else "不静默") +
+                                                (if (window.type == ReplyWindowType.SILENT) "攒着"
+                                                else "照常回") +
                                                         "  " +
                                                         formatMinuteOfDay(window.startMinute) +
                                                         " - " +
@@ -205,19 +206,36 @@ fun ReplyRhythmSettingsDialog(visible: Boolean, onDismissRequest: () -> Unit) {
                 }
 
                 Spacer(modifier = Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = { editing = ReplyWindow() }) { Text("添加窗口") }
-                    TextButton(
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                            "不在这些时段里：",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    FilterChip(
+                            selected = !defaultSilent,
                             onClick = {
                                 scope.launch {
-                                    prefs.setDefaultSilent(!defaultSilent)
+                                    prefs.setDefaultSilent(false)
                                     reload()
                                 }
-                            }
-                    ) {
-                        Text(if (defaultSilent) "默认：全部静默" else "默认：正常回复")
-                    }
+                            },
+                            label = { Text("正常回复") },
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    FilterChip(
+                            selected = defaultSilent,
+                            onClick = {
+                                scope.launch {
+                                    prefs.setDefaultSilent(true)
+                                    reload()
+                                }
+                            },
+                            label = { Text("也攒着") },
+                    )
                 }
+                TextButton(onClick = { editing = ReplyWindow() }) { Text("添加时段") }
             }
         }
     }
@@ -266,20 +284,46 @@ private fun ReplyWindowEditor(
 
     AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("添加窗口") },
+            title = { Text("添加时段") },
             text = {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(
+                    Row(
+                            modifier =
+                                    Modifier.fillMaxWidth()
+                                            .clickable { type = ReplyWindowType.SILENT },
+                            verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
                                 selected = type == ReplyWindowType.SILENT,
                                 onClick = { type = ReplyWindowType.SILENT },
-                                label = { Text("静默") },
                         )
-                        FilterChip(
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("这段时间攒着", style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                    "你发的先存着，过了再一起回",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    Row(
+                            modifier =
+                                    Modifier.fillMaxWidth()
+                                            .clickable { type = ReplyWindowType.ACTIVE },
+                            verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
                                 selected = type == ReplyWindowType.ACTIVE,
                                 onClick = { type = ReplyWindowType.ACTIVE },
-                                label = { Text("不静默") },
                         )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("这段时间照常回", style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                    "就算落在「攒着」里，这段时间也立刻回",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
