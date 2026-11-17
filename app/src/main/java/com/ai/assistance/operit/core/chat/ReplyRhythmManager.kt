@@ -77,11 +77,16 @@ object ReplyRhythmManager {
 
     suspend fun status(
             context: Context,
+            chatId: String? = null,
             now: LocalDateTime = LocalDateTime.now()
     ): ReplyRhythmStatus {
         val prefs = ReplyRhythmPreferences.getInstance(context)
         if (!prefs.isEnabled()) {
             return ReplyRhythmStatus(false, false, false, null, "")
+        }
+        // 单个对话豁免：这个对话永远不攒
+        if (chatId != null && prefs.getExemptChatIds().contains(chatId)) {
+            return ReplyRhythmStatus(false, false, true, null, "")
         }
 
         val manualUntil = prefs.getManualSilentUntil()
@@ -130,5 +135,6 @@ object ReplyRhythmManager {
     }
 
     /** 当前是否应该攒着不回复 */
-    suspend fun shouldHold(context: Context): Boolean = status(context).silent
+    suspend fun shouldHold(context: Context, chatId: String? = null): Boolean =
+            status(context, chatId).silent
 }
