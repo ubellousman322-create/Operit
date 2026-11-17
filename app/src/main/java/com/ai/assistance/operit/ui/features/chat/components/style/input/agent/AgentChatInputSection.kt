@@ -33,7 +33,6 @@ import androidx.compose.material.icons.outlined.Brightness2
 import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
-import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.coroutines.delay
 import com.ai.assistance.operit.core.chat.ReplyRhythmManager
 import com.ai.assistance.operit.core.chat.ReplyRhythmStatus
@@ -62,7 +61,6 @@ import androidx.compose.material.icons.rounded.Psychology
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.TipsAndUpdates
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -75,7 +73,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
