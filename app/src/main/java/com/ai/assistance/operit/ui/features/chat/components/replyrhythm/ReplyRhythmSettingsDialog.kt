@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,9 +43,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ai.assistance.operit.data.preferences.ReplyRhythmPreferences
+import com.ai.assistance.operit.data.repository.ChatHistoryManager
 import com.ai.assistance.operit.data.preferences.ReplyWindow
 import com.ai.assistance.operit.data.preferences.ReplyWindowRepeat
 import com.ai.assistance.operit.data.preferences.ReplyWindowType
@@ -75,10 +79,13 @@ fun ReplyRhythmSettingsDialog(visible: Boolean, onDismissRequest: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val prefs = remember { ReplyRhythmPreferences.getInstance(context) }
+    val chatHistoryManager = remember { ChatHistoryManager.getInstance(context) }
+    val chatHistories by chatHistoryManager.chatHistoriesFlow.collectAsState(initial = emptyList())
 
     var enabled by remember { mutableStateOf(false) }
     var defaultSilent by remember { mutableStateOf(false) }
     var windows by remember { mutableStateOf<List<ReplyWindow>>(emptyList()) }
+    var exemptIds by remember { mutableStateOf<Set<String>>(emptySet()) }
     var editing by remember { mutableStateOf<ReplyWindow?>(null) }
 
     fun reload() {
@@ -86,6 +93,7 @@ fun ReplyRhythmSettingsDialog(visible: Boolean, onDismissRequest: () -> Unit) {
             enabled = prefs.isEnabled()
             defaultSilent = prefs.isDefaultSilent()
             windows = prefs.getWindows()
+            exemptIds = prefs.getExemptChatIds()
         }
     }
 
@@ -133,23 +141,26 @@ fun ReplyRhythmSettingsDialog(visible: Boolean, onDismissRequest: () -> Unit) {
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("时段", style = MaterialTheme.typography.titleSmall)
-                Text(
-                        "这段时间攒着、那段时间照常回，不冲突；「照常回」优先",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-
                 LazyColumn(modifier = Modifier.weight(1f)) {
+                    item {
+                        Column {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("时段", style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                    "这段时间攒着、那段时间照常回；「照常回」优先",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+                    }
                     if (windows.isEmpty()) {
                         item {
                             Text(
-                                    "还没有时段。点下面「添加时段」。",
+                                    "还没有时段。",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(vertical = 16.dp),
+                                    modifier = Modifier.padding(vertical = 8.dp),
                             )
                         }
                     }
@@ -203,6 +214,67 @@ fun ReplyRhythmSettingsDialog(visible: Boolean, onDismissRequest: () -> Unit) {
                             }
                         }
                     }
+                    item {
+                        TextButton(onClick = { editing = ReplyWindow() }) { Text("添加时段") }
+                    }
+                    item {
+                        Column {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("不参与静默的对话", style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                    "勾上的对话，什么时段都立刻回",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+                    }
+                    if (chatHistories.isEmpty()) {
+                        item {
+                            Text(
+                                    "还没有对话。",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(vertical = 8.dp),
+                            )
+                        }
+                    }
+                    items(chatHistories) { chat ->
+                        Row(
+                                modifier =
+                                        Modifier.fillMaxWidth()
+                                                .clickable {
+                                                    val checked = chat.id !in exemptIds
+                                                    val next =
+                                                            if (checked) exemptIds + chat.id
+                                                            else exemptIds - chat.id
+                                                    exemptIds = next
+                                                    scope.launch {
+                                                        prefs.setChatExempt(chat.id, checked)
+                                                    }
+                                                }
+                                                .padding(vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Checkbox(
+                                    checked = chat.id in exemptIds,
+                                    onCheckedChange = { checked ->
+                                        val next =
+                                                if (checked) exemptIds + chat.id
+                                                else exemptIds - chat.id
+                                        exemptIds = next
+                                        scope.launch { prefs.setChatExempt(chat.id, checked) }
+                                    },
+                            )
+                            Text(
+                                    text = chat.title.ifBlank { "未命名对话" },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(6.dp))
@@ -235,7 +307,6 @@ fun ReplyRhythmSettingsDialog(visible: Boolean, onDismissRequest: () -> Unit) {
                             label = { Text("也攒着") },
                     )
                 }
-                TextButton(onClick = { editing = ReplyWindow() }) { Text("添加时段") }
             }
         }
     }
