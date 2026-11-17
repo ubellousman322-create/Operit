@@ -914,7 +914,7 @@ class MessageProcessingDelegate(
                     !isAutoContinuation &&
                     !isGroupOrchestrationTurn &&
                     !bypassReplyRhythm &&
-                    ReplyRhythmManager.shouldHold(context)
+                    ReplyRhythmManager.shouldHold(context, chatId)
                 ) {
                     AppLogger.d(
                         TAG,
