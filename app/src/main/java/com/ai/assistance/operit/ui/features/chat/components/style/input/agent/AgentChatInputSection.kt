@@ -321,7 +321,7 @@ fun AgentChatInputSection(
     val replyRhythmPendingLatest = rememberUpdatedState(replyRhythmPendingCount)
     val replyRhythmAutoTriggered = remember { mutableStateOf(false) }
     LaunchedEffect(replyRhythmHistory.size) {
-        replyRhythmStatus = ReplyRhythmManager.status(context)
+        replyRhythmStatus = ReplyRhythmManager.status(context, currentChatId)
     }
     LaunchedEffect(replyRhythmPendingCount) {
         if (replyRhythmPendingCount == 0) {
@@ -332,7 +332,7 @@ fun AgentChatInputSection(
     LaunchedEffect(Unit) {
         while (true) {
             delay(20_000L)
-            val status = ReplyRhythmManager.status(context)
+            val status = ReplyRhythmManager.status(context, currentChatId)
             replyRhythmStatus = status
             val pending = replyRhythmPendingLatest.value
             if (!status.silent && pending > 0 && !replyRhythmAutoTriggered.value) {
@@ -771,7 +771,7 @@ fun AgentChatInputSection(
                                                         computeRhythmUntil(value)
                                                     )
                                                     replyRhythmStatus =
-                                                        ReplyRhythmManager.status(context)
+                                                        ReplyRhythmManager.status(context, currentChatId)
                                                 }
                                             }
                                             .padding(vertical = 12.dp),
@@ -785,7 +785,7 @@ fun AgentChatInputSection(
                                 showReplyRhythmPicker = false
                                 scope.launch {
                                     replyRhythmPrefs.clearManualSilent()
-                                    replyRhythmStatus = ReplyRhythmManager.status(context)
+                                    replyRhythmStatus = ReplyRhythmManager.status(context, currentChatId)
                                 }
                             }
                         ) { Text("取消攒着") }
