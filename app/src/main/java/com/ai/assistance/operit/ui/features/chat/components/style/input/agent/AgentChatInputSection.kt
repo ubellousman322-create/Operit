@@ -81,6 +81,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -317,13 +318,27 @@ fun AgentChatInputSection(
             else -> System.currentTimeMillis() + option * 60_000L
         }
     }
+    val replyRhythmPendingLatest = rememberUpdatedState(replyRhythmPendingCount)
+    val replyRhythmAutoTriggered = remember { mutableStateOf(false) }
     LaunchedEffect(replyRhythmHistory.size) {
         replyRhythmStatus = ReplyRhythmManager.status(context)
     }
+    LaunchedEffect(replyRhythmPendingCount) {
+        if (replyRhythmPendingCount == 0) {
+            replyRhythmAutoTriggered.value = false
+        }
+    }
+    // 回复节奏：窗口结束后如果还有没回的，自动交给她一次
     LaunchedEffect(Unit) {
         while (true) {
-            delay(30_000L)
-            replyRhythmStatus = ReplyRhythmManager.status(context)
+            delay(20_000L)
+            val status = ReplyRhythmManager.status(context)
+            replyRhythmStatus = status
+            val pending = replyRhythmPendingLatest.value
+            if (!status.silent && pending > 0 && !replyRhythmAutoTriggered.value) {
+                replyRhythmAutoTriggered.value = true
+                actualViewModel.triggerPendingReply()
+            }
         }
     }
     val isProcessing =
@@ -678,7 +693,7 @@ fun AgentChatInputSection(
 
     Surface(color = Color.Transparent, modifier = floatingContainerModifier) {
         Column {
-            if (replyRhythmStatus?.silent == true && replyRhythmPendingCount > 0) {
+            if (replyRhythmPendingCount > 0) {
                 Surface(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant,
@@ -698,7 +713,13 @@ fun AgentChatInputSection(
                         Text(
                             text =
                                 buildString {
-                                    append("攒着中 · ${replyRhythmPendingCount} 条")
+                                    append(
+                                            if (replyRhythmStatus?.silent == true) {
+                                                "攒着中 · ${replyRhythmPendingCount} 条"
+                                            } else {
+                                                "${replyRhythmPendingCount} 条待回"
+                                            }
+                                    )
                                     val release = replyRhythmStatus?.releaseAtMillis
                                     if (release != null && release > 0L) {
                                         val fmt =
