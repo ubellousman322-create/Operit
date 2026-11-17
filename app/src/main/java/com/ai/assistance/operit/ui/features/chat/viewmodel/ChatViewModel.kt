@@ -1467,6 +1467,11 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         hideMentionSuggestionPanel()
     }
 
+    /** 回复节奏：静默窗口结束后，让攒下的消息一起得到回复 */
+    fun triggerPendingReply() {
+        messageCoordinationDelegate.triggerPendingReply()
+    }
+
     fun sendUserMessage(promptFunctionType: PromptFunctionType = PromptFunctionType.CHAT) {
         hideMentionSuggestionPanel()
         messageCoordinationDelegate.sendUserMessage(
