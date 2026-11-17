@@ -28,6 +28,16 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.outlined.VolumeOff
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Brightness2
+import androidx.compose.material.icons.outlined.Brightness2
+import androidx.compose.material.icons.filled.PauseCircle
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.style.TextOverflow
+import kotlinx.coroutines.delay
+import com.ai.assistance.operit.core.chat.ReplyRhythmManager
+import com.ai.assistance.operit.core.chat.ReplyRhythmStatus
+import com.ai.assistance.operit.data.preferences.ReplyRhythmPreferences
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Terminal
@@ -264,6 +274,61 @@ fun AgentChatInputSection(
     val functionalConfigManager = remember(context) { FunctionalConfigManager(context) }
     val modelConfigManager = remember(context) { ModelConfigManager(context) }
     val userPreferencesManager = remember(context) { UserPreferencesManager.getInstance(context) }
+    val replyRhythmPrefs = remember(context) { ReplyRhythmPreferences.getInstance(context) }
+    var replyRhythmStatus by remember { mutableStateOf<ReplyRhythmStatus?>(null) }
+    var showReplyRhythmPicker by remember { mutableStateOf(false) }
+    val replyRhythmHistory by actualViewModel.chatHistory.collectAsState()
+    val replyRhythmPendingCount =
+        remember(replyRhythmHistory) {
+            val lastAiIndex = replyRhythmHistory.indexOfLast { it.sender == "ai" }
+            replyRhythmHistory.drop(lastAiIndex + 1).count { it.sender == "user" }
+        }
+    val replyRhythmOptions =
+        remember {
+            listOf(
+                "30 分钟" to 30L,
+                "1 小时" to 60L,
+                "2 小时" to 120L,
+                "今晚 18:00" to -1L,
+                "明天早上 08:00" to -2L,
+                "一直攒着，手动解除" to 0L,
+            )
+        }
+    val computeRhythmUntil: (Long) -> Long = { option ->
+        when (option) {
+            -1L -> {
+                val c = java.util.Calendar.getInstance()
+                c.set(java.util.Calendar.HOUR_OF_DAY, 18)
+                c.set(java.util.Calendar.MINUTE, 0)
+                c.set(java.util.Calendar.SECOND, 0)
+                c.set(java.util.Calendar.MILLISECOND, 0)
+                if (c.timeInMillis <= System.currentTimeMillis()) {
+                    c.add(java.util.Calendar.DAY_OF_YEAR, 1)
+                }
+                c.timeInMillis
+            }
+            -2L -> {
+                val c = java.util.Calendar.getInstance()
+                c.add(java.util.Calendar.DAY_OF_YEAR, 1)
+                c.set(java.util.Calendar.HOUR_OF_DAY, 8)
+                c.set(java.util.Calendar.MINUTE, 0)
+                c.set(java.util.Calendar.SECOND, 0)
+                c.set(java.util.Calendar.MILLISECOND, 0)
+                c.timeInMillis
+            }
+            0L -> Long.MAX_VALUE
+            else -> System.currentTimeMillis() + option * 60_000L
+        }
+    }
+    LaunchedEffect(replyRhythmHistory.size) {
+        replyRhythmStatus = ReplyRhythmManager.status(context)
+    }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(30_000L)
+            replyRhythmStatus = ReplyRhythmManager.status(context)
+        }
+    }
     val isProcessing =
         isLoading ||
             inputState is InputProcessingState.Connecting ||
@@ -616,6 +681,99 @@ fun AgentChatInputSection(
 
     Surface(color = Color.Transparent, modifier = floatingContainerModifier) {
         Column {
+            if (replyRhythmStatus?.silent == true && replyRhythmPendingCount > 0) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(8.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp).fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.PauseCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text =
+                                buildString {
+                                    append("攒着中 · ${replyRhythmPendingCount} 条")
+                                    val release = replyRhythmStatus?.releaseAtMillis
+                                    if (release != null && release > 0L) {
+                                        val fmt =
+                                            java.text.SimpleDateFormat(
+                                                "HH:mm",
+                                                java.util.Locale.getDefault()
+                                            )
+                                        append(" · ${fmt.format(java.util.Date(release))} 回")
+                                    }
+                                },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = "现在回",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier =
+                                Modifier.clickable {
+                                    scope.launch {
+                                        replyRhythmPrefs.clearManualSilent()
+                                        actualViewModel.triggerPendingReply()
+                                    }
+                                },
+                        )
+                    }
+                }
+            }
+            if (showReplyRhythmPicker) {
+                AlertDialog(
+                    onDismissRequest = { showReplyRhythmPicker = false },
+                    title = { Text("攒到什么时候") },
+                    text = {
+                        Column {
+                            replyRhythmOptions.forEach { (label, value) ->
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier =
+                                        Modifier.fillMaxWidth()
+                                            .clickable {
+                                                showReplyRhythmPicker = false
+                                                scope.launch {
+                                                    replyRhythmPrefs.setEnabled(true)
+                                                    replyRhythmPrefs.setManualSilentUntil(
+                                                        computeRhythmUntil(value)
+                                                    )
+                                                    replyRhythmStatus =
+                                                        ReplyRhythmManager.status(context)
+                                                }
+                                            }
+                                            .padding(vertical = 12.dp),
+                                )
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showReplyRhythmPicker = false
+                                scope.launch {
+                                    replyRhythmPrefs.clearManualSilent()
+                                    replyRhythmStatus = ReplyRhythmManager.status(context)
+                                }
+                            }
+                        ) { Text("取消攒着") }
+                    },
+                )
+            }
             replyToMessage?.let { message ->
                 Surface(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
@@ -844,6 +1002,39 @@ fun AgentChatInputSection(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .padding(start = 0.dp, end = 4.dp)
+                                    .size(26.dp)
+                                    .clickable(
+                                        enabled = true,
+                                        onClick = {
+                                            showModelSelectorPopup.value = false
+                                            setShowAttachmentPanel(false)
+                                            setShowEmojiPanel(false)
+                                            showReplyRhythmPicker = true
+                                        },
+                                    ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector =
+                                    if (replyRhythmStatus?.silent == true) {
+                                        Icons.Filled.Brightness2
+                                    } else {
+                                        Icons.Outlined.Brightness2
+                                    },
+                                contentDescription = "回复节奏",
+                                tint =
+                                    if (replyRhythmStatus?.silent == true) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f)
+                                    },
+                                modifier = Modifier.size(21.dp),
+                            )
+                        }
                         Box(
                             modifier =
                                 Modifier
@@ -1173,6 +1364,39 @@ fun AgentChatInputSection(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
+                                Box(
+                                    modifier =
+                                        Modifier
+                                            .padding(start = 0.dp, end = 4.dp)
+                                            .size(26.dp)
+                                            .clickable(
+                                                enabled = true,
+                                                onClick = {
+                                                    showModelSelectorPopup.value = false
+                                                    setShowAttachmentPanel(false)
+                                                    setShowEmojiPanel(false)
+                                                    showReplyRhythmPicker = true
+                                                },
+                                            ),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        imageVector =
+                                            if (replyRhythmStatus?.silent == true) {
+                                                Icons.Filled.Brightness2
+                                            } else {
+                                                Icons.Outlined.Brightness2
+                                            },
+                                        contentDescription = "回复节奏",
+                                        tint =
+                                            if (replyRhythmStatus?.silent == true) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f)
+                                            },
+                                        modifier = Modifier.size(21.dp),
+                                    )
+                                }
                                 Box(
                                     modifier =
                                         Modifier
