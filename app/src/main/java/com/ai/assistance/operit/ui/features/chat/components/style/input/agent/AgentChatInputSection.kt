@@ -993,16 +993,9 @@ fun AgentChatInputSection(
                                 }
                             }
                         }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
                         Box(
                             modifier =
                                 Modifier
-                                    .padding(start = 0.dp, end = 4.dp)
                                     .size(26.dp)
                                     .clickable(
                                         enabled = true,
@@ -1032,6 +1025,12 @@ fun AgentChatInputSection(
                                 modifier = Modifier.size(21.dp),
                             )
                         }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Box(
                             modifier =
                                 Modifier
@@ -1355,45 +1354,44 @@ fun AgentChatInputSection(
                                     }
                                 }
                             }
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .size(26.dp)
+                                        .clickable(
+                                            enabled = true,
+                                            onClick = {
+                                                showModelSelectorPopup.value = false
+                                                setShowAttachmentPanel(false)
+                                                setShowEmojiPanel(false)
+                                                showReplyRhythmPicker = true
+                                            },
+                                        ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    imageVector =
+                                        if (replyRhythmStatus?.silent == true) {
+                                            Icons.Filled.Brightness2
+                                        } else {
+                                            Icons.Outlined.Brightness2
+                                        },
+                                    contentDescription = "回复节奏",
+                                    tint =
+                                        if (replyRhythmStatus?.silent == true) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f)
+                                        },
+                                    modifier = Modifier.size(21.dp),
+                                )
+                            }
                         }
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .padding(start = 0.dp, end = 4.dp)
-                                            .size(26.dp)
-                                            .clickable(
-                                                enabled = true,
-                                                onClick = {
-                                                    showModelSelectorPopup.value = false
-                                                    setShowAttachmentPanel(false)
-                                                    setShowEmojiPanel(false)
-                                                    showReplyRhythmPicker = true
-                                                },
-                                            ),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(
-                                        imageVector =
-                                            if (replyRhythmStatus?.silent == true) {
-                                                Icons.Filled.Brightness2
-                                            } else {
-                                                Icons.Outlined.Brightness2
-                                            },
-                                        contentDescription = "回复节奏",
-                                        tint =
-                                            if (replyRhythmStatus?.silent == true) {
-                                                MaterialTheme.colorScheme.primary
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f)
-                                            },
-                                        modifier = Modifier.size(21.dp),
-                                    )
-                                }
                                 Box(
                                     modifier =
                                         Modifier
