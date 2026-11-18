@@ -715,6 +715,20 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
         }
     }
 
+    // 键盘弹出时滚到最后一条
+    LaunchedEffect(imeBottomPx) {
+        if (imeBottomPx > 0) {
+            delay(80)
+            try {
+                if (latestChatHistory.isNotEmpty()) {
+                    scrollState.animateScrollTo(scrollState.maxValue)
+                }
+            } catch (_: Exception) {
+                // 忽略
+            }
+        }
+    }
+
     // 移除原有的 snackbar 错误处理
     val snackbarHostState = remember { SnackbarHostState() }
 
