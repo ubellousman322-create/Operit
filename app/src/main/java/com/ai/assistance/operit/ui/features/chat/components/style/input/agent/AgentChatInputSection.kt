@@ -693,7 +693,7 @@ fun AgentChatInputSection(
 
     Surface(color = Color.Transparent, modifier = floatingContainerModifier) {
         Column {
-            if (replyRhythmPendingCount > 0) {
+            if (replyRhythmStatus?.silent == true && replyRhythmPendingCount > 0) {
                 Surface(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant,
@@ -713,13 +713,7 @@ fun AgentChatInputSection(
                         Text(
                             text =
                                 buildString {
-                                    append(
-                                            if (replyRhythmStatus?.silent == true) {
-                                                "攒着中 · ${replyRhythmPendingCount} 条"
-                                            } else {
-                                                "${replyRhythmPendingCount} 条待回"
-                                            }
-                                    )
+                                    append("攒着中 · ${replyRhythmPendingCount} 条")
                                     val release = replyRhythmStatus?.releaseAtMillis
                                     if (release != null && release > 0L) {
                                         val fmt =
