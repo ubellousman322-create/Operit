@@ -715,16 +715,18 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
         }
     }
 
-    // 键盘弹出时滚到最后一条
+    // 键盘弹出时滚到最后一条：键盘动画约 250ms，分两次补偿
     LaunchedEffect(imeBottomPx) {
         if (imeBottomPx > 0) {
-            delay(80)
-            try {
-                if (latestChatHistory.isNotEmpty()) {
-                    scrollState.animateScrollTo(scrollState.maxValue)
+            repeat(3) { step ->
+                delay(if (step == 0) 60L else 140L)
+                try {
+                    if (latestChatHistory.isNotEmpty()) {
+                        scrollState.animateScrollTo(scrollState.maxValue)
+                    }
+                } catch (_: Exception) {
+                    // 忽略
                 }
-            } catch (_: Exception) {
-                // 忽略
             }
         }
     }
