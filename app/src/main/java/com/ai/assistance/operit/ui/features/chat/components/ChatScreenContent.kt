@@ -272,6 +272,7 @@ fun ChatScreenContent(
                         hasBackgroundImage = hasBackgroundImage,
                         modifier = Modifier.fillMaxSize(),
                         onSelectMessageToEdit = onSelectMessageToEditCallback,
+                        onThinkingEdited = { idx, editedMsg -> actualViewModel.updateMessage(idx, editedMsg) },
                         onDeleteMessage = { index -> actualViewModel.deleteMessage(index) },
                         onDeleteCurrentMessageVariant = { index ->
                             actualViewModel.deleteCurrentMessageVariant(index)
@@ -400,6 +401,7 @@ fun ChatScreenContent(
                         hasBackgroundImage = hasBackgroundImage,
                         modifier = Modifier.fillMaxSize(),
                         onSelectMessageToEdit = onSelectMessageToEditCallback,
+                        onThinkingEdited = { idx, editedMsg -> actualViewModel.updateMessage(idx, editedMsg) },
                         onDeleteMessage = { index -> actualViewModel.deleteMessage(index) },
                         onDeleteCurrentMessageVariant = { index ->
                             actualViewModel.deleteCurrentMessageVariant(index)
