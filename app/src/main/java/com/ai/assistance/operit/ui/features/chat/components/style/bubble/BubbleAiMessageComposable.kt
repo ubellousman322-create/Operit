@@ -766,7 +766,7 @@ fun BubbleAiMessageComposable(
             onDismissRequest = { showThinkingSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = Color.Transparent,
-            scrimColor = Color.Black.copy(alpha = 0.28f),
+            scrimColor = Color.Black.copy(alpha = 0.08f),
             dragHandle = null,
         ) {
             Box(
@@ -775,19 +775,19 @@ fun BubbleAiMessageComposable(
                         .waterGlass(
                             enabled = sheetWater,
                             shape = sheetShape,
-                            containerColor = sheetBase.copy(alpha = 0.82f),
+                            containerColor = sheetBase.copy(alpha = 0.50f),
                             shadowElevation = 0.dp,
                             borderWidth = 0.7.dp,
-                            overlayAlphaBoost = 0.10f,
+                            overlayAlphaBoost = 0.03f,
                         )
                         .liquidGlass(
                             enabled = sheetLiquid,
                             shape = sheetShape,
-                            containerColor = sheetBase.copy(alpha = 0.62f),
+                            containerColor = sheetBase.copy(alpha = 0.34f),
                             shadowElevation = 0.dp,
                             borderWidth = 0.3.dp,
-                            blurRadius = 34.dp,
-                            overlayAlphaBoost = 0.12f,
+                            blurRadius = 44.dp,
+                            overlayAlphaBoost = 0.04f,
                             enableLens = false,
                         )
                         .background(
