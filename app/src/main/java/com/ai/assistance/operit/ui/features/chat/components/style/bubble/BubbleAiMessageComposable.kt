@@ -67,6 +67,7 @@ import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
 import com.ai.assistance.operit.ui.theme.liquidGlass
 import com.ai.assistance.operit.ui.theme.resolveConfiguredFontFamily
 import com.ai.assistance.operit.ui.theme.waterGlass
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 
@@ -132,6 +133,9 @@ fun BubbleAiMessageComposable(
     val showThinkingProcess = themeSnapshot.showThinkingProcess
     val showStatusTags = themeSnapshot.showStatusTags
     val effectiveShowThinkingProcess = if (forceShowThinkingProcess) true else showThinkingProcess
+
+    // 流式期间由 CustomXmlRenderer 回调回来的实时思考文本
+    val liveThinkingState = remember(message.timestamp) { mutableStateOf("") }
     val avatarShapePref = themeSnapshot.avatarShape
     val avatarCornerRadius = themeSnapshot.avatarCornerRadius
     val bubbleAiUseCustomFont = themeSnapshot.bubbleAiUseCustomFont
@@ -195,6 +199,18 @@ fun BubbleAiMessageComposable(
     // 创建并保存StreamMarkdownRenderer的状态，使用message.timestamp作为key确保同一条消息共享状态
     val rendererState = remember(message.timestamp) { StreamMarkdownRendererState() }
 
+    // 流式期间：渲染器在攒完整文本，每 120ms 从里面抽一次思考，同步给上面的胶囊
+    LaunchedEffect(message.contentStream, message.timestamp) {
+        if (message.contentStream == null) return@LaunchedEffect
+        while (true) {
+            delay(120L)
+            val latest = extractThinkingText(rendererState.collectedContent.toString())
+            if (latest != liveThinkingState.value) {
+                liveThinkingState.value = latest
+            }
+        }
+    }
+
     val xmlRenderer = remember(
         effectiveShowThinkingProcess,
         showStatusTags,
@@ -208,7 +224,8 @@ fun BubbleAiMessageComposable(
             showStatusTags = showStatusTags,
             initialThinkingExpanded = initialThinkingExpanded,
             allowExpandedThinkingFullHeight = allowExpandedThinkingFullHeight,
-            enableDialogs = enableDialogs
+            enableDialogs = enableDialogs,
+            suppressThinkingRender = true,
         )
     }
 
@@ -258,6 +275,7 @@ fun BubbleAiMessageComposable(
         if (message.contentStream != null) message.content else stripThinkingBlocks(message.content)
     }
     var showThinkingSheet by remember { mutableStateOf(false) }
+    val shownThinking = liveThinkingState.value.ifBlank { thinkingText }
 
     val shouldUseExpandedBubbleLayout =
         rendererState.renderNodes.any { node -> node.type in ExpandedBubbleLayoutNodeTypes }
@@ -589,8 +607,12 @@ fun BubbleAiMessageComposable(
                 )
             }
             
-            if (thinkingText.isNotBlank() && effectiveShowThinkingProcess) {
-                ThinkingCapsule(text = thinkingText, onClick = { showThinkingSheet = true })
+            if (shownThinking.isNotBlank() && effectiveShowThinkingProcess) {
+                ThinkingCapsule(
+                    text = shownThinking,
+                    streaming = message.contentStream != null,
+                    onClick = { showThinkingSheet = true },
+                )
             }
 
             BoxWithConstraints {
@@ -723,14 +745,14 @@ fun BubbleAiMessageComposable(
     }
     }
 
-    if (showThinkingSheet && thinkingText.isNotBlank()) {
+    if (showThinkingSheet && shownThinking.isNotBlank()) {
         ModalBottomSheet(
             onDismissRequest = { showThinkingSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surface,
             dragHandle = null,
         ) {
-            ThinkingSheetContent(text = thinkingText, onClose = { showThinkingSheet = false })
+            ThinkingSheetContent(text = shownThinking, onClose = { showThinkingSheet = false })
         }
     }
 
@@ -749,7 +771,7 @@ fun BubbleAiMessageComposable(
 /** 气泡上方那一条胶囊，单击上滑打开完整思考。 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ThinkingCapsule(text: String, onClick: () -> Unit) {
+private fun ThinkingCapsule(text: String, streaming: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(14.dp),
