@@ -9,10 +9,15 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assistant
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.ui.common.markdown.StreamMarkdownRenderer
 import com.ai.assistance.operit.ui.common.markdown.StreamMarkdownRendererState
@@ -50,6 +56,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.ai.assistance.operit.util.markdown.MarkdownProcessorType
 import com.ai.assistance.operit.ui.theme.ProvideAiMarkdownTextLayoutSettings
@@ -63,6 +70,25 @@ import com.ai.assistance.operit.ui.theme.waterGlass
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 
+private val thinkBlockRegex =
+    Regex("<think(?:ing)?\b[^>]*>([\s\S]*?)</think(?:ing)?>", RegexOption.IGNORE_CASE)
+
+/** 从消息内容里取出所有思考文本。 */
+private fun extractThinkingText(content: String): String {
+    if (!content.contains("<think", ignoreCase = true)) return ""
+    return
+        thinkBlockRegex
+            .findAll(content)
+            .joinToString("\n\n") { it.groupValues[1].trim() }
+            .trim()
+}
+
+/** 去掉消息里的思考块，只留正文。 */
+private fun stripThinkingBlocks(content: String): String {
+    if (!content.contains("<think", ignoreCase = true)) return content
+    return thinkBlockRegex.replace(content, "").trim()
+}
+
 private val ExpandedBubbleLayoutNodeTypes =
     setOf(
         MarkdownProcessorType.CODE_BLOCK,
@@ -73,7 +99,7 @@ private val ExpandedBubbleLayoutNodeTypes =
     )
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun BubbleAiMessageComposable(
     message: ChatMessage,
@@ -224,6 +250,15 @@ fun BubbleAiMessageComposable(
             null
         }
     }
+    // 思考内容：从正文里剥出来，单独成一个胶囊，不再占气泡内部
+    val thinkingText = remember(message.content, message.contentStream) {
+        if (message.contentStream != null) "" else extractThinkingText(message.content)
+    }
+    val displayContent = remember(message.content, message.contentStream) {
+        if (message.contentStream != null) message.content else stripThinkingBlocks(message.content)
+    }
+    var showThinkingSheet by remember { mutableStateOf(false) }
+
     val shouldUseExpandedBubbleLayout =
         rendererState.renderNodes.any { node -> node.type in ExpandedBubbleLayoutNodeTypes }
     val sizeTrackingModifier =
@@ -397,7 +432,7 @@ fun BubbleAiMessageComposable(
                                 )
                             } else {
                                 StreamMarkdownRenderer(
-                                    content = message.content,
+                                    content = displayContent,
                                     textColor = textColor,
                                     backgroundColor = backgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
@@ -554,6 +589,10 @@ fun BubbleAiMessageComposable(
                 )
             }
             
+            if (thinkingText.isNotBlank() && effectiveShowThinkingProcess) {
+                ThinkingCapsule(text = thinkingText, onClick = { showThinkingSheet = true })
+            }
+
             BoxWithConstraints {
                 val maxBubbleWidth = maxWidth * 0.85f
                 if (imageUrl != null) {
@@ -607,7 +646,7 @@ fun BubbleAiMessageComposable(
                                 // 对于已完成的静态消息，使用 content 参数的渲染器以支持Markdown
                                 // 共享相同的state，避免重新计算nodes等状态
                                 StreamMarkdownRenderer(
-                                    content = message.content,
+                                    content = displayContent,
                                     textColor = textColor,
                                     backgroundColor = backgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
@@ -684,6 +723,17 @@ fun BubbleAiMessageComposable(
     }
     }
 
+    if (showThinkingSheet && thinkingText.isNotBlank()) {
+        ModalBottomSheet(
+            onDismissRequest = { showThinkingSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = MaterialTheme.colorScheme.surface,
+            dragHandle = null,
+        ) {
+            ThinkingSheetContent(text = thinkingText, onClose = { showThinkingSheet = false })
+        }
+    }
+
     // 链接预览弹窗
     if (showLinkDialog && linkToPreview.isNotEmpty() && enableDialogs) {
         LinkPreviewDialog(
@@ -693,5 +743,103 @@ fun BubbleAiMessageComposable(
                 linkToPreview = ""
             }
         )
+    }
+}
+
+/** 气泡上方那一条胶囊，单击上滑打开完整思考。 */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ThinkingCapsule(text: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        modifier = Modifier.padding(bottom = 6.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                modifier = Modifier.size(14.dp),
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "思考摘要",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowUp,
+                contentDescription = "展开思考",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                modifier = Modifier.size(16.dp),
+            )
+        }
+    }
+}
+
+/** 上滑面板里的思考全文。 */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ThinkingSheetContent(text: String, onClose: () -> Unit) {
+    val sheetScroll = rememberScrollState()
+    Column(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.88f)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 8.dp, top = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Spacer(modifier = Modifier.width(36.dp))
+            Text(
+                text = "思考摘要",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = onClose) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "关闭",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Column(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(sheetScroll)
+                    .padding(horizontal = 22.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.size(14.dp),
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "思考摘要",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                lineHeight = 25.sp,
+            )
+            Spacer(modifier = Modifier.height(48.dp))
+        }
     }
 }
