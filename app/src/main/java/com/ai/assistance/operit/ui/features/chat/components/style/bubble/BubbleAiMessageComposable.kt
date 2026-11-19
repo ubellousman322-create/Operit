@@ -78,9 +78,8 @@ private val thinkBlockRegex =
 /** 从消息内容里取出所有思考文本。 */
 private fun extractThinkingText(content: String): String {
     if (!content.contains("<think", ignoreCase = true)) return ""
-    return
-        thinkBlockRegex
-            .findAll(content)
+    return thinkBlockRegex
+        .findAll(content)
             .joinToString("\n\n") { it.groupValues[1].trim() }
             .trim()
 }
