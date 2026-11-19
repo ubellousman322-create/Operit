@@ -7,6 +7,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -402,6 +403,14 @@ fun BubbleAiMessageComposable(
                 Spacer(modifier = Modifier.height(6.dp))
             }
 
+            if (shownThinking.isNotBlank() && effectiveShowThinkingProcess) {
+                ThinkingCapsule(
+                    text = shownThinking,
+                    streaming = message.contentStream != null,
+                    onClick = { showThinkingSheet = true },
+                )
+            }
+
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val maxBubbleWidth = maxWidth
                 if (imageUrl != null) {
@@ -772,52 +781,42 @@ fun BubbleAiMessageComposable(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ThinkingCapsule(text: String, streaming: Boolean, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        modifier = Modifier.padding(bottom = 6.dp),
+    Row(
+        modifier =
+            Modifier.clip(RoundedCornerShape(8.dp))
+                .clickable(onClick = onClick)
+                .padding(horizontal = 4.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = Icons.Default.Check,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
-                modifier = Modifier.size(14.dp),
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = "思考摘要",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowUp,
-                contentDescription = "展开思考",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
-                modifier = Modifier.size(16.dp),
-            )
-        }
+        Text(text = "\uD83D\uDCAD", fontSize = 13.sp)
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = "内心话",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.width(3.dp))
+        Icon(
+            imageVector = Icons.Default.KeyboardArrowUp,
+            contentDescription = "展开内心话",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            modifier = Modifier.size(14.dp),
+        )
     }
 }
 
-/** 上滑面板里的思考全文。 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ThinkingSheetContent(text: String, onClose: () -> Unit) {
     val sheetScroll = rememberScrollState()
-    Column(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.88f)) {
+    Column(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.5f)) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 8.dp, top = 14.dp),
+            modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 8.dp, top = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Spacer(modifier = Modifier.width(36.dp))
             Text(
-                text = "思考摘要",
+                text = "内心话",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -832,7 +831,7 @@ private fun ThinkingSheetContent(text: String, onClose: () -> Unit) {
                 )
             }
         }
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         Column(
             modifier =
                 Modifier.fillMaxWidth()
@@ -841,15 +840,10 @@ private fun ThinkingSheetContent(text: String, onClose: () -> Unit) {
                     .padding(horizontal = 22.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    modifier = Modifier.size(14.dp),
-                )
+                Text(text = "\uD83D\uDCAD", fontSize = 12.sp)
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "思考摘要",
+                    text = "内心话",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -861,7 +855,7 @@ private fun ThinkingSheetContent(text: String, onClose: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurface,
                 lineHeight = 25.sp,
             )
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(40.dp))
         }
     }
 }
