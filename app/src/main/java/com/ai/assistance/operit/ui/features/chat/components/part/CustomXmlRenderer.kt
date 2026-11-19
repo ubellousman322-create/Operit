@@ -66,7 +66,11 @@ class CustomXmlRenderer(
     private val initialThinkingExpanded: Boolean = false,
     private val allowExpandedThinkingFullHeight: Boolean = false,
     private val enableDialogs: Boolean = true,  // 新增参数：是否启用弹窗功能，默认启用
-    private val fallback: XmlContentRenderer = DefaultXmlRenderer()
+    private val fallback: XmlContentRenderer = DefaultXmlRenderer(),
+    /** 思考内容若在别处展示（气泡上方的胶囊），通过这个回调把实时文本交出去 */
+    private val onThinkingText: ((String) -> Unit)? = null,
+    /** 为 true 时这里不再绘制思考块，只回调文本 */
+    private val suppressThinkingRender: Boolean = false,
 ) : XmlContentRenderer {
     // 定义渲染器能够处理的内置标签集合
     private val builtInTags =
@@ -732,6 +736,15 @@ class CustomXmlRenderer(
     ) {
         val tagName =
             if (content.contains("<thinking")) "thinking" else "think"
+
+        // 思考块改为在气泡上方的胶囊里实时展示：这里只把文本交出去，不占气泡空间
+        if (suppressThinkingRender) {
+            val liveThink = extractContentFromXml(content, tagName).trim()
+            LaunchedEffect(liveThink) {
+                onThinkingText?.invoke(liveThink)
+            }
+            return
+        }
 
         var expandThinkingProcess by rememberLocal(key = "expand_thinking_process_default", defaultValue = false)
         // 仅在"流仍然存在"且标签未闭合时，才判定为进行中。
