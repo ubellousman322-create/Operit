@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assistant
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -122,6 +124,7 @@ fun BubbleAiMessageComposable(
     enableDialogs: Boolean = true,
     onAvatarLongPressMention: ((String) -> Unit)? = null,
     onAvatarDoubleTap: (() -> Unit)? = null,
+    onThinkingEdited: ((String) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val preferencesManager = remember { UserPreferencesManager.getInstance(context) }
@@ -760,7 +763,12 @@ fun BubbleAiMessageComposable(
             containerColor = MaterialTheme.colorScheme.surface,
             dragHandle = null,
         ) {
-            ThinkingSheetContent(text = shownThinking, onClose = { showThinkingSheet = false })
+            ThinkingSheetContent(
+                text = shownThinking,
+                editable = onThinkingEdited != null && message.contentStream == null,
+                onSave = { onThinkingEdited?.invoke(it) },
+                onClose = { showThinkingSheet = false },
+            )
         }
     }
 
@@ -806,14 +814,22 @@ private fun ThinkingCapsule(text: String, streaming: Boolean, onClick: () -> Uni
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ThinkingSheetContent(text: String, onClose: () -> Unit) {
+private fun ThinkingSheetContent(
+    text: String,
+    editable: Boolean,
+    onSave: (String) -> Unit,
+    onClose: () -> Unit,
+) {
     val sheetScroll = rememberScrollState()
+    var draft by remember(text) { mutableStateOf(text) }
+    var editing by remember(text) { mutableStateOf(false) }
+
     Column(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.5f)) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 8.dp, top = 10.dp),
+            modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Spacer(modifier = Modifier.width(36.dp))
+            Spacer(modifier = Modifier.width(40.dp))
             Text(
                 text = "内心话",
                 style = MaterialTheme.typography.titleMedium,
@@ -822,6 +838,26 @@ private fun ThinkingSheetContent(text: String, onClose: () -> Unit) {
                 textAlign = TextAlign.Center,
                 modifier = Modifier.weight(1f),
             )
+            if (editable) {
+                IconButton(
+                    onClick = {
+                        if (editing) {
+                            onSave(draft)
+                            editing = false
+                        } else {
+                            editing = true
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = if (editing) Icons.Default.Check else Icons.Default.Edit,
+                        contentDescription = if (editing) "保存" else "编辑",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.width(48.dp))
+            }
             IconButton(onClick = onClose) {
                 Icon(
                     imageVector = Icons.Default.Close,
@@ -848,13 +884,38 @@ private fun ThinkingSheetContent(text: String, onClose: () -> Unit) {
                 )
             }
             Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                lineHeight = 25.sp,
-            )
+            if (editing) {
+                BasicTextField(
+                    value = draft,
+                    onValueChange = { draft = it },
+                    textStyle =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                Text(
+                    text = draft,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 25.sp,
+                )
+            }
             Spacer(modifier = Modifier.height(40.dp))
+        }
+    }
+}
+
+/** 把消息里的思考段换成新的内容；多段时合并成一段。 */
+internal fun replaceThinkingContent(content: String, newThinking: String): String {
+    var first = true
+    return thinkBlockRegex.replace(content) { _ ->
+        if (first) {
+            first = false
+            "<think>" + newThinking + "</think>"
+        } else {
+            ""
         }
     }
 }
