@@ -7,6 +7,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -757,18 +758,50 @@ fun BubbleAiMessageComposable(
     }
 
     if (showThinkingSheet && shownThinking.isNotBlank()) {
+        val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        val sheetBase = MaterialTheme.colorScheme.surface
+        val sheetWater = isWaterGlassSupported()
+        val sheetLiquid = !sheetWater && isLiquidGlassSupported()
         ModalBottomSheet(
             onDismissRequest = { showThinkingSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = Color.Transparent,
+            scrimColor = Color.Black.copy(alpha = 0.28f),
             dragHandle = null,
         ) {
-            ThinkingSheetContent(
-                text = shownThinking,
-                editable = onThinkingEdited != null && message.contentStream == null,
-                onSave = { onThinkingEdited?.invoke(it) },
-                onClose = { showThinkingSheet = false },
-            )
+            Box(
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .waterGlass(
+                            enabled = sheetWater,
+                            shape = sheetShape,
+                            containerColor = sheetBase.copy(alpha = 0.82f),
+                            shadowElevation = 0.dp,
+                            borderWidth = 0.7.dp,
+                            overlayAlphaBoost = 0.10f,
+                        )
+                        .liquidGlass(
+                            enabled = sheetLiquid,
+                            shape = sheetShape,
+                            containerColor = sheetBase.copy(alpha = 0.62f),
+                            shadowElevation = 0.dp,
+                            borderWidth = 0.3.dp,
+                            blurRadius = 34.dp,
+                            overlayAlphaBoost = 0.12f,
+                            enableLens = false,
+                        )
+                        .background(
+                            color = if (sheetWater || sheetLiquid) Color.Transparent else sheetBase,
+                            shape = sheetShape,
+                        )
+            ) {
+                ThinkingSheetContent(
+                    text = shownThinking,
+                    editable = onThinkingEdited != null && message.contentStream == null,
+                    onSave = { onThinkingEdited?.invoke(it) },
+                    onClose = { showThinkingSheet = false },
+                )
+            }
         }
     }
 
