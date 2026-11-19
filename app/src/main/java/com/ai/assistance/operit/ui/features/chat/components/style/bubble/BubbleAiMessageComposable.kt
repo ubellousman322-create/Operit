@@ -72,7 +72,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 
 private val thinkBlockRegex =
-    Regex("<think(?:ing)?\b[^>]*>([\s\S]*?)</think(?:ing)?>", RegexOption.IGNORE_CASE)
+    Regex("<think(?:ing)?\\b[^>]*>([\\s\\S]*?)</think(?:ing)?>", RegexOption.IGNORE_CASE)
 
 /** 从消息内容里取出所有思考文本。 */
 private fun extractThinkingText(content: String): String {
