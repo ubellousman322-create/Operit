@@ -1172,14 +1172,23 @@ class MessageProcessingDelegate(
                     "创建带流的AI消息, stream is null: ${aiMessage.contentStream == null}, timestamp: ${aiMessage.timestamp}"
                 )
 
+                // Waifu 分句时会把 XML 块丢掉，思考先攒在这里，挂到第一条气泡上
+                val waifuThinkingBuffer = StringBuilder()
+
                 suspend fun emitWaifuSegment(segment: String) {
                     if (segment.isBlank()) return
 
                     val interrupt = waifuEmittedMessages.isEmpty()
+                    val segmentContent =
+                        if (interrupt && waifuThinkingBuffer.isNotEmpty()) {
+                            waifuThinkingBuffer.toString() + segment
+                        } else {
+                            segment
+                        }
                     val segmentMessage =
                         ChatMessage(
                             sender = "ai",
-                            content = segment,
+                            content = segmentContent,
                             contentStream = null,
                             timestamp = ChatMessageTimestampAllocator.next(),
                             roleName = currentRoleName,
@@ -1324,7 +1333,10 @@ class MessageProcessingDelegate(
                                         WaifuMessageProcessor.streamSegmentsWithTypingQueue(
                                             sourceStream = sharedCharStream,
                                             removePunctuation = waifuRemovePunctuation,
-                                            charDelayMs = waifuCharDelay
+                                            charDelayMs = waifuCharDelay,
+                                            onThinking = { chunk ->
+                                                waifuThinkingBuffer.append(chunk)
+                                            }
                                         ).collect { segment ->
                                             emitWaifuSegment(segment)
                                         }
