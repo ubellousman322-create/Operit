@@ -233,6 +233,7 @@ fun ChatArea(
     hasBackgroundImage: Boolean = false,
     modifier: Modifier = Modifier,
     onSelectMessageToEdit: ((Int, ChatMessage, String) -> Unit)? = null,
+    onThinkingEdited: ((Int, ChatMessage) -> Unit)? = null,
     onCopyMessage: ((ChatMessage) -> Unit)? = null,
     onDeleteMessage: ((Int) -> Unit)? = null,
     onDeleteCurrentMessageVariant: ((Int) -> Unit)? = null,
@@ -478,6 +479,7 @@ val lastMessageContentLength = lastMessage?.content?.length
                             thinkingBackgroundColor = thinkingBackgroundColor,
                             thinkingTextColor = thinkingTextColor,
                             onSelectMessageToEdit = onSelectMessageToEdit,
+                            onThinkingEdited = onThinkingEdited,
                             onCopyMessage = onCopyMessage,
                             onDeleteMessage = onDeleteMessage,
                             onDeleteCurrentMessageVariant = onDeleteCurrentMessageVariant,
@@ -651,6 +653,7 @@ private fun MessageItem(
     thinkingBackgroundColor: Color,
     thinkingTextColor: Color,
     onSelectMessageToEdit: ((Int, ChatMessage, String) -> Unit)?,
+    onThinkingEdited: ((Int, ChatMessage) -> Unit)? = null,
     onCopyMessage: ((ChatMessage) -> Unit)?,
     onDeleteMessage: ((Int) -> Unit)?,
     onDeleteCurrentMessageVariant: ((Int) -> Unit)?,
@@ -953,7 +956,8 @@ private fun MessageItem(
                         onAvatarDoubleTap = onPatAvatar,
                         onEditSummary = { summaryMessage ->
                             onSelectMessageToEdit?.invoke(index, summaryMessage, "summary")
-                        }
+                        },
+                        onThinkingEdited = { edited -> onThinkingEdited?.invoke(index, edited) },
                     )
                 }
             }
