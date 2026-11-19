@@ -46,6 +46,7 @@ fun BubbleStyleChatMessage(
     onRoleAvatarLongPress: ((String) -> Unit)? = null,
     onAvatarDoubleTap: (() -> Unit)? = null,
     onEditSummary: ((ChatMessage) -> Unit)? = null,
+    onThinkingEdited: ((ChatMessage) -> Unit)? = null,
 ) {
     val summaryLikeContent =
         message.content.trimStart().let {
@@ -105,6 +106,12 @@ fun BubbleStyleChatMessage(
                 enableDialogs = enableDialogs,
                 onAvatarLongPressMention = onRoleAvatarLongPress,
                 onAvatarDoubleTap = onAvatarDoubleTap,
+                onThinkingEdited =
+                    onThinkingEdited?.let { cb ->
+                        { newText ->
+                            cb(message.copy(content = replaceThinkingContent(message.content, newText)))
+                        }
+                    },
             )
         }
         "summary" -> {
