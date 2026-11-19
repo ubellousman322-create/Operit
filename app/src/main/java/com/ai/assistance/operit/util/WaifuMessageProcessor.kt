@@ -101,6 +101,7 @@ object WaifuMessageProcessor {
     fun streamSegments(
         sourceStream: Stream<String>,
         removePunctuation: Boolean = false,
+        onThinking: ((String) -> Unit)? = null,
     ): Stream<String> = stream {
         val session = StreamingSession(removePunctuation = removePunctuation)
         val renderableBuffer = StringBuilder()
@@ -117,7 +118,16 @@ object WaifuMessageProcessor {
             val blockType = blockGroup.tag ?: MarkdownProcessorType.PLAIN_TEXT
             when (blockType) {
                 MarkdownProcessorType.XML_BLOCK -> {
-                    blockGroup.stream.collect { }
+                    if (onThinking == null) {
+                        blockGroup.stream.collect { }
+                    } else {
+                        val xmlBuilder = StringBuilder()
+                        blockGroup.stream.collect { xmlBuilder.append(it) }
+                        val xml = xmlBuilder.toString()
+                        if (xml.contains("<think", ignoreCase = true)) {
+                            onThinking(xml)
+                        }
+                    }
                 }
 
                 MarkdownProcessorType.CODE_BLOCK,
@@ -195,6 +205,7 @@ object WaifuMessageProcessor {
         sourceStream: Stream<String>,
         removePunctuation: Boolean = false,
         charDelayMs: Int,
+        onThinking: ((String) -> Unit)? = null,
     ): Stream<String> = stream {
         coroutineScope {
             val segmentQueue = Channel<String>(Channel.UNLIMITED)
@@ -203,6 +214,7 @@ object WaifuMessageProcessor {
                     streamSegments(
                         sourceStream = sourceStream,
                         removePunctuation = false,
+                        onThinking = onThinking,
                     ).collect { segment ->
                         val queuedSegment =
                             if (removePunctuation) {
